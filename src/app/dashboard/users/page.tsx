@@ -204,7 +204,7 @@ export default function UsersManagementPage() {
   };
 
   // Handler saat Role diubah (Reset Unit Kerja agar tidak bentrok)
-  const handleRoleChange = (newRole: string) => {
+  const handleRoleChange = (newRole: any) => {
     setFormData({
       ...formData,
       role: newRole,
@@ -268,7 +268,7 @@ export default function UsersManagementPage() {
                   {formData.role === "admin" ? (
                     <Input id="unitName" required placeholder="Contoh: Pusat" value={formData.unitName} onChange={(e) => setFormData({...formData, unitName: e.target.value})} />
                   ) : (
-                    <Select required value={formData.unitName} onValueChange={(val) => setFormData({...formData, unitName: val})}>
+                    <Select required value={formData.unitName} onValueChange={(val: any) => setFormData({...formData, unitName: val})}>
                       <SelectTrigger><SelectValue placeholder={`Pilih Unit ${formData.role === 'eselon_1' ? 'Eselon 1' : 'Eselon 2'}`} /></SelectTrigger>
                       <SelectContent>
                         {unitsList.filter(u => u.level === formData.role).map((unit) => (
@@ -317,7 +317,7 @@ export default function UsersManagementPage() {
                   {formData.role === "admin" ? (
                     <Input id="unitName_edit" required value={formData.unitName} onChange={(e) => setFormData({...formData, unitName: e.target.value})} />
                   ) : (
-                    <Select required value={formData.unitName} onValueChange={(val) => setFormData({...formData, unitName: val})}>
+                    <Select required value={formData.unitName} onValueChange={(val: any) => setFormData({...formData, unitName: val})}>
                       <SelectTrigger><SelectValue placeholder={`Pilih Unit ${formData.role === 'eselon_1' ? 'Eselon 1' : 'Eselon 2'}`} /></SelectTrigger>
                       <SelectContent>
                         {unitsList.filter(u => u.level === formData.role).map((unit) => (

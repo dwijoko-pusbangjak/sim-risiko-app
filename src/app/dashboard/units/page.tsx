@@ -218,7 +218,7 @@ export default function UnitsManagementPage() {
                   <Label htmlFor="level">Tingkat Eselon *</Label>
                   <Select 
                     value={formData.level} 
-                    onValueChange={(val) => setFormData({...formData, level: val})}
+                    onValueChange={(val: any) => setFormData({...formData, level: val})}
                   >
                     <SelectTrigger>
                       {formData.level === "eselon_1" ? "Eselon 1 (Induk)" : 
@@ -236,7 +236,7 @@ export default function UnitsManagementPage() {
                     <Label htmlFor="parentId">Induk Eselon 1 *</Label>
                     <Select 
                       value={formData.parentId} 
-                      onValueChange={(val) => setFormData({...formData, parentId: val})}
+                      onValueChange={(val: any) => setFormData({...formData, parentId: val})}
                     >
                       <SelectTrigger>
                         {formData.parentId && formData.parentId !== "none" 
