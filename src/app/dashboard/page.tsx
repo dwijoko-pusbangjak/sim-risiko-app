@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -133,18 +133,13 @@ export default function DashboardPage() {
       });
       
       // Tangani risiko dari unit yang dihapus atau tidak ter-map ke E1/E2 di db units
-      const unmappedRisks = allRisks.filter(r => !mappedRiskIds.has(r.id));
-      if (unmappedRisks.length > 0) {
-        hierarchy.push({
-          id: "unmapped",
-          name: "Lainnya (Unit Terhapus / Tak Terdaftar)",
-          level: "eselon_1",
-          totalRisiko: unmappedRisks.length,
-          risikoPrioritas: unmappedRisks.filter(r => (r.besaranRisiko || 0) >= 12).length,
-          totalRtp: unmappedRisks.reduce((acc, r) => acc + (r.rtpList?.length || 0), 0),
-          children: []
-        });
-      }
+        const unmappedRisks = allRisks.filter(r => !mappedRiskIds.has(r.id));
+        if (unmappedRisks.length > 0) {
+          console.log("Menghapus data yatim...", unmappedRisks.length);
+          Promise.all(unmappedRisks.map(r => deleteDoc(doc(db, "mr_identifikasi", r.id))))
+            .then(() => console.log("Berhasil menghapus data yatim"))
+            .catch(e => console.error("Gagal menghapus data yatim", e));
+        }
       
       // Auto expand all
       const initialExpand: Record<string, boolean> = {};
