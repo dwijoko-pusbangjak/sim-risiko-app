@@ -185,7 +185,10 @@ export default function LaporanPage() {
       csvContent += `Sumber Data: ${escapeCSV(konteksData?.sumberData || "-")}\n`;
       csvContent += `Tujuan KL: ${escapeCSV(konteksData?.tujuanKL || "-")}\n`;
       csvContent += `Stakeholder Internal: ${escapeCSV(konteksData?.stakeholderInternal || "-")}\n`;
-      csvContent += `Stakeholder Eksternal: ${escapeCSV(konteksData?.stakeholderEksternal || "-")}\n\n`;
+      csvContent += `Stakeholder Eksternal: ${escapeCSV(konteksData?.stakeholderEksternal || "-")}\n`;
+      csvContent += `Sumber Temuan: ${escapeCSV(konteksData?.sumberTemuan || "-")}\n`;
+      csvContent += `Uraian Temuan: ${escapeCSV(konteksData?.uraianTemuan || "-")}\n`;
+      csvContent += `Penyebab Temuan: ${escapeCSV(konteksData?.penyebabTemuan || "-")}\n\n`;
       
       const sasaranTitle = unitData?.level === "eselon_1" ? "Sasaran Program" : "Sasaran Kegiatan";
       csvContent += `No,Induk Sasaran,${sasaranTitle},Indikator,Target,Nama Peraturan\n`;
@@ -580,7 +583,7 @@ export default function LaporanPage() {
             {/* 5. LAPORAN PENETAPAN KONTEKS */}
             {reportType === "konteks" && (
               <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm mb-4 border-b border-black pb-4">
                   <div>
                     <p className="font-bold">Sumber Data / Informasi:</p>
                     <p className="mb-2 whitespace-pre-wrap">{konteksData?.sumberData || "-"}</p>
@@ -592,6 +595,14 @@ export default function LaporanPage() {
                     <p className="mb-2 whitespace-pre-wrap">{konteksData?.stakeholderInternal || "-"}</p>
                     <p className="font-bold">Stakeholder Eksternal:</p>
                     <p className="whitespace-pre-wrap">{konteksData?.stakeholderEksternal || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="font-bold">Sumber Temuan:</p>
+                    <p className="mb-2 whitespace-pre-wrap">{konteksData?.sumberTemuan || "-"}</p>
+                    <p className="font-bold">Uraian Temuan:</p>
+                    <p className="mb-2 whitespace-pre-wrap">{konteksData?.uraianTemuan || "-"}</p>
+                    <p className="font-bold">Penyebab Temuan:</p>
+                    <p className="whitespace-pre-wrap">{konteksData?.penyebabTemuan || "-"}</p>
                   </div>
                 </div>
 

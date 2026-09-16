@@ -27,6 +27,9 @@ interface KonteksData {
   peraturan: Record<string, string>;
   stakeholderInternal: string;
   stakeholderEksternal: string;
+  sumberTemuan?: string;
+  uraianTemuan?: string;
+  penyebabTemuan?: string;
 }
 
 export default function PenetapanKonteksPage() {
@@ -46,6 +49,9 @@ export default function PenetapanKonteksPage() {
   const [peraturan, setPeraturan] = useState<Record<string, string>>({});
   const [stakeholderInternal, setStakeholderInternal] = useState("");
   const [stakeholderEksternal, setStakeholderEksternal] = useState("");
+  const [sumberTemuan, setSumberTemuan] = useState("");
+  const [uraianTemuan, setUraianTemuan] = useState("");
+  const [penyebabTemuan, setPenyebabTemuan] = useState("");
   
   const [isSaving, setIsSaving] = useState(false);
   
@@ -112,6 +118,9 @@ export default function PenetapanKonteksPage() {
     setPeraturan({});
     setStakeholderInternal("");
     setStakeholderEksternal("");
+    setSumberTemuan("");
+    setUraianTemuan("");
+    setPenyebabTemuan("");
     setIsEditMode(false);
   };
 
@@ -128,6 +137,9 @@ export default function PenetapanKonteksPage() {
     setPeraturan(item.peraturan || {});
     setStakeholderInternal(item.stakeholderInternal || "");
     setStakeholderEksternal(item.stakeholderEksternal || "");
+    setSumberTemuan(item.sumberTemuan || "");
+    setUraianTemuan(item.uraianTemuan || "");
+    setPenyebabTemuan(item.penyebabTemuan || "");
     setIsEditMode(true);
     setIsFormVisible(true);
   };
@@ -169,6 +181,9 @@ export default function PenetapanKonteksPage() {
         peraturan,
         stakeholderInternal,
         stakeholderEksternal,
+        sumberTemuan,
+        uraianTemuan,
+        penyebabTemuan,
         updatedAt: new Date().toISOString(),
         ownerId: user.uid,
         role: user.role
@@ -504,6 +519,41 @@ export default function PenetapanKonteksPage() {
                   onChange={(e) => setStakeholderEksternal(e.target.value)}
                   className="min-h-[100px]"
                 />
+              </div>
+            </div>
+
+            <div className="pt-4 border-t space-y-4">
+              <h4 className="font-semibold text-slate-800">Insiden / Temuan Sebelumnya</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sumberTemuan">Sumber Temuan</Label>
+                  <Input 
+                    id="sumberTemuan"
+                    placeholder="Contoh: Audit Internal, LHP BPK..." 
+                    value={sumberTemuan}
+                    onChange={(e) => setSumberTemuan(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="uraianTemuan">Uraian Temuan</Label>
+                  <Textarea 
+                    id="uraianTemuan"
+                    placeholder="Deskripsikan temuan..." 
+                    value={uraianTemuan}
+                    onChange={(e) => setUraianTemuan(e.target.value)}
+                    className="min-h-[80px]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="penyebabTemuan">Penyebab Temuan</Label>
+                  <Textarea 
+                    id="penyebabTemuan"
+                    placeholder="Penyebab utama dari temuan..." 
+                    value={penyebabTemuan}
+                    onChange={(e) => setPenyebabTemuan(e.target.value)}
+                    className="min-h-[80px]"
+                  />
+                </div>
               </div>
             </div>
 

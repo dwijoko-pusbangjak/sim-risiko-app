@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Loader2, Save, Image as ImageIcon } from "lucide-react";
+import { Loader2, Save, Image as ImageIcon, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -17,6 +18,7 @@ export default function SettingsPage() {
   const router = useRouter();
   
   const [wallpaperUrl, setWallpaperUrl] = useState("");
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -48,18 +50,37 @@ export default function SettingsPage() {
       setIsLoading(false);
     }
   };
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setUploadFile(file);
+      setWallpaperUrl(URL.createObjectURL(file));
+    }
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      let finalUrl = wallpaperUrl;
+
+      if (uploadFile) {
+        toast.info("Mengunggah gambar...");
+        const storageRef = ref(storage, `wallpapers/login_wallpaper_${Date.now()}_${uploadFile.name}`);
+        await uploadBytes(storageRef, uploadFile);
+        finalUrl = await getDownloadURL(storageRef);
+      }
+
       const docRef = doc(db, "settings", "general");
       await setDoc(docRef, {
-        loginWallpaperUrl: wallpaperUrl,
+        loginWallpaperUrl: finalUrl,
         updatedAt: new Date().toISOString(),
         updatedBy: user?.email
       }, { merge: true });
       
       toast.success("Pengaturan wallpaper berhasil disimpan!");
+      setUploadFile(null);
+      setWallpaperUrl(finalUrl);
     } catch (error) {
       console.error("Error saving settings:", error);
       toast.error("Gagal menyimpan pengaturan.");
@@ -89,21 +110,32 @@ export default function SettingsPage() {
             <ImageIcon className="mr-2 h-5 w-5 text-indigo-600" /> Wallpaper Halaman Login
           </CardTitle>
           <CardDescription>
-            Atur gambar yang akan muncul di sisi kiri halaman login. Gunakan URL gambar yang valid (akhiran .jpg, .png).
+            Unggah gambar yang akan muncul di sisi kiri halaman login. Gunakan gambar beresolusi baik (.jpg, .png).
             Ini berguna untuk media pengumuman atau sosialisasi.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="wallpaperUrl">URL Gambar Wallpaper</Label>
-            <Input 
-              id="wallpaperUrl" 
-              placeholder="Contoh: https://example.com/pengumuman.jpg" 
-              value={wallpaperUrl}
-              onChange={(e) => setWallpaperUrl(e.target.value)}
-            />
+            <Label htmlFor="wallpaperFile">Upload Gambar Wallpaper</Label>
+            <div className="flex items-center gap-4">
+              <Input 
+                id="wallpaperFile" 
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="cursor-pointer file:cursor-pointer"
+              />
+              <Button type="button" variant="outline" onClick={() => {
+                setUploadFile(null);
+                setWallpaperUrl("");
+                const fileInput = document.getElementById("wallpaperFile") as HTMLInputElement;
+                if (fileInput) fileInput.value = "";
+              }}>
+                Hapus
+              </Button>
+            </div>
             <p className="text-xs text-slate-500">
-              Kosongkan jika ingin menggunakan warna solid/gradien bawaan.
+              Kosongkan dan simpan jika ingin menggunakan warna solid/gradien bawaan.
             </p>
           </div>
 
