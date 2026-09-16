@@ -11,7 +11,7 @@ import { Loader2, Printer, FileText, Download } from "lucide-react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/logger";
 
-type ReportType = "peta_risiko" | "pemantauan_rtp" | "keterjadian" | "efektifitas";
+type ReportType = "peta_risiko" | "pemantauan_rtp" | "keterjadian" | "efektifitas" | "konteks";
 
 export default function LaporanPage() {
   const { user, activeYear, loading: authLoading } = useAuth();
@@ -21,6 +21,10 @@ export default function LaporanPage() {
   const [showPreview, setShowPreview] = useState(false);
   
   const [risikoData, setRisikoData] = useState<any[]>([]);
+  const [konteksData, setKonteksData] = useState<any>(null);
+  const [sasaranList, setSasaranList] = useState<any[]>([]);
+  const [parentSasaranList, setParentSasaranList] = useState<any[]>([]);
+  
   const [unitData, setUnitData] = useState<any>(null);
   const [eselon1Name, setEselon1Name] = useState<string>("");
   
@@ -41,8 +45,10 @@ export default function LaporanPage() {
       const unitSnap = await getDocs(unitQ);
       let eselon1Str = "";
       
+      let uDataLevel = "";
       if (!unitSnap.empty) {
         const uData = unitSnap.docs[0].data();
+        uDataLevel = uData.level;
         setUnitData(uData);
         
         // Auto-fill form pimpinan
@@ -67,19 +73,48 @@ export default function LaporanPage() {
         }
       }
       
-      // 2. Ambil data Risiko
-      const riskQ = query(
-        collection(db, "mr_identifikasi"), 
-        where("unitName", "==", user.unitName),
-        where("tahun", "==", activeYear)
-      );
-      const riskSnap = await getDocs(riskQ);
-      const data = riskSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      if (reportType === "konteks") {
+        const kQ = query(collection(db, "mr_konteks"), where("unitName", "==", user.unitName), where("tahun", "==", activeYear));
+        const kSnap = await getDocs(kQ);
+        if (!kSnap.empty) {
+          setKonteksData({ id: kSnap.docs[0].id, ...kSnap.docs[0].data() });
+        } else {
+          setKonteksData(null);
+        }
+        
+        if (uDataLevel === "eselon_1") {
+          const sQ = query(collection(db, "sasaran_program"), where("unitName", "==", user.unitName));
+          const sSnap = await getDocs(sQ);
+          setSasaranList(sSnap.docs.map(d => ({id: d.id, ...d.data()})));
+          
+          const stQ = collection(db, "sasaran_strategis");
+          const stSnap = await getDocs(stQ);
+          setParentSasaranList(stSnap.docs.map(d => ({id: d.id, ...d.data()})));
+        } else if (uDataLevel === "eselon_2") {
+          const sQ = query(collection(db, "sasaran_kegiatan"), where("unitName", "==", user.unitName));
+          const sSnap = await getDocs(sQ);
+          setSasaranList(sSnap.docs.map(d => ({id: d.id, ...d.data()})));
+
+          const pQ = collection(db, "sasaran_program");
+          const pSnap = await getDocs(pQ);
+          setParentSasaranList(pSnap.docs.map(d => ({id: d.id, ...d.data()})));
+        }
+      } else {
+        // 2. Ambil data Risiko
+        const riskQ = query(
+          collection(db, "mr_identifikasi"), 
+          where("unitName", "==", user.unitName),
+          where("tahun", "==", activeYear)
+        );
+        const riskSnap = await getDocs(riskQ);
+        const data = riskSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Sort berdasarkan Besaran Risiko Awal (Skala tertinggi ke terendah) - opsional
+        data.sort((a: any, b: any) => (b.besaranRisiko || 0) - (a.besaranRisiko || 0));
+        
+        setRisikoData(data);
+      }
       
-      // Sort berdasarkan Besaran Risiko Awal (Skala tertinggi ke terendah) - opsional
-      data.sort((a: any, b: any) => (b.besaranRisiko || 0) - (a.besaranRisiko || 0));
-      
-      setRisikoData(data);
       setShowPreview(true);
       
       logActivity(user, "Lihat", "Laporan", `Melihat Pratinjau Laporan ${getReportTitle(reportType)}`);
@@ -146,6 +181,29 @@ export default function LaporanPage() {
           });
         }
       });
+    } else if (reportType === "konteks") {
+      csvContent += `Sumber Data: ${escapeCSV(konteksData?.sumberData || "-")}\n`;
+      csvContent += `Tujuan KL: ${escapeCSV(konteksData?.tujuanKL || "-")}\n`;
+      csvContent += `Stakeholder Internal: ${escapeCSV(konteksData?.stakeholderInternal || "-")}\n`;
+      csvContent += `Stakeholder Eksternal: ${escapeCSV(konteksData?.stakeholderEksternal || "-")}\n\n`;
+      
+      const sasaranTitle = unitData?.level === "eselon_1" ? "Sasaran Program" : "Sasaran Kegiatan";
+      csvContent += `No,Induk Sasaran,${sasaranTitle},Indikator,Target,Nama Peraturan\n`;
+      
+      sasaranList.forEach((sasaran, idx) => {
+        const parent = parentSasaranList.find(p => p.id === (unitData?.level === "eselon_1" ? sasaran.strategisId : sasaran.programId));
+        const parentName = parent ? parent.name : "-";
+        const sasaranName = sasaran.name || "-";
+        const peraturan = konteksData?.peraturan?.[sasaran.id] || "-";
+        
+        if (sasaran.indikators && sasaran.indikators.length > 0) {
+          const inds = sasaran.indikators.map((i: any) => i.name).join(" ; ");
+          const targs = sasaran.indikators.map((i: any) => i.target).join(" ; ");
+          csvContent += `${idx + 1},${escapeCSV(parentName)},${escapeCSV(sasaranName)},${escapeCSV(inds)},${escapeCSV(targs)},${escapeCSV(peraturan)}\n`;
+        } else {
+          csvContent += `${idx + 1},${escapeCSV(parentName)},${escapeCSV(sasaranName)},${escapeCSV(sasaran.ikp || sasaran.ikk || "-")},${escapeCSV(sasaran.target || "-")},${escapeCSV(peraturan)}\n`;
+        }
+      });
     }
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -166,6 +224,7 @@ export default function LaporanPage() {
       case "pemantauan_rtp": return "LAPORAN PEMANTAUAN RENCANA TINDAK PENGENDALIAN";
       case "keterjadian": return "LAPORAN KETERJADIAN RISIKO";
       case "efektifitas": return "LAPORAN EFEKTIFITAS RENCANA TINDAK PENGENDALIAN";
+      case "konteks": return "LAPORAN PENETAPAN KONTEKS";
     }
   };
 
@@ -202,9 +261,11 @@ export default function LaporanPage() {
                     {reportType === "pemantauan_rtp" && "Laporan Pemantauan Rencana Tindak Pengendalian"}
                     {reportType === "keterjadian" && "Laporan Keterjadian Risiko"}
                     {reportType === "efektifitas" && "Laporan Efektifitas Rencana Tindak Pengendalian"}
+                    {reportType === "konteks" && "Laporan Penetapan Konteks"}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="konteks">Laporan Penetapan Konteks</SelectItem>
                   <SelectItem value="peta_risiko">Laporan Matriks Peta Risiko</SelectItem>
                   <SelectItem value="pemantauan_rtp">Laporan Pemantauan Rencana Tindak Pengendalian</SelectItem>
                   <SelectItem value="keterjadian">Laporan Keterjadian Risiko</SelectItem>
@@ -515,6 +576,76 @@ export default function LaporanPage() {
                   })()}
                 </tbody>
               </table>
+            {/* 5. LAPORAN PENETAPAN KONTEKS */}
+            {reportType === "konteks" && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                  <div>
+                    <p className="font-bold">Sumber Data / Informasi:</p>
+                    <p className="mb-2 whitespace-pre-wrap">{konteksData?.sumberData || "-"}</p>
+                    <p className="font-bold">Tujuan Kementerian/Lembaga:</p>
+                    <p className="whitespace-pre-wrap">{konteksData?.tujuanKL || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="font-bold">Stakeholder Internal:</p>
+                    <p className="mb-2 whitespace-pre-wrap">{konteksData?.stakeholderInternal || "-"}</p>
+                    <p className="font-bold">Stakeholder Eksternal:</p>
+                    <p className="whitespace-pre-wrap">{konteksData?.stakeholderEksternal || "-"}</p>
+                  </div>
+                </div>
+
+                <table className="w-full border-collapse border border-black text-sm">
+                  <thead>
+                    <tr className="bg-slate-50">
+                      <th className="border border-black p-2 text-center w-12">No</th>
+                      <th className="border border-black p-2 text-center">Induk Sasaran</th>
+                      <th className="border border-black p-2 text-center">
+                        {unitData?.level === "eselon_1" ? "Sasaran Program" : "Sasaran Kegiatan"}
+                      </th>
+                      <th className="border border-black p-2 text-center w-1/4">Indikator</th>
+                      <th className="border border-black p-2 text-center w-20">Target</th>
+                      <th className="border border-black p-2 text-center w-1/4">Nama Peraturan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sasaranList.length > 0 ? (
+                      sasaranList.map((sasaran, idx) => {
+                        const parent = parentSasaranList.find(p => p.id === (unitData?.level === "eselon_1" ? sasaran.strategisId : sasaran.programId));
+                        return (
+                          <tr key={sasaran.id}>
+                            <td className="border border-black p-2 text-center align-top">{idx + 1}</td>
+                            <td className="border border-black p-2 text-xs align-top">{parent ? parent.name : "-"}</td>
+                            <td className="border border-black p-2 text-xs align-top font-medium">{sasaran.name || "-"}</td>
+                            <td className="border border-black p-2 text-xs align-top">
+                              {sasaran.indikators && sasaran.indikators.length > 0 ? (
+                                <ul className="list-disc pl-4 space-y-1 m-0">
+                                  {sasaran.indikators.map((ind: any, i: number) => <li key={i}>{ind.name}</li>)}
+                                </ul>
+                              ) : (
+                                sasaran.ikp || sasaran.ikk || "-"
+                              )}
+                            </td>
+                            <td className="border border-black p-2 text-xs text-center align-top">
+                              {sasaran.indikators && sasaran.indikators.length > 0 ? (
+                                <ul className="list-none space-y-1 p-0 m-0">
+                                  {sasaran.indikators.map((ind: any, i: number) => <li key={i}>{ind.target}</li>)}
+                                </ul>
+                              ) : (
+                                sasaran.target || "-"
+                              )}
+                            </td>
+                            <td className="border border-black p-2 text-xs whitespace-pre-wrap align-top">
+                              {konteksData?.peraturan?.[sasaran.id] || "-"}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr><td colSpan={6} className="border border-black p-4 text-center italic">Tidak ada data sasaran</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             )}
             
           </div>
