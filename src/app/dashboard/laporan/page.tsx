@@ -576,6 +576,7 @@ export default function LaporanPage() {
                   })()}
                 </tbody>
               </table>
+            )}
             {/* 5. LAPORAN PENETAPAN KONTEKS */}
             {reportType === "konteks" && (
               <div className="space-y-6">
