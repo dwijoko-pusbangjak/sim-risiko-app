@@ -39,11 +39,17 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 
+interface Indikator {
+  name: string;
+  target: string;
+}
+
 interface SasaranStrategis {
   id: string;
   name: string; // Sasaran Strategis
-  iku: string; // Indikator Kinerja Utama
-  target: string;
+  iku?: string; // Legacy
+  target?: string; // Legacy
+  indikators?: Indikator[];
 }
 
 export default function SasaranStrategisPage() {
@@ -63,8 +69,7 @@ export default function SasaranStrategisPage() {
   const [formData, setFormData] = useState<SasaranStrategis>({
     id: "",
     name: "",
-    iku: "",
-    target: "",
+    indikators: [{ name: "", target: "" }]
   });
 
   useEffect(() => {
@@ -96,13 +101,18 @@ export default function SasaranStrategisPage() {
   };
 
   const handleOpenCreate = () => {
-    setFormData({ id: "", name: "", iku: "", target: "" });
+    setFormData({ id: "", name: "", indikators: [{ name: "", target: "" }] });
     setIsEditMode(false);
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (item: SasaranStrategis) => {
-    setFormData(item);
+    // Migration for old data
+    const indikators = item.indikators && item.indikators.length > 0 
+      ? item.indikators 
+      : [{ name: item.iku || "", target: item.target || "" }];
+      
+    setFormData({ ...item, indikators });
     setIsEditMode(true);
     setIsModalOpen(true);
   };
@@ -114,8 +124,7 @@ export default function SasaranStrategisPage() {
     try {
       const dataToSave = {
         name: formData.name,
-        iku: formData.iku,
-        target: formData.target,
+        indikators: formData.indikators || [],
       };
 
       if (isEditMode && formData.id) {
@@ -206,25 +215,66 @@ export default function SasaranStrategisPage() {
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
                   />
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="iku">Indikator Kinerja Utama (IKU) *</Label>
-                  <Input 
-                    id="iku" 
-                    required
-                    placeholder="Contoh: Nilai SAKIP Kementerian" 
-                    value={formData.iku}
-                    onChange={(e) => setFormData({...formData, iku: e.target.value})}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="target">Target *</Label>
-                  <Input 
-                    id="target" 
-                    required
-                    placeholder="Contoh: 85.50 (Sangat Baik)" 
-                    value={formData.target}
-                    onChange={(e) => setFormData({...formData, target: e.target.value})}
-                  />
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <Label>Indikator Kinerja Utama & Target</Label>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setFormData({...formData, indikators: [...(formData.indikators || []), { name: "", target: "" }]})}
+                    >
+                      <Plus className="h-4 w-4 mr-1" /> Tambah Indikator
+                    </Button>
+                  </div>
+                  
+                  {formData.indikators?.map((ind, index) => (
+                    <div key={index} className="grid gap-2 p-3 border rounded-md relative bg-slate-50">
+                      <div className="absolute right-2 top-2">
+                        {formData.indikators!.length > 1 && (
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => {
+                              const newInds = [...formData.indikators!];
+                              newInds.splice(index, 1);
+                              setFormData({...formData, indikators: newInds});
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                      <div className="grid gap-1.5 pr-8">
+                        <Label className="text-xs">Indikator {index + 1} *</Label>
+                        <Input 
+                          required
+                          placeholder="Contoh: Nilai SAKIP Kementerian" 
+                          value={ind.name}
+                          onChange={(e) => {
+                            const newInds = [...formData.indikators!];
+                            newInds[index].name = e.target.value;
+                            setFormData({...formData, indikators: newInds});
+                          }}
+                        />
+                      </div>
+                      <div className="grid gap-1.5 pr-8">
+                        <Label className="text-xs">Target {index + 1} *</Label>
+                        <Input 
+                          required
+                          placeholder="Contoh: 85.50 (Sangat Baik)" 
+                          value={ind.target}
+                          onChange={(e) => {
+                            const newInds = [...formData.indikators!];
+                            newInds[index].target = e.target.value;
+                            setFormData({...formData, indikators: newInds});
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
               <DialogFooter>
@@ -276,11 +326,31 @@ export default function SasaranStrategisPage() {
                       {item.name}
                     </div>
                   </TableCell>
-                  <TableCell className="text-slate-600">{item.iku}</TableCell>
-                  <TableCell>
-                    <span className="px-2 py-1 rounded-md text-sm font-semibold bg-blue-50 text-blue-700 border border-blue-100">
-                      {item.target}
-                    </span>
+                  <TableCell className="text-slate-600 align-top">
+                    {item.indikators && item.indikators.length > 0 ? (
+                      <ul className="list-disc pl-4 space-y-2">
+                        {item.indikators.map((ind, i) => <li key={i}>{ind.name}</li>)}
+                      </ul>
+                    ) : (
+                      item.iku
+                    )}
+                  </TableCell>
+                  <TableCell className="align-top">
+                    {item.indikators && item.indikators.length > 0 ? (
+                      <ul className="space-y-2">
+                        {item.indikators.map((ind, i) => (
+                          <li key={i}>
+                            <span className="px-2 py-1 rounded-md text-sm font-semibold bg-blue-50 text-blue-700 border border-blue-100 inline-block">
+                              {ind.target}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <span className="px-2 py-1 rounded-md text-sm font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+                        {item.target}
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-1">
