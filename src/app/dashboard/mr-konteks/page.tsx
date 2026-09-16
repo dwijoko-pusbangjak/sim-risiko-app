@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, doc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
@@ -25,8 +25,13 @@ interface KonteksData {
   sumberData: string;
   tujuanKL: string;
   peraturan: Record<string, string>;
-  stakeholderInternal: string;
-  stakeholderEksternal: string;
+  amanatPeraturan?: Record<string, string>;
+  pihakInternal?: Record<string, string>;
+  hubunganInternal?: Record<string, string>;
+  pihakEksternal?: Record<string, string>;
+  hubunganEksternal?: Record<string, string>;
+  stakeholderInternal: string; // legacy
+  stakeholderEksternal: string; // legacy
   sumberTemuan?: string;
   uraianTemuan?: string;
   penyebabTemuan?: string;
@@ -47,8 +52,14 @@ export default function PenetapanKonteksPage() {
   const [sumberData, setSumberData] = useState("");
   const [tujuanKL, setTujuanKL] = useState("");
   const [peraturan, setPeraturan] = useState<Record<string, string>>({});
-  const [stakeholderInternal, setStakeholderInternal] = useState("");
-  const [stakeholderEksternal, setStakeholderEksternal] = useState("");
+  const [amanatPeraturan, setAmanatPeraturan] = useState<Record<string, string>>({});
+  const [pihakInternal, setPihakInternal] = useState<Record<string, string>>({});
+  const [hubunganInternal, setHubunganInternal] = useState<Record<string, string>>({});
+  const [pihakEksternal, setPihakEksternal] = useState<Record<string, string>>({});
+  const [hubunganEksternal, setHubunganEksternal] = useState<Record<string, string>>({});
+
+  const [stakeholderInternal, setStakeholderInternal] = useState(""); // legacy
+  const [stakeholderEksternal, setStakeholderEksternal] = useState(""); // legacy
   const [sumberTemuan, setSumberTemuan] = useState("");
   const [uraianTemuan, setUraianTemuan] = useState("");
   const [penyebabTemuan, setPenyebabTemuan] = useState("");
@@ -116,6 +127,11 @@ export default function PenetapanKonteksPage() {
     setSumberData("");
     setTujuanKL("");
     setPeraturan({});
+    setAmanatPeraturan({});
+    setPihakInternal({});
+    setHubunganInternal({});
+    setPihakEksternal({});
+    setHubunganEksternal({});
     setStakeholderInternal("");
     setStakeholderEksternal("");
     setSumberTemuan("");
@@ -135,6 +151,11 @@ export default function PenetapanKonteksPage() {
     setSumberData(item.sumberData || "");
     setTujuanKL(item.tujuanKL || "");
     setPeraturan(item.peraturan || {});
+    setAmanatPeraturan(item.amanatPeraturan || {});
+    setPihakInternal(item.pihakInternal || {});
+    setHubunganInternal(item.hubunganInternal || {});
+    setPihakEksternal(item.pihakEksternal || {});
+    setHubunganEksternal(item.hubunganEksternal || {});
     setStakeholderInternal(item.stakeholderInternal || "");
     setStakeholderEksternal(item.stakeholderEksternal || "");
     setSumberTemuan(item.sumberTemuan || "");
@@ -179,6 +200,11 @@ export default function PenetapanKonteksPage() {
         sumberData,
         tujuanKL,
         peraturan,
+        amanatPeraturan,
+        pihakInternal,
+        hubunganInternal,
+        pihakEksternal,
+        hubunganEksternal,
         stakeholderInternal,
         stakeholderEksternal,
         sumberTemuan,
@@ -204,8 +230,8 @@ export default function PenetapanKonteksPage() {
     }
   };
 
-  const handlePeraturanChange = (id: string, value: string) => {
-    setPeraturan(prev => ({ ...prev, [id]: value }));
+  const handleDynamicChange = (setter: React.Dispatch<React.SetStateAction<Record<string, string>>>, id: string, value: string) => {
+    setter(prev => ({ ...prev, [id]: value }));
   };
 
   if (authLoading || (isListLoading && strategisList.length === 0)) {
@@ -358,76 +384,102 @@ export default function PenetapanKonteksPage() {
                 required
               />
             </div>
-
             <div className="space-y-4 pt-4 border-t">
-              <Label className="text-lg font-semibold text-slate-800">Keterkaitan Sasaran & Peraturan</Label>
+              <Label className="text-lg font-semibold text-slate-800">Kebijakan dan Daftar Pemangku Kepentingan Terkait</Label>
               <p className="text-sm text-slate-500 mb-2">
-                Tabel di bawah ini ditarik otomatis dari master data Sasaran Kinerja Anda. Silakan isi Nama Peraturan untuk setiap indikator.
+                Tabel ini ditarik otomatis dari master data Sasaran Kinerja. Silakan isi Nama Peraturan, Amanat, serta Stakeholder.
               </p>
               
               <div className="border rounded-lg overflow-x-auto">
-                <Table>
+                <Table className="min-w-[1400px]">
                   <TableHeader className="bg-slate-50">
                     <TableRow>
-                      <TableHead className="w-1/4">
-                        {user?.role === "eselon_1" ? "Sasaran Strategis" : "Sasaran Program (Induk)"}
+                      <TableHead className="w-12 border-r border-b text-center align-middle" rowSpan={2}>No.</TableHead>
+                      <TableHead className="w-[250px] border-r border-b text-center align-middle" rowSpan={2}>
+                        Sasaran Strategis / Program / Kegiatan
                       </TableHead>
-                      <TableHead className="w-1/4">
-                        {user?.role === "eselon_1" ? "Sasaran Program" : "Sasaran Kegiatan"}
-                      </TableHead>
-                      <TableHead className="w-[15%]">Indikator</TableHead>
-                      <TableHead className="w-[10%] text-center">Target</TableHead>
-                      <TableHead className="w-1/4">Nama Peraturan</TableHead>
+                      <TableHead className="w-[200px] border-r border-b text-center align-middle" rowSpan={2}>Nama Peraturan</TableHead>
+                      <TableHead className="w-[200px] border-r border-b text-center align-middle" rowSpan={2}>Amanat Peraturan Terkait Unit Kerja</TableHead>
+                      <TableHead className="w-[300px] border-r border-b text-center" colSpan={2}>Stakeholder Internal</TableHead>
+                      <TableHead className="w-[300px] border-b text-center" colSpan={2}>Stakeholder Eksternal</TableHead>
+                    </TableRow>
+                    <TableRow>
+                      <TableHead className="w-[150px] border-r border-b text-center bg-slate-50">Stakeholder</TableHead>
+                      <TableHead className="w-[150px] border-r border-b text-center bg-slate-50">Hubungan</TableHead>
+                      <TableHead className="w-[150px] border-r border-b text-center bg-slate-50">Stakeholder</TableHead>
+                      <TableHead className="w-[150px] border-b text-center bg-slate-50">Hubungan</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {user?.role === "eselon_1" && (
-                      programList.length > 0 ? programList.map((prog) => {
+                      programList.length > 0 ? programList.map((prog, idx) => {
                         const strat = strategisList.find(s => s.id === prog.strategisId);
                         return (
-                          <TableRow key={prog.id}>
-                            <TableCell className="font-medium text-sm text-slate-700 align-top">
-                              {strat ? strat.name : "-"}
-                            </TableCell>
-                            <TableCell className="text-sm align-top">{prog.name}</TableCell>
-                            <TableCell className="text-sm align-top">
+                          <TableRow key={prog.id} className="border-b">
+                            <TableCell className="border-r text-center align-top p-2">{idx + 1}</TableCell>
+                            <TableCell className="border-r text-sm align-top p-2">
+                              <p className="font-semibold text-slate-700">{prog.name}</p>
                               {prog.indikators && prog.indikators.length > 0 ? (
-                                <ul className="list-disc pl-4 space-y-1">
+                                <ul className="list-disc pl-4 mt-2 space-y-1">
                                   {prog.indikators.map((ind, i) => <li key={i}>{ind.name}</li>)}
                                 </ul>
                               ) : (
-                                prog.ikp
+                                <p className="mt-2 text-slate-600">{prog.ikp}</p>
                               )}
                             </TableCell>
-                            <TableCell className="text-sm text-center align-top">
-                              {prog.indikators && prog.indikators.length > 0 ? (
-                                <ul className="space-y-1 list-none p-0 m-0">
-                                  {prog.indikators.map((ind, i) => (
-                                    <li key={i}>
-                                      <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-semibold text-xs inline-block">
-                                        {ind.target}
-                                      </span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-semibold text-xs">
-                                  {prog.target}
-                                </span>
-                              )}
-                            </TableCell>
-                            <TableCell className="align-top">
-                              <Input 
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
                                 placeholder="Ketik peraturan..." 
                                 value={peraturan[prog.id] || ""}
-                                onChange={(e) => handlePeraturanChange(prog.id, e.target.value)}
+                                onChange={(e) => handleDynamicChange(setPeraturan, prog.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
+                                placeholder="Amanat peraturan..." 
+                                value={amanatPeraturan[prog.id] || ""}
+                                onChange={(e) => handleDynamicChange(setAmanatPeraturan, prog.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
+                                placeholder="Pihak internal..." 
+                                value={pihakInternal[prog.id] || ""}
+                                onChange={(e) => handleDynamicChange(setPihakInternal, prog.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
+                                placeholder="Hubungan internal..." 
+                                value={hubunganInternal[prog.id] || ""}
+                                onChange={(e) => handleDynamicChange(setHubunganInternal, prog.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
+                                placeholder="Pihak eksternal..." 
+                                value={pihakEksternal[prog.id] || ""}
+                                onChange={(e) => handleDynamicChange(setPihakEksternal, prog.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="align-top p-2">
+                              <Textarea 
+                                placeholder="Hubungan eksternal..." 
+                                value={hubunganEksternal[prog.id] || ""}
+                                onChange={(e) => handleDynamicChange(setHubunganEksternal, prog.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
                               />
                             </TableCell>
                           </TableRow>
                         );
                       }) : (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center h-24 text-slate-500">
+                          <TableCell colSpan={8} className="text-center h-24 text-slate-500">
                             Belum ada Sasaran Program yang diinput untuk unit ini.
                           </TableCell>
                         </TableRow>
@@ -435,52 +487,74 @@ export default function PenetapanKonteksPage() {
                     )}
 
                     {user?.role === "eselon_2" && (
-                      kegiatanList.length > 0 ? kegiatanList.map((keg) => {
+                      kegiatanList.length > 0 ? kegiatanList.map((keg, idx) => {
                         const prog = programList.find(p => p.id === keg.programId);
                         return (
-                          <TableRow key={keg.id}>
-                            <TableCell className="font-medium text-sm text-slate-700 align-top">
-                              {prog ? prog.name : "-"}
-                            </TableCell>
-                            <TableCell className="text-sm align-top">{keg.name}</TableCell>
-                            <TableCell className="text-sm align-top">
+                          <TableRow key={keg.id} className="border-b">
+                            <TableCell className="border-r text-center align-top p-2">{idx + 1}</TableCell>
+                            <TableCell className="border-r text-sm align-top p-2">
+                              <p className="font-semibold text-slate-700">{keg.name}</p>
                               {keg.indikators && keg.indikators.length > 0 ? (
-                                <ul className="list-disc pl-4 space-y-1">
+                                <ul className="list-disc pl-4 mt-2 space-y-1">
                                   {keg.indikators.map((ind, i) => <li key={i}>{ind.name}</li>)}
                                 </ul>
                               ) : (
-                                keg.ikk
+                                <p className="mt-2 text-slate-600">{keg.ikk}</p>
                               )}
                             </TableCell>
-                            <TableCell className="text-sm text-center align-top">
-                              {keg.indikators && keg.indikators.length > 0 ? (
-                                <ul className="space-y-1 list-none p-0 m-0">
-                                  {keg.indikators.map((ind, i) => (
-                                    <li key={i}>
-                                      <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-semibold text-xs inline-block">
-                                        {ind.target}
-                                      </span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-semibold text-xs">
-                                  {keg.target}
-                                </span>
-                              )}
-                            </TableCell>
-                            <TableCell className="align-top">
-                              <Input 
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
                                 placeholder="Ketik peraturan..." 
                                 value={peraturan[keg.id] || ""}
-                                onChange={(e) => handlePeraturanChange(keg.id, e.target.value)}
+                                onChange={(e) => handleDynamicChange(setPeraturan, keg.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
+                                placeholder="Amanat peraturan..." 
+                                value={amanatPeraturan[keg.id] || ""}
+                                onChange={(e) => handleDynamicChange(setAmanatPeraturan, keg.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
+                                placeholder="Pihak internal..." 
+                                value={pihakInternal[keg.id] || ""}
+                                onChange={(e) => handleDynamicChange(setPihakInternal, keg.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
+                                placeholder="Hubungan internal..." 
+                                value={hubunganInternal[keg.id] || ""}
+                                onChange={(e) => handleDynamicChange(setHubunganInternal, keg.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
+                                placeholder="Pihak eksternal..." 
+                                value={pihakEksternal[keg.id] || ""}
+                                onChange={(e) => handleDynamicChange(setPihakEksternal, keg.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="align-top p-2">
+                              <Textarea 
+                                placeholder="Hubungan eksternal..." 
+                                value={hubunganEksternal[keg.id] || ""}
+                                onChange={(e) => handleDynamicChange(setHubunganEksternal, keg.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
                               />
                             </TableCell>
                           </TableRow>
                         );
                       }) : (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center h-24 text-slate-500">
+                          <TableCell colSpan={8} className="text-center h-24 text-slate-500">
                             Belum ada Sasaran Kegiatan yang diinput untuk unit ini.
                           </TableCell>
                         </TableRow>
@@ -489,36 +563,13 @@ export default function PenetapanKonteksPage() {
                     
                     {user?.role === "admin" && (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center h-24 text-slate-500">
+                        <TableCell colSpan={8} className="text-center h-24 text-slate-500">
                           Admin tidak memiliki Sasaran Kinerja unit secara langsung.
                         </TableCell>
                       </TableRow>
                     )}
                   </TableBody>
                 </Table>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
-              <div className="space-y-2">
-                <Label htmlFor="stakeholderInternal">Stakeholder Internal</Label>
-                <Textarea 
-                  id="stakeholderInternal"
-                  placeholder="Daftar pihak internal yang terkait..." 
-                  value={stakeholderInternal}
-                  onChange={(e) => setStakeholderInternal(e.target.value)}
-                  className="min-h-[100px]"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="stakeholderEksternal">Stakeholder Eksternal</Label>
-                <Textarea 
-                  id="stakeholderEksternal"
-                  placeholder="Daftar pihak eksternal yang terkait..." 
-                  value={stakeholderEksternal}
-                  onChange={(e) => setStakeholderEksternal(e.target.value)}
-                  className="min-h-[100px]"
-                />
               </div>
             </div>
 

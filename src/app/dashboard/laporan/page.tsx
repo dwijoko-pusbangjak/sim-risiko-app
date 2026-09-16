@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
@@ -184,27 +184,29 @@ export default function LaporanPage() {
     } else if (reportType === "konteks") {
       csvContent += `Sumber Data: ${escapeCSV(konteksData?.sumberData || "-")}\n`;
       csvContent += `Tujuan KL: ${escapeCSV(konteksData?.tujuanKL || "-")}\n`;
-      csvContent += `Stakeholder Internal: ${escapeCSV(konteksData?.stakeholderInternal || "-")}\n`;
-      csvContent += `Stakeholder Eksternal: ${escapeCSV(konteksData?.stakeholderEksternal || "-")}\n`;
       csvContent += `Sumber Temuan: ${escapeCSV(konteksData?.sumberTemuan || "-")}\n`;
       csvContent += `Uraian Temuan: ${escapeCSV(konteksData?.uraianTemuan || "-")}\n`;
       csvContent += `Penyebab Temuan: ${escapeCSV(konteksData?.penyebabTemuan || "-")}\n\n`;
       
-      const sasaranTitle = unitData?.level === "eselon_1" ? "Sasaran Program" : "Sasaran Kegiatan";
-      csvContent += `No,Induk Sasaran,${sasaranTitle},Indikator,Target,Nama Peraturan\n`;
+      csvContent += `No,Induk Sasaran,Sasaran Kinerja,Indikator,Target,Nama Peraturan,Amanat Peraturan,Pihak Internal,Hubungan Internal,Pihak Eksternal,Hubungan Eksternal\n`;
       
       sasaranList.forEach((sasaran, idx) => {
         const parent = parentSasaranList.find(p => p.id === (unitData?.level === "eselon_1" ? sasaran.strategisId : sasaran.programId));
         const parentName = parent ? parent.name : "-";
         const sasaranName = sasaran.name || "-";
         const peraturan = konteksData?.peraturan?.[sasaran.id] || "-";
+        const amanat = konteksData?.amanatPeraturan?.[sasaran.id] || "-";
+        const pInt = konteksData?.pihakInternal?.[sasaran.id] || "-";
+        const hInt = konteksData?.hubunganInternal?.[sasaran.id] || "-";
+        const pEks = konteksData?.pihakEksternal?.[sasaran.id] || "-";
+        const hEks = konteksData?.hubunganEksternal?.[sasaran.id] || "-";
         
         if (sasaran.indikators && sasaran.indikators.length > 0) {
           const inds = sasaran.indikators.map((i: any) => i.name).join(" ; ");
           const targs = sasaran.indikators.map((i: any) => i.target).join(" ; ");
-          csvContent += `${idx + 1},${escapeCSV(parentName)},${escapeCSV(sasaranName)},${escapeCSV(inds)},${escapeCSV(targs)},${escapeCSV(peraturan)}\n`;
+          csvContent += `${idx + 1},${escapeCSV(parentName)},${escapeCSV(sasaranName)},${escapeCSV(inds)},${escapeCSV(targs)},${escapeCSV(peraturan)},${escapeCSV(amanat)},${escapeCSV(pInt)},${escapeCSV(hInt)},${escapeCSV(pEks)},${escapeCSV(hEks)}\n`;
         } else {
-          csvContent += `${idx + 1},${escapeCSV(parentName)},${escapeCSV(sasaranName)},${escapeCSV(sasaran.ikp || sasaran.ikk || "-")},${escapeCSV(sasaran.target || "-")},${escapeCSV(peraturan)}\n`;
+          csvContent += `${idx + 1},${escapeCSV(parentName)},${escapeCSV(sasaranName)},${escapeCSV(sasaran.ikp || sasaran.ikk || "-")},${escapeCSV(sasaran.target || "-")},${escapeCSV(peraturan)},${escapeCSV(amanat)},${escapeCSV(pInt)},${escapeCSV(hInt)},${escapeCSV(pEks)},${escapeCSV(hEks)}\n`;
         }
       });
     }
@@ -583,40 +585,50 @@ export default function LaporanPage() {
             {/* 5. LAPORAN PENETAPAN KONTEKS */}
             {reportType === "konteks" && (
               <div className="space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm mb-4 border-b border-black pb-4">
-                  <div>
-                    <p className="font-bold">Sumber Data / Informasi:</p>
-                    <p className="mb-2 whitespace-pre-wrap">{konteksData?.sumberData || "-"}</p>
-                    <p className="font-bold">Tujuan Kementerian/Lembaga:</p>
-                    <p className="whitespace-pre-wrap">{konteksData?.tujuanKL || "-"}</p>
+                <div className="grid grid-cols-1 gap-4 text-sm mb-4 border-b border-black pb-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="font-bold">Sumber Data / Informasi:</p>
+                      <p className="mb-2 whitespace-pre-wrap">{konteksData?.sumberData || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="font-bold">Tujuan Kementerian/Lembaga:</p>
+                      <p className="whitespace-pre-wrap">{konteksData?.tujuanKL || "-"}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-bold">Stakeholder Internal:</p>
-                    <p className="mb-2 whitespace-pre-wrap">{konteksData?.stakeholderInternal || "-"}</p>
-                    <p className="font-bold">Stakeholder Eksternal:</p>
-                    <p className="whitespace-pre-wrap">{konteksData?.stakeholderEksternal || "-"}</p>
-                  </div>
-                  <div>
-                    <p className="font-bold">Sumber Temuan:</p>
-                    <p className="mb-2 whitespace-pre-wrap">{konteksData?.sumberTemuan || "-"}</p>
-                    <p className="font-bold">Uraian Temuan:</p>
-                    <p className="mb-2 whitespace-pre-wrap">{konteksData?.uraianTemuan || "-"}</p>
-                    <p className="font-bold">Penyebab Temuan:</p>
-                    <p className="whitespace-pre-wrap">{konteksData?.penyebabTemuan || "-"}</p>
+                  <div className="grid grid-cols-3 gap-4 border-t border-slate-200 pt-2">
+                    <div>
+                      <p className="font-bold">Sumber Temuan:</p>
+                      <p className="whitespace-pre-wrap">{konteksData?.sumberTemuan || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="font-bold">Uraian Temuan:</p>
+                      <p className="whitespace-pre-wrap">{konteksData?.uraianTemuan || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="font-bold">Penyebab Temuan:</p>
+                      <p className="whitespace-pre-wrap">{konteksData?.penyebabTemuan || "-"}</p>
+                    </div>
                   </div>
                 </div>
+
+                <div className="text-center font-bold mb-4">Kebijakan dan Daftar Pemangku Kepentingan Terkait</div>
 
                 <table className="w-full border-collapse border border-black text-sm">
                   <thead>
                     <tr className="bg-slate-50">
-                      <th className="border border-black p-2 text-center w-12">No</th>
-                      <th className="border border-black p-2 text-center">Induk Sasaran</th>
-                      <th className="border border-black p-2 text-center">
-                        {unitData?.level === "eselon_1" ? "Sasaran Program" : "Sasaran Kegiatan"}
-                      </th>
-                      <th className="border border-black p-2 text-center w-1/4">Indikator</th>
-                      <th className="border border-black p-2 text-center w-20">Target</th>
-                      <th className="border border-black p-2 text-center w-1/4">Nama Peraturan</th>
+                      <th className="border border-black p-2 text-center w-10" rowSpan={2}>No</th>
+                      <th className="border border-black p-2 text-center w-1/5" rowSpan={2}>Sasaran Kinerja</th>
+                      <th className="border border-black p-2 text-center w-40" rowSpan={2}>Nama Peraturan</th>
+                      <th className="border border-black p-2 text-center w-40" rowSpan={2}>Amanat Peraturan Terkait Unit Kerja</th>
+                      <th className="border border-black p-2 text-center" colSpan={2}>Stakeholder Internal</th>
+                      <th className="border border-black p-2 text-center" colSpan={2}>Stakeholder Eksternal</th>
+                    </tr>
+                    <tr className="bg-slate-50">
+                      <th className="border border-black p-2 text-center w-28">Stakeholder</th>
+                      <th className="border border-black p-2 text-center w-28">Hubungan</th>
+                      <th className="border border-black p-2 text-center w-28">Stakeholder</th>
+                      <th className="border border-black p-2 text-center w-28">Hubungan</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -626,34 +638,42 @@ export default function LaporanPage() {
                         return (
                           <tr key={sasaran.id}>
                             <td className="border border-black p-2 text-center align-top">{idx + 1}</td>
-                            <td className="border border-black p-2 text-xs align-top">{parent ? parent.name : "-"}</td>
-                            <td className="border border-black p-2 text-xs align-top font-medium">{sasaran.name || "-"}</td>
                             <td className="border border-black p-2 text-xs align-top">
-                              {sasaran.indikators && sasaran.indikators.length > 0 ? (
-                                <ul className="list-disc pl-4 space-y-1 m-0">
-                                  {sasaran.indikators.map((ind: any, i: number) => <li key={i}>{ind.name}</li>)}
-                                </ul>
-                              ) : (
-                                sasaran.ikp || sasaran.ikk || "-"
-                              )}
-                            </td>
-                            <td className="border border-black p-2 text-xs text-center align-top">
-                              {sasaran.indikators && sasaran.indikators.length > 0 ? (
-                                <ul className="list-none space-y-1 p-0 m-0">
-                                  {sasaran.indikators.map((ind: any, i: number) => <li key={i}>{ind.target}</li>)}
-                                </ul>
-                              ) : (
-                                sasaran.target || "-"
-                              )}
+                              <p className="font-semibold text-slate-700">{parent ? parent.name : "-"}</p>
+                              <p className="mt-1 font-medium">{sasaran.name || "-"}</p>
+                              <div className="mt-2 text-slate-600">
+                                {sasaran.indikators && sasaran.indikators.length > 0 ? (
+                                  <ul className="list-disc pl-4 space-y-1 m-0">
+                                    {sasaran.indikators.map((ind: any, i: number) => <li key={i}>{ind.name} (Target: {ind.target})</li>)}
+                                  </ul>
+                                ) : (
+                                  <p>{sasaran.ikp || sasaran.ikk || "-"} (Target: {sasaran.target || "-"})</p>
+                                )}
+                              </div>
                             </td>
                             <td className="border border-black p-2 text-xs whitespace-pre-wrap align-top">
                               {konteksData?.peraturan?.[sasaran.id] || "-"}
+                            </td>
+                            <td className="border border-black p-2 text-xs whitespace-pre-wrap align-top">
+                              {konteksData?.amanatPeraturan?.[sasaran.id] || "-"}
+                            </td>
+                            <td className="border border-black p-2 text-xs whitespace-pre-wrap align-top">
+                              {konteksData?.pihakInternal?.[sasaran.id] || "-"}
+                            </td>
+                            <td className="border border-black p-2 text-xs whitespace-pre-wrap align-top">
+                              {konteksData?.hubunganInternal?.[sasaran.id] || "-"}
+                            </td>
+                            <td className="border border-black p-2 text-xs whitespace-pre-wrap align-top">
+                              {konteksData?.pihakEksternal?.[sasaran.id] || "-"}
+                            </td>
+                            <td className="border border-black p-2 text-xs whitespace-pre-wrap align-top">
+                              {konteksData?.hubunganEksternal?.[sasaran.id] || "-"}
                             </td>
                           </tr>
                         );
                       })
                     ) : (
-                      <tr><td colSpan={6} className="border border-black p-4 text-center italic">Tidak ada data sasaran</td></tr>
+                      <tr><td colSpan={8} className="border border-black p-4 text-center italic">Tidak ada data sasaran</td></tr>
                     )}
                   </tbody>
                 </table>

@@ -1,0 +1,188 @@
+            <div className="space-y-4 pt-4 border-t">
+              <Label className="text-lg font-semibold text-slate-800">Kebijakan dan Daftar Pemangku Kepentingan Terkait</Label>
+              <p className="text-sm text-slate-500 mb-2">
+                Tabel ini ditarik otomatis dari master data Sasaran Kinerja. Silakan isi Nama Peraturan, Amanat, serta Stakeholder.
+              </p>
+              
+              <div className="border rounded-lg overflow-x-auto">
+                <Table className="min-w-[1400px]">
+                  <TableHeader className="bg-slate-50">
+                    <TableRow>
+                      <TableHead className="w-12 border-r border-b text-center align-middle" rowSpan={2}>No.</TableHead>
+                      <TableHead className="w-[250px] border-r border-b text-center align-middle" rowSpan={2}>
+                        Sasaran Strategis / Program / Kegiatan
+                      </TableHead>
+                      <TableHead className="w-[200px] border-r border-b text-center align-middle" rowSpan={2}>Nama Peraturan</TableHead>
+                      <TableHead className="w-[200px] border-r border-b text-center align-middle" rowSpan={2}>Amanat Peraturan Terkait Unit Kerja</TableHead>
+                      <TableHead className="w-[300px] border-r border-b text-center" colSpan={2}>Stakeholder Internal</TableHead>
+                      <TableHead className="w-[300px] border-b text-center" colSpan={2}>Stakeholder Eksternal</TableHead>
+                    </TableRow>
+                    <TableRow>
+                      <TableHead className="w-[150px] border-r border-b text-center bg-slate-50">Stakeholder</TableHead>
+                      <TableHead className="w-[150px] border-r border-b text-center bg-slate-50">Hubungan</TableHead>
+                      <TableHead className="w-[150px] border-r border-b text-center bg-slate-50">Stakeholder</TableHead>
+                      <TableHead className="w-[150px] border-b text-center bg-slate-50">Hubungan</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {user?.role === "eselon_1" && (
+                      programList.length > 0 ? programList.map((prog, idx) => {
+                        const strat = strategisList.find(s => s.id === prog.strategisId);
+                        return (
+                          <TableRow key={prog.id} className="border-b">
+                            <TableCell className="border-r text-center align-top p-2">{idx + 1}</TableCell>
+                            <TableCell className="border-r text-sm align-top p-2">
+                              <p className="font-semibold text-slate-700">{prog.name}</p>
+                              {prog.indikators && prog.indikators.length > 0 ? (
+                                <ul className="list-disc pl-4 mt-2 space-y-1">
+                                  {prog.indikators.map((ind, i) => <li key={i}>{ind.name}</li>)}
+                                </ul>
+                              ) : (
+                                <p className="mt-2 text-slate-600">{prog.ikp}</p>
+                              )}
+                            </TableCell>
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
+                                placeholder="Ketik peraturan..." 
+                                value={peraturan[prog.id] || ""}
+                                onChange={(e) => handleDynamicChange(setPeraturan, prog.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
+                                placeholder="Amanat peraturan..." 
+                                value={amanatPeraturan[prog.id] || ""}
+                                onChange={(e) => handleDynamicChange(setAmanatPeraturan, prog.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
+                                placeholder="Pihak internal..." 
+                                value={pihakInternal[prog.id] || ""}
+                                onChange={(e) => handleDynamicChange(setPihakInternal, prog.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
+                                placeholder="Hubungan internal..." 
+                                value={hubunganInternal[prog.id] || ""}
+                                onChange={(e) => handleDynamicChange(setHubunganInternal, prog.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
+                                placeholder="Pihak eksternal..." 
+                                value={pihakEksternal[prog.id] || ""}
+                                onChange={(e) => handleDynamicChange(setPihakEksternal, prog.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="align-top p-2">
+                              <Textarea 
+                                placeholder="Hubungan eksternal..." 
+                                value={hubunganEksternal[prog.id] || ""}
+                                onChange={(e) => handleDynamicChange(setHubunganEksternal, prog.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      }) : (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center h-24 text-slate-500">
+                            Belum ada Sasaran Program yang diinput untuk unit ini.
+                          </TableCell>
+                        </TableRow>
+                      )
+                    )}
+
+                    {user?.role === "eselon_2" && (
+                      kegiatanList.length > 0 ? kegiatanList.map((keg, idx) => {
+                        const prog = programList.find(p => p.id === keg.programId);
+                        return (
+                          <TableRow key={keg.id} className="border-b">
+                            <TableCell className="border-r text-center align-top p-2">{idx + 1}</TableCell>
+                            <TableCell className="border-r text-sm align-top p-2">
+                              <p className="font-semibold text-slate-700">{keg.name}</p>
+                              {keg.indikators && keg.indikators.length > 0 ? (
+                                <ul className="list-disc pl-4 mt-2 space-y-1">
+                                  {keg.indikators.map((ind, i) => <li key={i}>{ind.name}</li>)}
+                                </ul>
+                              ) : (
+                                <p className="mt-2 text-slate-600">{keg.ikk}</p>
+                              )}
+                            </TableCell>
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
+                                placeholder="Ketik peraturan..." 
+                                value={peraturan[keg.id] || ""}
+                                onChange={(e) => handleDynamicChange(setPeraturan, keg.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
+                                placeholder="Amanat peraturan..." 
+                                value={amanatPeraturan[keg.id] || ""}
+                                onChange={(e) => handleDynamicChange(setAmanatPeraturan, keg.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
+                                placeholder="Pihak internal..." 
+                                value={pihakInternal[keg.id] || ""}
+                                onChange={(e) => handleDynamicChange(setPihakInternal, keg.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
+                                placeholder="Hubungan internal..." 
+                                value={hubunganInternal[keg.id] || ""}
+                                onChange={(e) => handleDynamicChange(setHubunganInternal, keg.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="border-r align-top p-2">
+                              <Textarea 
+                                placeholder="Pihak eksternal..." 
+                                value={pihakEksternal[keg.id] || ""}
+                                onChange={(e) => handleDynamicChange(setPihakEksternal, keg.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                            <TableCell className="align-top p-2">
+                              <Textarea 
+                                placeholder="Hubungan eksternal..." 
+                                value={hubunganEksternal[keg.id] || ""}
+                                onChange={(e) => handleDynamicChange(setHubunganEksternal, keg.id, e.target.value)}
+                                className="min-h-[120px] w-full resize-y text-sm"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      }) : (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center h-24 text-slate-500">
+                            Belum ada Sasaran Kegiatan yang diinput untuk unit ini.
+                          </TableCell>
+                        </TableRow>
+                      )
+                    )}
+                    
+                    {user?.role === "admin" && (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center h-24 text-slate-500">
+                          Admin tidak memiliki Sasaran Kinerja unit secara langsung.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
