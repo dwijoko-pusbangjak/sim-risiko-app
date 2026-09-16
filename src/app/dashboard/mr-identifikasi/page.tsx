@@ -14,8 +14,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Loader2, Save, Plus, Pencil, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
-interface SasaranProgram { id: string; name: string; ikp: string; }
-interface SasaranKegiatan { id: string; name: string; ikk: string; }
+interface Indikator { name: string; target: string; }
+interface SasaranProgram { id: string; name: string; ikp?: string; indikators?: Indikator[]; }
+interface SasaranKegiatan { id: string; name: string; ikk?: string; indikators?: Indikator[]; }
 
 interface IdentifikasiRisiko {
   id: string;
@@ -100,16 +101,28 @@ export default function IdentifikasiRisikoPage() {
       if (user.role === "eselon_1") {
         const q = query(collection(db, "sasaran_program"), where("unitName", "==", user.unitName));
         const snap = await getDocs(q);
-        list = snap.docs.map(d => {
+        snap.docs.forEach(d => {
           const data = d.data() as SasaranProgram;
-          return { id: d.id, indikator: data.ikp, sasaran: data.name };
+          if (data.indikators && data.indikators.length > 0) {
+            data.indikators.forEach((ind, i) => {
+              list.push({ id: d.id + "_" + i, indikator: ind.name, sasaran: data.name });
+            });
+          } else if (data.ikp) {
+            list.push({ id: d.id, indikator: data.ikp, sasaran: data.name });
+          }
         });
       } else if (user.role === "eselon_2") {
         const q = query(collection(db, "sasaran_kegiatan"), where("unitName", "==", user.unitName));
         const snap = await getDocs(q);
-        list = snap.docs.map(d => {
+        snap.docs.forEach(d => {
           const data = d.data() as SasaranKegiatan;
-          return { id: d.id, indikator: data.ikk, sasaran: data.name };
+          if (data.indikators && data.indikators.length > 0) {
+            data.indikators.forEach((ind, i) => {
+              list.push({ id: d.id + "_" + i, indikator: ind.name, sasaran: data.name });
+            });
+          } else if (data.ikk) {
+            list.push({ id: d.id, indikator: data.ikk, sasaran: data.name });
+          }
         });
       }
       setKinerjaList(list);

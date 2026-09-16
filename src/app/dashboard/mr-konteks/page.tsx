@@ -14,9 +14,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Loader2, Save, Plus, Pencil, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
+interface Indikator { name: string; target: string; }
 interface SasaranStrategis { id: string; name: string; }
-interface SasaranProgram { id: string; strategisId: string; unitName: string; name: string; ikp: string; target: string; }
-interface SasaranKegiatan { id: string; programId: string; unitName: string; name: string; ikk: string; target: string; }
+interface SasaranProgram { id: string; strategisId: string; unitName: string; name: string; ikp?: string; target?: string; indikators?: Indikator[]; }
+interface SasaranKegiatan { id: string; programId: string; unitName: string; name: string; ikk?: string; target?: string; indikators?: Indikator[]; }
 
 interface KonteksData {
   id: string;
@@ -374,11 +375,31 @@ export default function PenetapanKonteksPage() {
                               {strat ? strat.name : "-"}
                             </TableCell>
                             <TableCell className="text-sm align-top">{prog.name}</TableCell>
-                            <TableCell className="text-sm align-top">{prog.ikp}</TableCell>
+                            <TableCell className="text-sm align-top">
+                              {prog.indikators && prog.indikators.length > 0 ? (
+                                <ul className="list-disc pl-4 space-y-1">
+                                  {prog.indikators.map((ind, i) => <li key={i}>{ind.name}</li>)}
+                                </ul>
+                              ) : (
+                                prog.ikp
+                              )}
+                            </TableCell>
                             <TableCell className="text-sm text-center align-top">
-                              <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-semibold text-xs">
-                                {prog.target}
-                              </span>
+                              {prog.indikators && prog.indikators.length > 0 ? (
+                                <ul className="space-y-1 list-none p-0 m-0">
+                                  {prog.indikators.map((ind, i) => (
+                                    <li key={i}>
+                                      <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-semibold text-xs inline-block">
+                                        {ind.target}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-semibold text-xs">
+                                  {prog.target}
+                                </span>
+                              )}
                             </TableCell>
                             <TableCell className="align-top">
                               <Input 
@@ -407,11 +428,31 @@ export default function PenetapanKonteksPage() {
                               {prog ? prog.name : "-"}
                             </TableCell>
                             <TableCell className="text-sm align-top">{keg.name}</TableCell>
-                            <TableCell className="text-sm align-top">{keg.ikk}</TableCell>
+                            <TableCell className="text-sm align-top">
+                              {keg.indikators && keg.indikators.length > 0 ? (
+                                <ul className="list-disc pl-4 space-y-1">
+                                  {keg.indikators.map((ind, i) => <li key={i}>{ind.name}</li>)}
+                                </ul>
+                              ) : (
+                                keg.ikk
+                              )}
+                            </TableCell>
                             <TableCell className="text-sm text-center align-top">
-                              <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-semibold text-xs">
-                                {keg.target}
-                              </span>
+                              {keg.indikators && keg.indikators.length > 0 ? (
+                                <ul className="space-y-1 list-none p-0 m-0">
+                                  {keg.indikators.map((ind, i) => (
+                                    <li key={i}>
+                                      <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-semibold text-xs inline-block">
+                                        {ind.target}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-semibold text-xs">
+                                  {keg.target}
+                                </span>
+                              )}
                             </TableCell>
                             <TableCell className="align-top">
                               <Input 
