@@ -23,6 +23,9 @@ export default function LaporanPage() {
   const [risikoData, setRisikoData] = useState<any[]>([]);
   const [konteksData, setKonteksData] = useState<any>(null);
   const [sasaranList, setSasaranList] = useState<any[]>([]);
+  const [strategisList, setStrategisList] = useState<any[]>([]);
+  const [programList, setProgramList] = useState<any[]>([]);
+  const [kegiatanList, setKegiatanList] = useState<any[]>([]);
   const [parentSasaranList, setParentSasaranList] = useState<any[]>([]);
   
   const [unitData, setUnitData] = useState<any>(null);
@@ -81,23 +84,27 @@ export default function LaporanPage() {
         } else {
           setKonteksData(null);
         }
-        
+        const stQ = collection(db, "sasaran_strategis");
+        const stSnap = await getDocs(stQ);
+        setStrategisList(stSnap.docs.map(d => ({id: d.id, ...d.data()})));
         if (uDataLevel === "eselon_1") {
-          const sQ = query(collection(db, "sasaran_program"), where("unitName", "==", user.unitName));
-          const sSnap = await getDocs(sQ);
-          setSasaranList(sSnap.docs.map(d => ({id: d.id, ...d.data()})));
-          
-          const stQ = collection(db, "sasaran_strategis");
-          const stSnap = await getDocs(stQ);
+          const progQ = query(collection(db, "sasaran_program"), where("unitName", "==", user.unitName));
+          const progSnap = await getDocs(progQ);
+          const programs = progSnap.docs.map(d => ({id: d.id, ...d.data()}));
+          setProgramList(programs);
+          setSasaranList(programs);
           setParentSasaranList(stSnap.docs.map(d => ({id: d.id, ...d.data()})));
+          setKegiatanList([]);
         } else if (uDataLevel === "eselon_2") {
-          const sQ = query(collection(db, "sasaran_kegiatan"), where("unitName", "==", user.unitName));
-          const sSnap = await getDocs(sQ);
-          setSasaranList(sSnap.docs.map(d => ({id: d.id, ...d.data()})));
-
-          const pQ = collection(db, "sasaran_program");
-          const pSnap = await getDocs(pQ);
-          setParentSasaranList(pSnap.docs.map(d => ({id: d.id, ...d.data()})));
+          const progSnap = await getDocs(collection(db, "sasaran_program"));
+          const programs = progSnap.docs.map(d => ({id: d.id, ...d.data()}));
+          setProgramList(programs);
+          setParentSasaranList(programs);
+          const kegQ = query(collection(db, "sasaran_kegiatan"), where("unitName", "==", user.unitName));
+          const kegSnap = await getDocs(kegQ);
+          const kegiatans = kegSnap.docs.map(d => ({id: d.id, ...d.data()}));
+          setKegiatanList(kegiatans);
+          setSasaranList(kegiatans);
         }
       } else {
         // 2. Ambil data Risiko
