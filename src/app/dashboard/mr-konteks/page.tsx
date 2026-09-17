@@ -19,19 +19,39 @@ interface SasaranStrategis { id: string; name: string; }
 interface SasaranProgram { id: string; strategisId: string; unitName: string; name: string; ikp?: string; target?: string; indikators?: Indikator[]; }
 interface SasaranKegiatan { id: string; programId: string; unitName: string; name: string; ikk?: string; target?: string; indikators?: Indikator[]; }
 
+interface KebijakanRow {
+  id: string;
+  sasaran: string;
+  peraturan: string;
+  amanat: string;
+  pihakInternal: string;
+  hubInternal: string;
+  pihakEksternal: string;
+  hubEksternal: string;
+}
+
+interface InsidenRow {
+  id: string;
+  sumber: string;
+  uraian: string;
+  penyebab: string;
+}
+
 interface KonteksData {
   id: string;
   tahun: string;
   sumberData: string;
   tujuanKL: string;
-  peraturan: Record<string, string>;
+  kebijakanList?: KebijakanRow[];
+  insidenList?: InsidenRow[];
+  peraturan?: Record<string, string>;
   amanatPeraturan?: Record<string, string>;
   pihakInternal?: Record<string, string>;
   hubunganInternal?: Record<string, string>;
   pihakEksternal?: Record<string, string>;
   hubunganEksternal?: Record<string, string>;
-  stakeholderInternal: string; // legacy
-  stakeholderEksternal: string; // legacy
+  stakeholderInternal?: string; // legacy
+  stakeholderEksternal?: string; // legacy
   sumberTemuan?: string;
   uraianTemuan?: string;
   penyebabTemuan?: string;
@@ -51,18 +71,11 @@ export default function PenetapanKonteksPage() {
   const [tahun, setTahun] = useState(new Date().getFullYear().toString());
   const [sumberData, setSumberData] = useState("");
   const [tujuanKL, setTujuanKL] = useState("");
-  const [peraturan, setPeraturan] = useState<Record<string, string>>({});
-  const [amanatPeraturan, setAmanatPeraturan] = useState<Record<string, string>>({});
-  const [pihakInternal, setPihakInternal] = useState<Record<string, string>>({});
-  const [hubunganInternal, setHubunganInternal] = useState<Record<string, string>>({});
-  const [pihakEksternal, setPihakEksternal] = useState<Record<string, string>>({});
-  const [hubunganEksternal, setHubunganEksternal] = useState<Record<string, string>>({});
+  const [kebijakanList, setKebijakanList] = useState<KebijakanRow[]>([]);
+  const [insidenListState, setInsidenListState] = useState<InsidenRow[]>([]);
 
-  const [stakeholderInternal, setStakeholderInternal] = useState(""); // legacy
-  const [stakeholderEksternal, setStakeholderEksternal] = useState(""); // legacy
-  const [sumberTemuan, setSumberTemuan] = useState("");
-  const [uraianTemuan, setUraianTemuan] = useState("");
-  const [penyebabTemuan, setPenyebabTemuan] = useState("");
+  // legacy fields to preserve on save
+  const [legacyData, setLegacyData] = useState<any>({});
   
   const [isSaving, setIsSaving] = useState(false);
   
@@ -122,26 +135,51 @@ export default function PenetapanKonteksPage() {
     }
   };
 
+
+  const generateId = () => Date.now().toString() + Math.random().toString().slice(2, 6);
+
   const resetForm = () => {
     setTahun(new Date().getFullYear().toString());
     setSumberData("");
     setTujuanKL("");
-    setPeraturan({});
-    setAmanatPeraturan({});
-    setPihakInternal({});
-    setHubunganInternal({});
-    setPihakEksternal({});
-    setHubunganEksternal({});
-    setStakeholderInternal("");
-    setStakeholderEksternal("");
-    setSumberTemuan("");
-    setUraianTemuan("");
-    setPenyebabTemuan("");
+    setKebijakanList([]);
+    setInsidenListState([]);
+    setLegacyData({});
     setIsEditMode(false);
   };
 
   const handleCreateNew = () => {
     resetForm();
+    
+    const initialKebijakan: KebijakanRow[] = [];
+    if (user?.role === "eselon_1") {
+      programList.forEach(prog => {
+        const strat = strategisList.find(s => s.id === prog.strategisId);
+        const parentName = strat ? strat.name : "-";
+        const indText = prog.indikators && prog.indikators.length > 0 
+          ? prog.indikators.map(i => `- ${i.name} (Target: ${i.target})`).join('\n')
+          : `- ${prog.ikp} (Target: ${prog.target})`;
+        initialKebijakan.push({
+          id: generateId(),
+          sasaran: `Induk: ${parentName}\nSasaran: ${prog.name}\nIndikator:\n${indText}`,
+          peraturan: "", amanat: "", pihakInternal: "", hubInternal: "", pihakEksternal: "", hubEksternal: ""
+        });
+      });
+    } else if (user?.role === "eselon_2") {
+      kegiatanList.forEach(keg => {
+        const prog = programList.find(p => p.id === keg.programId);
+        const parentName = prog ? prog.name : "-";
+        const indText = keg.indikators && keg.indikators.length > 0 
+          ? keg.indikators.map(i => `- ${i.name} (Target: ${i.target})`).join('\n')
+          : `- ${keg.ikk} (Target: ${keg.target})`;
+        initialKebijakan.push({
+          id: generateId(),
+          sasaran: `Induk: ${parentName}\nSasaran: ${keg.name}\nIndikator:\n${indText}`,
+          peraturan: "", amanat: "", pihakInternal: "", hubInternal: "", pihakEksternal: "", hubEksternal: ""
+        });
+      });
+    }
+    setKebijakanList(initialKebijakan);
     setIsFormVisible(true);
   };
 
@@ -150,17 +188,63 @@ export default function PenetapanKonteksPage() {
     setTahun(item.tahun);
     setSumberData(item.sumberData || "");
     setTujuanKL(item.tujuanKL || "");
-    setPeraturan(item.peraturan || {});
-    setAmanatPeraturan(item.amanatPeraturan || {});
-    setPihakInternal(item.pihakInternal || {});
-    setHubunganInternal(item.hubunganInternal || {});
-    setPihakEksternal(item.pihakEksternal || {});
-    setHubunganEksternal(item.hubunganEksternal || {});
-    setStakeholderInternal(item.stakeholderInternal || "");
-    setStakeholderEksternal(item.stakeholderEksternal || "");
-    setSumberTemuan(item.sumberTemuan || "");
-    setUraianTemuan(item.uraianTemuan || "");
-    setPenyebabTemuan(item.penyebabTemuan || "");
+    
+    setLegacyData({
+      peraturan: item.peraturan || {},
+      amanatPeraturan: item.amanatPeraturan || {},
+      pihakInternal: item.pihakInternal || {},
+      hubunganInternal: item.hubunganInternal || {},
+      pihakEksternal: item.pihakEksternal || {},
+      hubunganEksternal: item.hubunganEksternal || {},
+      stakeholderInternal: item.stakeholderInternal || "",
+      stakeholderEksternal: item.stakeholderEksternal || "",
+      sumberTemuan: item.sumberTemuan || "",
+      uraianTemuan: item.uraianTemuan || "",
+      penyebabTemuan: item.penyebabTemuan || ""
+    });
+
+    let parsedKebijakan = item.kebijakanList || [];
+    if (parsedKebijakan.length === 0 && item.peraturan && Object.keys(item.peraturan).length > 0) {
+      const list = user?.role === "eselon_1" ? programList : kegiatanList;
+      parsedKebijakan = list.map(sas => {
+        let parentName = "-";
+        if (user?.role === "eselon_1") {
+          const s = sas as SasaranProgram;
+          parentName = strategisList.find(x => x.id === s.strategisId)?.name || "-";
+        } else {
+          const s = sas as SasaranKegiatan;
+          parentName = programList.find(x => x.id === s.programId)?.name || "-";
+        }
+        
+        const indText = sas.indikators && sas.indikators.length > 0 
+          ? sas.indikators.map((i: any) => `- ${i.name} (Target: ${i.target})`).join('\n')
+          : `- ${'ikp' in sas ? sas.ikp : 'ikk' in sas ? sas.ikk : ''} (Target: ${sas.target || '-'})`;
+        
+        return {
+          id: generateId(),
+          sasaran: `Induk: ${parentName}\nSasaran: ${sas.name}\nIndikator:\n${indText}`,
+          peraturan: item.peraturan?.[sas.id] || "",
+          amanat: item.amanatPeraturan?.[sas.id] || "",
+          pihakInternal: item.pihakInternal?.[sas.id] || "",
+          hubInternal: item.hubunganInternal?.[sas.id] || "",
+          pihakEksternal: item.pihakEksternal?.[sas.id] || "",
+          hubEksternal: item.hubunganEksternal?.[sas.id] || ""
+        };
+      });
+    }
+    setKebijakanList(parsedKebijakan);
+
+    let parsedInsiden = item.insidenList || [];
+    if (parsedInsiden.length === 0 && (item.sumberTemuan || item.uraianTemuan || item.penyebabTemuan)) {
+      parsedInsiden = [{
+        id: generateId(),
+        sumber: item.sumberTemuan || "",
+        uraian: item.uraianTemuan || "",
+        penyebab: item.penyebabTemuan || ""
+      }];
+    }
+    setInsidenListState(parsedInsiden);
+
     setIsEditMode(true);
     setIsFormVisible(true);
   };
@@ -190,7 +274,6 @@ export default function PenetapanKonteksPage() {
     
     setIsSaving(true);
     try {
-      // Buat ID spesifik berdasarkan tahun agar tidak ada duplikasi tahun per unit
       const docId = `${user.unitName}-${tahun}`.replace(/\s+/g, '-').toLowerCase();
       const docRef = doc(db, "mr_konteks", docId);
       
@@ -199,17 +282,9 @@ export default function PenetapanKonteksPage() {
         tahun,
         sumberData,
         tujuanKL,
-        peraturan,
-        amanatPeraturan,
-        pihakInternal,
-        hubunganInternal,
-        pihakEksternal,
-        hubunganEksternal,
-        stakeholderInternal,
-        stakeholderEksternal,
-        sumberTemuan,
-        uraianTemuan,
-        penyebabTemuan,
+        kebijakanList,
+        insidenList: insidenListState,
+        ...legacyData,
         updatedAt: new Date().toISOString(),
         ownerId: user.uid,
         role: user.role
@@ -230,8 +305,11 @@ export default function PenetapanKonteksPage() {
     }
   };
 
-  const handleDynamicChange = (setter: React.Dispatch<React.SetStateAction<Record<string, string>>>, id: string, value: string) => {
-    setter(prev => ({ ...prev, [id]: value }));
+  const handleDynamicChange = (id: string, field: keyof KebijakanRow, value: string) => {
+    setKebijakanList(prev => prev.map(row => row.id === id ? { ...row, [field]: value } : row));
+  };
+  const handleInsidenChange = (id: string, field: keyof InsidenRow, value: string) => {
+    setInsidenListState(prev => prev.map(row => row.id === id ? { ...row, [field]: value } : row));
   };
 
   if (authLoading || (isListLoading && strategisList.length === 0)) {
@@ -385,10 +463,17 @@ export default function PenetapanKonteksPage() {
               />
             </div>
             <div className="space-y-4 pt-4 border-t">
-              <Label className="text-lg font-semibold text-slate-800">Kebijakan dan Daftar Pemangku Kepentingan Terkait</Label>
-              <p className="text-sm text-slate-500 mb-2">
-                Tabel ini ditarik otomatis dari master data Sasaran Kinerja. Silakan isi Nama Peraturan, Amanat, serta Stakeholder.
-              </p>
+              <div className="flex justify-between items-center">
+                <div>
+                  <Label className="text-lg font-semibold text-slate-800">Kebijakan dan Daftar Pemangku Kepentingan Terkait</Label>
+                  <p className="text-sm text-slate-500 mb-2">
+                    Tabel ini ditarik otomatis dari master data Sasaran Kinerja. Anda dapat menambah baris baru jika diperlukan.
+                  </p>
+                </div>
+                <Button type="button" onClick={() => setKebijakanList([...kebijakanList, { id: generateId(), sasaran: "", peraturan: "", amanat: "", pihakInternal: "", hubInternal: "", pihakEksternal: "", hubEksternal: "" }])} className="bg-emerald-600 hover:bg-emerald-700">
+                  <Plus className="h-4 w-4 mr-2" /> Tambah Baris
+                </Button>
+              </div>
               
               <div className="border rounded-lg overflow-x-auto">
                 <Table className="min-w-[1400px]">
@@ -401,7 +486,8 @@ export default function PenetapanKonteksPage() {
                       <TableHead className="w-[200px] border-r border-b text-center align-middle" rowSpan={2}>Nama Peraturan</TableHead>
                       <TableHead className="w-[200px] border-r border-b text-center align-middle" rowSpan={2}>Amanat Peraturan Terkait Unit Kerja</TableHead>
                       <TableHead className="w-[300px] border-r border-b text-center" colSpan={2}>Stakeholder Internal</TableHead>
-                      <TableHead className="w-[300px] border-b text-center" colSpan={2}>Stakeholder Eksternal</TableHead>
+                      <TableHead className="w-[300px] border-r border-b text-center" colSpan={2}>Stakeholder Eksternal</TableHead>
+                      <TableHead className="w-12 border-b text-center align-middle" rowSpan={2}></TableHead>
                     </TableRow>
                     <TableRow>
                       <TableHead className="w-[150px] border-r border-b text-center bg-slate-50">Stakeholder</TableHead>
@@ -411,160 +497,75 @@ export default function PenetapanKonteksPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {user?.role === "eselon_1" && (
-                      programList.length > 0 ? programList.map((prog, idx) => {
-                        const strat = strategisList.find(s => s.id === prog.strategisId);
-                        return (
-                          <TableRow key={prog.id} className="border-b">
-                            <TableCell className="border-r text-center align-top p-2">{idx + 1}</TableCell>
-                            <TableCell className="border-r text-sm align-top p-2">
-                              <p className="font-semibold text-slate-700">{prog.name}</p>
-                              {prog.indikators && prog.indikators.length > 0 ? (
-                                <ul className="list-disc pl-4 mt-2 space-y-1">
-                                  {prog.indikators.map((ind, i) => <li key={i}>{ind.name}</li>)}
-                                </ul>
-                              ) : (
-                                <p className="mt-2 text-slate-600">{prog.ikp}</p>
-                              )}
-                            </TableCell>
-                            <TableCell className="border-r align-top p-2">
-                              <Textarea 
-                                placeholder="Ketik peraturan..." 
-                                value={peraturan[prog.id] || ""}
-                                onChange={(e) => handleDynamicChange(setPeraturan, prog.id, e.target.value)}
-                                className="min-h-[120px] w-full resize-y text-sm"
-                              />
-                            </TableCell>
-                            <TableCell className="border-r align-top p-2">
-                              <Textarea 
-                                placeholder="Amanat peraturan..." 
-                                value={amanatPeraturan[prog.id] || ""}
-                                onChange={(e) => handleDynamicChange(setAmanatPeraturan, prog.id, e.target.value)}
-                                className="min-h-[120px] w-full resize-y text-sm"
-                              />
-                            </TableCell>
-                            <TableCell className="border-r align-top p-2">
-                              <Textarea 
-                                placeholder="Pihak internal..." 
-                                value={pihakInternal[prog.id] || ""}
-                                onChange={(e) => handleDynamicChange(setPihakInternal, prog.id, e.target.value)}
-                                className="min-h-[120px] w-full resize-y text-sm"
-                              />
-                            </TableCell>
-                            <TableCell className="border-r align-top p-2">
-                              <Textarea 
-                                placeholder="Hubungan internal..." 
-                                value={hubunganInternal[prog.id] || ""}
-                                onChange={(e) => handleDynamicChange(setHubunganInternal, prog.id, e.target.value)}
-                                className="min-h-[120px] w-full resize-y text-sm"
-                              />
-                            </TableCell>
-                            <TableCell className="border-r align-top p-2">
-                              <Textarea 
-                                placeholder="Pihak eksternal..." 
-                                value={pihakEksternal[prog.id] || ""}
-                                onChange={(e) => handleDynamicChange(setPihakEksternal, prog.id, e.target.value)}
-                                className="min-h-[120px] w-full resize-y text-sm"
-                              />
-                            </TableCell>
-                            <TableCell className="align-top p-2">
-                              <Textarea 
-                                placeholder="Hubungan eksternal..." 
-                                value={hubunganEksternal[prog.id] || ""}
-                                onChange={(e) => handleDynamicChange(setHubunganEksternal, prog.id, e.target.value)}
-                                className="min-h-[120px] w-full resize-y text-sm"
-                              />
-                            </TableCell>
-                          </TableRow>
-                        );
-                      }) : (
-                        <TableRow>
-                          <TableCell colSpan={8} className="text-center h-24 text-slate-500">
-                            Belum ada Sasaran Program yang diinput untuk unit ini.
-                          </TableCell>
-                        </TableRow>
-                      )
-                    )}
-
-                    {user?.role === "eselon_2" && (
-                      kegiatanList.length > 0 ? kegiatanList.map((keg, idx) => {
-                        const prog = programList.find(p => p.id === keg.programId);
-                        return (
-                          <TableRow key={keg.id} className="border-b">
-                            <TableCell className="border-r text-center align-top p-2">{idx + 1}</TableCell>
-                            <TableCell className="border-r text-sm align-top p-2">
-                              <p className="font-semibold text-slate-700">{keg.name}</p>
-                              {keg.indikators && keg.indikators.length > 0 ? (
-                                <ul className="list-disc pl-4 mt-2 space-y-1">
-                                  {keg.indikators.map((ind, i) => <li key={i}>{ind.name}</li>)}
-                                </ul>
-                              ) : (
-                                <p className="mt-2 text-slate-600">{keg.ikk}</p>
-                              )}
-                            </TableCell>
-                            <TableCell className="border-r align-top p-2">
-                              <Textarea 
-                                placeholder="Ketik peraturan..." 
-                                value={peraturan[keg.id] || ""}
-                                onChange={(e) => handleDynamicChange(setPeraturan, keg.id, e.target.value)}
-                                className="min-h-[120px] w-full resize-y text-sm"
-                              />
-                            </TableCell>
-                            <TableCell className="border-r align-top p-2">
-                              <Textarea 
-                                placeholder="Amanat peraturan..." 
-                                value={amanatPeraturan[keg.id] || ""}
-                                onChange={(e) => handleDynamicChange(setAmanatPeraturan, keg.id, e.target.value)}
-                                className="min-h-[120px] w-full resize-y text-sm"
-                              />
-                            </TableCell>
-                            <TableCell className="border-r align-top p-2">
-                              <Textarea 
-                                placeholder="Pihak internal..." 
-                                value={pihakInternal[keg.id] || ""}
-                                onChange={(e) => handleDynamicChange(setPihakInternal, keg.id, e.target.value)}
-                                className="min-h-[120px] w-full resize-y text-sm"
-                              />
-                            </TableCell>
-                            <TableCell className="border-r align-top p-2">
-                              <Textarea 
-                                placeholder="Hubungan internal..." 
-                                value={hubunganInternal[keg.id] || ""}
-                                onChange={(e) => handleDynamicChange(setHubunganInternal, keg.id, e.target.value)}
-                                className="min-h-[120px] w-full resize-y text-sm"
-                              />
-                            </TableCell>
-                            <TableCell className="border-r align-top p-2">
-                              <Textarea 
-                                placeholder="Pihak eksternal..." 
-                                value={pihakEksternal[keg.id] || ""}
-                                onChange={(e) => handleDynamicChange(setPihakEksternal, keg.id, e.target.value)}
-                                className="min-h-[120px] w-full resize-y text-sm"
-                              />
-                            </TableCell>
-                            <TableCell className="align-top p-2">
-                              <Textarea 
-                                placeholder="Hubungan eksternal..." 
-                                value={hubunganEksternal[keg.id] || ""}
-                                onChange={(e) => handleDynamicChange(setHubunganEksternal, keg.id, e.target.value)}
-                                className="min-h-[120px] w-full resize-y text-sm"
-                              />
-                            </TableCell>
-                          </TableRow>
-                        );
-                      }) : (
-                        <TableRow>
-                          <TableCell colSpan={8} className="text-center h-24 text-slate-500">
-                            Belum ada Sasaran Kegiatan yang diinput untuk unit ini.
-                          </TableCell>
-                        </TableRow>
-                      )
-                    )}
-                    
-                    {user?.role === "admin" && (
+                    {kebijakanList.length > 0 ? kebijakanList.map((row, idx) => (
+                      <TableRow key={row.id} className="border-b">
+                        <TableCell className="border-r text-center align-top p-2">{idx + 1}</TableCell>
+                        <TableCell className="border-r align-top p-2">
+                          <Textarea 
+                            placeholder="Sasaran Kinerja..." 
+                            value={row.sasaran}
+                            onChange={(e) => handleDynamicChange(row.id, 'sasaran', e.target.value)}
+                            className="min-h-[120px] w-full resize-y text-sm"
+                          />
+                        </TableCell>
+                        <TableCell className="border-r align-top p-2">
+                          <Textarea 
+                            placeholder="Ketik peraturan..." 
+                            value={row.peraturan}
+                            onChange={(e) => handleDynamicChange(row.id, 'peraturan', e.target.value)}
+                            className="min-h-[120px] w-full resize-y text-sm"
+                          />
+                        </TableCell>
+                        <TableCell className="border-r align-top p-2">
+                          <Textarea 
+                            placeholder="Amanat peraturan..." 
+                            value={row.amanat}
+                            onChange={(e) => handleDynamicChange(row.id, 'amanat', e.target.value)}
+                            className="min-h-[120px] w-full resize-y text-sm"
+                          />
+                        </TableCell>
+                        <TableCell className="border-r align-top p-2">
+                          <Textarea 
+                            placeholder="Pihak internal..." 
+                            value={row.pihakInternal}
+                            onChange={(e) => handleDynamicChange(row.id, 'pihakInternal', e.target.value)}
+                            className="min-h-[120px] w-full resize-y text-sm"
+                          />
+                        </TableCell>
+                        <TableCell className="border-r align-top p-2">
+                          <Textarea 
+                            placeholder="Hubungan internal..." 
+                            value={row.hubInternal}
+                            onChange={(e) => handleDynamicChange(row.id, 'hubInternal', e.target.value)}
+                            className="min-h-[120px] w-full resize-y text-sm"
+                          />
+                        </TableCell>
+                        <TableCell className="border-r align-top p-2">
+                          <Textarea 
+                            placeholder="Pihak eksternal..." 
+                            value={row.pihakEksternal}
+                            onChange={(e) => handleDynamicChange(row.id, 'pihakEksternal', e.target.value)}
+                            className="min-h-[120px] w-full resize-y text-sm"
+                          />
+                        </TableCell>
+                        <TableCell className="border-r align-top p-2">
+                          <Textarea 
+                            placeholder="Hubungan eksternal..." 
+                            value={row.hubEksternal}
+                            onChange={(e) => handleDynamicChange(row.id, 'hubEksternal', e.target.value)}
+                            className="min-h-[120px] w-full resize-y text-sm"
+                          />
+                        </TableCell>
+                        <TableCell className="align-top p-2 text-center">
+                          <Button type="button" variant="ghost" onClick={() => setKebijakanList(kebijakanList.filter(k => k.id !== row.id))} className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )) : (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center h-24 text-slate-500">
-                          Admin tidak memiliki Sasaran Kinerja unit secara langsung.
+                        <TableCell colSpan={9} className="text-center h-24 text-slate-500">
+                          Belum ada baris kebijakan. Klik "Tambah Baris".
                         </TableCell>
                       </TableRow>
                     )}
@@ -574,40 +575,53 @@ export default function PenetapanKonteksPage() {
             </div>
 
             <div className="pt-4 border-t space-y-4">
-              <h4 className="font-semibold text-slate-800">Insiden / Temuan Sebelumnya</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="sumberTemuan">Sumber Temuan</Label>
-                  <Input 
-                    id="sumberTemuan"
-                    placeholder="Contoh: Audit Internal, LHP BPK..." 
-                    value={sumberTemuan}
-                    onChange={(e) => setSumberTemuan(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="uraianTemuan">Uraian Temuan</Label>
-                  <Textarea 
-                    id="uraianTemuan"
-                    placeholder="Deskripsikan temuan..." 
-                    value={uraianTemuan}
-                    onChange={(e) => setUraianTemuan(e.target.value)}
-                    className="min-h-[80px]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="penyebabTemuan">Penyebab Temuan</Label>
-                  <Textarea 
-                    id="penyebabTemuan"
-                    placeholder="Penyebab utama dari temuan..." 
-                    value={penyebabTemuan}
-                    onChange={(e) => setPenyebabTemuan(e.target.value)}
-                    className="min-h-[80px]"
-                  />
-                </div>
+              <div className="flex justify-between items-center">
+                <h4 className="font-semibold text-slate-800">Insiden / Temuan Sebelumnya</h4>
+                <Button type="button" onClick={() => setInsidenListState([...insidenListState, { id: generateId(), sumber: "", uraian: "", penyebab: "" }])} className="bg-emerald-600 hover:bg-emerald-700">
+                  <Plus className="h-4 w-4 mr-2" /> Tambah Insiden
+                </Button>
               </div>
+              
+              {insidenListState.length > 0 ? insidenListState.map((insiden, idx) => (
+                <div key={insiden.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-4 items-start p-4 border rounded-lg bg-slate-50 relative">
+                  <div className="space-y-2">
+                    <Label>Sumber Temuan</Label>
+                    <Input 
+                      placeholder="Contoh: Audit Internal, LHP BPK..." 
+                      value={insiden.sumber}
+                      onChange={(e) => handleInsidenChange(insiden.id, 'sumber', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Uraian Temuan</Label>
+                    <Textarea 
+                      placeholder="Deskripsikan temuan..." 
+                      value={insiden.uraian}
+                      onChange={(e) => handleInsidenChange(insiden.id, 'uraian', e.target.value)}
+                      className="min-h-[80px]"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Penyebab Temuan</Label>
+                    <Textarea 
+                      placeholder="Penyebab utama dari temuan..." 
+                      value={insiden.penyebab}
+                      onChange={(e) => handleInsidenChange(insiden.id, 'penyebab', e.target.value)}
+                      className="min-h-[80px]"
+                    />
+                  </div>
+                  <div className="pt-8">
+                    <Button type="button" variant="ghost" onClick={() => setInsidenListState(insidenListState.filter(i => i.id !== insiden.id))} className="text-red-500 hover:text-red-700 hover:bg-red-50 h-10 w-10 p-0">
+                      <Trash2 className="h-5 w-5" />
+                    </Button>
+                  </div>
+                </div>
+              )) : (
+                <div className="p-8 text-center border rounded-lg border-dashed text-slate-500">
+                  Belum ada insiden / temuan sebelumnya.
+                </div>
+              )}
             </div>
-
             <div className="flex justify-end pt-4 gap-3">
               <Button type="button" variant="outline" onClick={() => setIsFormVisible(false)}>
                 Batal
