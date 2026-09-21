@@ -373,12 +373,14 @@ export default function UsersManagementPage() {
             ) : filteredUsers.length > 0 ? (
               filteredUsers.map((u) => (
                 <TableRow key={u.id}>
-                  <TableCell className="font-medium flex items-center gap-2">
-                    {u.role === "admin" ? <ShieldCheck className="w-4 h-4 text-purple-600" /> : <KeyRound className="w-4 h-4 text-slate-400" />}
-                    {u.email}
-                  </TableCell>
+                  <TableCell className="font-medium">
+<div className="flex items-start gap-2 mt-0.5">
+{u.role === "admin" ? <ShieldCheck className="w-4 h-4 text-purple-600" /> : <KeyRound className="w-4 h-4 text-slate-400" />}
+<span className="whitespace-normal break-words max-w-[300px]">{u.email}</span>
+</div>
+</TableCell>
                   <TableCell>{getRoleBadge(u.role)}</TableCell>
-                  <TableCell>{u.unitName}</TableCell>
+                  <TableCell><span className="whitespace-normal break-words max-w-[400px] block">{u.unitName}</span></TableCell>
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-1">
                       <Button variant="ghost" size="icon" onClick={() => openEditModal(u)} title="Edit Akses & Unit">

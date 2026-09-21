@@ -278,14 +278,16 @@ export default function DashboardPage() {
                             className="hover:bg-slate-100 cursor-pointer transition-colors bg-slate-50/50"
                             onClick={() => toggleE1(e1.id)}
                           >
-                            <TableCell className="font-bold text-slate-800 flex items-center py-4">
-                              {isOpen ? (
+                            <TableCell className="font-bold text-slate-800 py-4">
+<div className="flex items-start gap-2 mt-0.5">
+{isOpen ? (
                                 <ChevronDown className="h-4 w-4 mr-2 text-slate-500 shrink-0" />
                               ) : (
                                 <ChevronRight className="h-4 w-4 mr-2 text-slate-500 shrink-0" />
                               )}
-                              <span className="truncate">{e1.name}</span>
-                            </TableCell>
+<span className="whitespace-normal break-words max-w-[400px]">{e1.name}</span>
+</div>
+</TableCell>
                             <TableCell className="text-center font-bold text-lg text-blue-700">{e1.totalRisiko}</TableCell>
                             <TableCell className="text-center font-bold text-lg text-red-600">{e1.risikoPrioritas}</TableCell>
                             <TableCell className="text-center font-bold text-lg text-indigo-600">{e1.totalRtp}</TableCell>

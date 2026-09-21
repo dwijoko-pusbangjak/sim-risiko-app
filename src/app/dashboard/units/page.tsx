@@ -335,10 +335,12 @@ export default function UnitsManagementPage() {
                   filteredUnits.forEach(u => {
                     rows.push(
                       <TableRow key={u.id}>
-                        <TableCell className="font-medium flex items-center gap-2">
-                          <Building2 className={`w-4 h-4 ${u.level === 'eselon_1' ? 'text-emerald-600' : 'text-slate-400'}`} />
-                          {u.name}
-                        </TableCell>
+                        <TableCell className="font-medium">
+<div className="flex items-start gap-2">
+<Building2 className={`w-4 h-4 mt-0.5 shrink-0 ${u.level === 'eselon_1' ? 'text-emerald-600' : 'text-slate-400'}`} />
+<span className="whitespace-normal break-words max-w-[400px]">{u.name}</span>
+</div>
+</TableCell>
                         <TableCell>
                           {u.headName ? (
                             <div className="flex flex-col">
