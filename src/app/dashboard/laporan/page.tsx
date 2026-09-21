@@ -84,27 +84,43 @@ export default function LaporanPage() {
         } else {
           setKonteksData(null);
         }
+        
         const stQ = collection(db, "sasaran_strategis");
         const stSnap = await getDocs(stQ);
-        setStrategisList(stSnap.docs.map(d => ({id: d.id, ...d.data()})));
+        const allStrategis = stSnap.docs.map(d => ({id: d.id, ...d.data()}));
+        
         if (uDataLevel === "eselon_1") {
           const progQ = query(collection(db, "sasaran_program"), where("unitName", "==", user.unitName));
           const progSnap = await getDocs(progQ);
           const programs = progSnap.docs.map(d => ({id: d.id, ...d.data()}));
+          
+          const parentStrategisIds = [...new Set(programs.map(p => p.strategisId))];
+          const filteredStrategis = allStrategis.filter(s => parentStrategisIds.includes(s.id));
+          
+          setStrategisList(filteredStrategis);
           setProgramList(programs);
           setSasaranList(programs);
-          setParentSasaranList(stSnap.docs.map(d => ({id: d.id, ...d.data()})));
+          setParentSasaranList(filteredStrategis);
           setKegiatanList([]);
         } else if (uDataLevel === "eselon_2") {
-          const progSnap = await getDocs(collection(db, "sasaran_program"));
-          const programs = progSnap.docs.map(d => ({id: d.id, ...d.data()}));
-          setProgramList(programs);
-          setParentSasaranList(programs);
           const kegQ = query(collection(db, "sasaran_kegiatan"), where("unitName", "==", user.unitName));
           const kegSnap = await getDocs(kegQ);
           const kegiatans = kegSnap.docs.map(d => ({id: d.id, ...d.data()}));
+          
+          const progSnap = await getDocs(collection(db, "sasaran_program"));
+          const allPrograms = progSnap.docs.map(d => ({id: d.id, ...d.data()}));
+          
+          const parentProgramIds = [...new Set(kegiatans.map(k => k.programId))];
+          const filteredPrograms = allPrograms.filter(p => parentProgramIds.includes(p.id));
+          
+          const parentStrategisIds = [...new Set(filteredPrograms.map(p => p.strategisId))];
+          const filteredStrategis = allStrategis.filter(s => parentStrategisIds.includes(s.id));
+          
+          setStrategisList(filteredStrategis);
+          setProgramList(filteredPrograms);
           setKegiatanList(kegiatans);
           setSasaranList(kegiatans);
+          setParentSasaranList(filteredPrograms);
         }
       } else {
         // 2. Ambil data Risiko
