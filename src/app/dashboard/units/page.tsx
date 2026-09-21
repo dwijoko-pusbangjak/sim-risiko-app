@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Search, Loader2, Pencil, Trash2, Building2, CornerDownRight } from "lucide-react";
+import { Plus, Search, Loader2, Pencil, Trash2, Building2, CornerDownRight, ChevronRight, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -51,6 +51,11 @@ export default function UnitsManagementPage() {
   const [units, setUnits] = useState<UnitData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+    const [expandedUnits, setExpandedUnits] = useState<Record<string, boolean>>({});
+    const toggleExpand = (id: string, e: React.MouseEvent) => {
+      if ((e.target as HTMLElement).closest("button")) return;
+      setExpandedUnits(prev => ({ ...prev, [id]: !prev[id] }));
+    };
   
   // States for Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
