@@ -370,10 +370,12 @@ export default function UnitsManagementPage() {
                     // Push Eselon 1 Row
                     rows.push(
                       <TableRow key={e1.id} className="bg-slate-50/50 hover:bg-slate-50 border-b-2">
-                        <TableCell className="font-bold flex items-center gap-2 text-slate-800">
-                          <Building2 className="w-4 h-4 text-emerald-600" />
-                          {e1.name}
-                        </TableCell>
+                        <TableCell className="font-bold text-slate-800">
+<div className="flex items-start gap-2">
+<Building2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+<span className="whitespace-normal break-words max-w-[400px]">{e1.name}</span>
+</div>
+</TableCell>
                         <TableCell>
                           {e1.headName ? (
                             <div className="flex flex-col">
@@ -408,10 +410,12 @@ export default function UnitsManagementPage() {
                     children.forEach(e2 => {
                       rows.push(
                         <TableRow key={e2.id}>
-                          <TableCell className="font-medium flex items-center gap-2 pl-8 text-slate-600">
-                            <CornerDownRight className="w-4 h-4 text-slate-400" />
-                            {e2.name}
-                          </TableCell>
+                          <TableCell className="font-medium pl-8 text-slate-600">
+<div className="flex items-start gap-2">
+<CornerDownRight className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+<span className="whitespace-normal break-words max-w-[400px]">{e2.name}</span>
+</div>
+</TableCell>
                           <TableCell>
                             {e2.headName ? (
                               <div className="flex flex-col">
