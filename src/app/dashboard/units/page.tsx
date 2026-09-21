@@ -374,9 +374,10 @@ export default function UnitsManagementPage() {
                   eselon1List.forEach(e1 => {
                     // Push Eselon 1 Row
                     rows.push(
-                      <TableRow key={e1.id} className="bg-slate-50/50 hover:bg-slate-50 border-b-2">
+                      <TableRow key={e1.id} className="bg-slate-50/50 hover:bg-slate-50 border-b-2 cursor-pointer" onClick={(e) => toggleExpand(e1.id, e)}>
                         <TableCell className="font-bold text-slate-800">
 <div className="flex items-start gap-2">
+{expandedUnits[e1.id] ? <ChevronDown className="w-4 h-4 mt-0.5 shrink-0 text-slate-500" /> : <ChevronRight className="w-4 h-4 mt-0.5 shrink-0 text-slate-500" />}
 <Building2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
 <span className="whitespace-normal break-words max-w-[400px]">{e1.name}</span>
 </div>
@@ -411,7 +412,8 @@ export default function UnitsManagementPage() {
                     );
 
                     // Cari anak (Eselon 2)
-                    const children = units.filter(u => u.level === 'eselon_2' && u.parentId === e1.id);
+                    if (expandedUnits[e1.id]) {
+                      const children = units.filter(u => u.level === 'eselon_2' && u.parentId === e1.id);
                     children.forEach(e2 => {
                       rows.push(
                         <TableRow key={e2.id}>
@@ -450,6 +452,7 @@ export default function UnitsManagementPage() {
                         </TableRow>
                       );
                     });
+                    }
                   });
                 }
                 return rows;
