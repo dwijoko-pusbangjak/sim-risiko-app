@@ -240,7 +240,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         
         {/* Info Profil di Sidebar */}
         <div className="border-b border-slate-800 px-6 py-5 bg-[#111827]/50 shrink-0">
-          <p className="text-sm font-semibold text-white truncate" title={user.unitName || user.email || ""}>
+          <p className="text-sm font-semibold text-white whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
             {user.unitName || user.email}
           </p>
           <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -338,7 +338,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </Button>
         </div>
         <div className="border-b border-slate-800 px-6 py-5 bg-[#111827]/50 shrink-0">
-          <p className="text-sm font-semibold text-white truncate" title={user.unitName || user.email || ""}>
+          <p className="text-sm font-semibold text-white whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
             {user.unitName || user.email}
           </p>
           <div className="flex flex-wrap items-center gap-2 mt-2">
