@@ -119,7 +119,7 @@ export default function LoginPage() {
                <ShieldCheck className="w-10 h-10 text-emerald-700" />
              </div>
              <h1 className="text-2xl font-bold tracking-tight text-slate-900">SIM-Risiko</h1>
-             <p className="text-sm text-slate-500">Kemendes PDTT</p>
+             <p className="text-sm text-slate-500">Kemendes PDT</p>
           </div>
 
           <div className="space-y-2">
@@ -201,7 +201,7 @@ export default function LoginPage() {
 
           <div className="pt-6 text-center">
             <p className="text-xs text-slate-400">
-              © {new Date().getFullYear()} Kementerian Desa PDTT. Seluruh hak cipta dilindungi.
+              © {new Date().getFullYear()} Kementerian Desa PDT. Seluruh hak cipta dilindungi.
             </p>
           </div>
         </div>

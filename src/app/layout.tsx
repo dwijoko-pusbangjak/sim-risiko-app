@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 const font = Plus_Jakarta_Sans({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "SIM-Risiko Kemendes PDTT",
+  title: "SIM-Risiko Kemendes PDT",
   description: "Sistem Informasi Manajemen Risiko Kementerian Desa dan Pembangunan Daerah Tertinggal",
 };
 

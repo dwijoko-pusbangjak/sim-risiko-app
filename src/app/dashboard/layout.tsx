@@ -258,7 +258,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
         
         <div className="border-t border-slate-800 p-4 shrink-0 bg-[#0f172a]">
-          <p className="text-[11px] text-slate-500 text-center font-medium">Kemendes PDTT © 2026</p>
+          <p className="text-[11px] text-slate-500 text-center font-medium">Kemendes PDT © 2026</p>
         </div>
       </aside>
 
@@ -287,10 +287,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <DropdownMenuTrigger className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 transition-colors border border-slate-200">
                 <User className="h-5 w-5 text-slate-600" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 p-2 rounded-xl">
+              <DropdownMenuContent align="end" className="w-80 p-2 rounded-xl max-w-[90vw]">
                 <div className="px-2 py-1.5">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-semibold text-slate-800 line-clamp-2" title={user.unitName || user.email || ""}>
+                    <p className="text-sm font-semibold text-slate-800 whitespace-normal break-words" title={user.unitName || user.email || ""}>
                       {user.unitName || user.email}
                     </p>
                     <p className="text-xs font-medium text-emerald-600 mt-0.5">
