@@ -49,6 +49,7 @@ import { useRouter } from "next/navigation";
 interface Indikator {
   name: string;
   target: string;
+  satuan?: string;
 }
 
 interface SasaranProgram {
@@ -87,7 +88,7 @@ export default function SasaranProgramPage() {
     strategisId: "",
     unitName: "",
     name: "",
-    indikators: [{ name: "", target: "" }]
+    indikators: [{ name: "", target: "", satuan: "" }]
   });
 
   useEffect(() => {
@@ -137,7 +138,7 @@ export default function SasaranProgramPage() {
       strategisId: "", 
       unitName: user?.unitName || "", 
       name: "", 
-      indikators: [{ name: "", target: "" }]
+      indikators: [{ name: "", target: "", satuan: "" }]
     });
     setIsEditMode(false);
     setIsModalOpen(true);
@@ -146,7 +147,7 @@ export default function SasaranProgramPage() {
   const handleOpenEdit = (item: SasaranProgram) => {
     const indikators = item.indikators && item.indikators.length > 0 
       ? item.indikators 
-      : [{ name: item.ikp || "", target: item.target || "" }];
+      : [{ name: item.ikp || "", target: item.target || "", satuan: "" }];
       
     setFormData({ ...item, indikators });
     setIsEditMode(true);
@@ -298,7 +299,7 @@ export default function SasaranProgramPage() {
                       type="button" 
                       variant="outline" 
                       size="sm"
-                      onClick={() => setFormData({...formData, indikators: [...(formData.indikators || []), { name: "", target: "" }]})}
+                      onClick={() => setFormData({...formData, indikators: [...(formData.indikators || []), { name: "", target: "", satuan: "" }]})}
                     >
                       <Plus className="h-4 w-4 mr-1" /> Tambah Indikator
                     </Button>
@@ -336,18 +337,33 @@ export default function SasaranProgramPage() {
                           }}
                         />
                       </div>
-                      <div className="grid gap-1.5 pr-8">
-                        <Label className="text-xs">Target {index + 1} *</Label>
-                        <Input 
-                          required
-                          placeholder="Contoh: 15 Regulasi" 
-                          value={ind.target}
-                          onChange={(e) => {
-                            const newInds = [...formData.indikators!];
-                            newInds[index].target = e.target.value;
-                            setFormData({...formData, indikators: newInds});
-                          }}
-                        />
+                      <div className="grid grid-cols-2 gap-3 pr-8">
+                        <div className="grid gap-1.5">
+                          <Label className="text-xs">Target {index + 1} *</Label>
+                          <Input 
+                            required
+                            placeholder="Contoh: 15 Regulasi"
+                            value={ind.target}
+                            onChange={(e) => {
+                              const newInds = [...formData.indikators!];
+                              newInds[index].target = e.target.value;
+                              setFormData({...formData, indikators: newInds});
+                            }}
+                          />
+                        </div>
+                        <div className="grid gap-1.5">
+                          <Label className="text-xs">Satuan *</Label>
+                          <Input 
+                            required
+                            placeholder="Satuan (Cth: Dokumen)"
+                            value={ind.satuan || ""}
+                            onChange={(e) => {
+                              const newInds = [...formData.indikators!];
+                              newInds[index].satuan = e.target.value;
+                              setFormData({...formData, indikators: newInds});
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -429,8 +445,8 @@ export default function SasaranProgramPage() {
                         {item.indikators.map((ind, i) => (
                           <li key={i}>
                             <span className="px-2 py-1 rounded-md text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100 inline-block">
-                              {ind.target}
-                            </span>
+                              {ind.target} {ind.satuan || ""}
+                              </span>
                           </li>
                         ))}
                       </ul>
