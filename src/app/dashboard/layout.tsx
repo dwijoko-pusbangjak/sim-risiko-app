@@ -33,6 +33,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
+import { ChangePasswordModal } from "@/components/ChangePasswordModal";
+import { KeyRound } from "lucide-react";
 
 type NavItem = {
   name: string;
@@ -51,6 +53,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({ "Proses Manajemen Risiko": true });
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const { user, loading, activeYear } = useAuth();
 
   // Redirect jika tidak login
@@ -309,7 +312,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Konten Halaman */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#f8fafc] relative">
+        <ChangePasswordModal isOpen={isPasswordModalOpen} onClose={() => setIsPasswordModalOpen(false)} />
+          <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#f8fafc] relative">
           <div className="mx-auto max-w-7xl">
             {children}
           </div>
