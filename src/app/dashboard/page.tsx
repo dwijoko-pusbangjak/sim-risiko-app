@@ -306,7 +306,7 @@ export default function DashboardPage() {
                               <TableRow className="bg-slate-50/30 hover:bg-slate-50 transition-colors">
                                 <TableCell className="pl-12 py-3 text-emerald-700 font-semibold relative before:absolute before:left-[1.35rem] before:top-0 before:bottom-0 before:w-px before:bg-slate-200">
                                   <div className="absolute left-[1.35rem] top-1/2 -translate-y-1/2 w-3 h-px bg-slate-200"></div>
-                                  <span className="truncate block pr-4">Internal {e1.name}</span>
+                                  <span className="truncate block pr-4">UKE I {e1.name}</span>
                                 </TableCell>
                                 <TableCell className="text-center font-semibold text-emerald-700">{e1.e1OwnTotalRisiko}</TableCell>
                                 <TableCell className="text-center font-semibold text-emerald-700">{e1.e1OwnRisikoPrioritas}</TableCell>
