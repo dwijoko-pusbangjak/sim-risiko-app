@@ -75,7 +75,7 @@ export default function LoginPage() {
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm pointer-events-none" />
 
       {/* Kotak Utama Login (Tengah) */}
-      <div className="w-full max-w-[1000px] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row border border-slate-100 z-10 min-h-[600px]">
+      <div className="w-full max-w-[1000px] bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] overflow-hidden flex flex-col md:flex-row z-10 min-h-[600px] border border-white/20">
         
         {/* Sisi Kiri: Wallpaper / Gambar Sosialisasi */}
         <div className="hidden md:flex md:w-[50%] relative bg-slate-900 overflow-hidden items-center justify-center">
