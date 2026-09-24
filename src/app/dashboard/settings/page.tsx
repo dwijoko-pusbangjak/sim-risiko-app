@@ -116,7 +116,7 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="wallpaperFile">Upload Gambar Wallpaper</Label>
+            <Label htmlFor="wallpaperFile">Upload Gambar Wallpaper (Opsional)</Label>
             <div className="flex items-center gap-4">
               <Input 
                 id="wallpaperFile" 
@@ -138,6 +138,31 @@ export default function SettingsPage() {
               Kosongkan dan simpan jika ingin menggunakan warna solid/gradien bawaan.
             </p>
           </div>
+
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t border-slate-200"></div>
+              <span className="flex-shrink-0 mx-4 text-slate-400 text-xs uppercase font-medium">ATAU</span>
+              <div className="flex-grow border-t border-slate-200"></div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="wallpaperUrl">Gunakan Tautan (URL) Gambar</Label>
+              <Input 
+                id="wallpaperUrl" 
+                type="url"
+                placeholder="https://contoh.com/gambar-wallpaper.jpg"
+                value={!uploadFile ? wallpaperUrl : ""}
+                onChange={(e) => {
+                  setUploadFile(null);
+                  setWallpaperUrl(e.target.value);
+                  const fileInput = document.getElementById("wallpaperFile") as HTMLInputElement;
+                  if (fileInput) fileInput.value = "";
+                }}
+              />
+              <p className="text-xs text-slate-500">
+                Jika Firebase Storage terkunci, Anda bisa mengunggah gambar ke situs seperti Imgur/Postimages lalu menempelkan tautannya di sini.
+              </p>
+            </div>
 
           {wallpaperUrl && (
             <div className="mt-4 space-y-2">
