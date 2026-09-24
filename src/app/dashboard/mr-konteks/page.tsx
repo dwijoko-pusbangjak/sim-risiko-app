@@ -357,7 +357,7 @@ export default function PenetapanKonteksPage() {
                 konteksList.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-semibold text-slate-800">{item.tahun}</TableCell>
-                    <TableCell className="text-slate-600">{item.sumberData}</TableCell>
+                    <TableCell className="text-slate-600 whitespace-pre-wrap">{item.sumberData}</TableCell>
                     <TableCell className="hidden md:table-cell text-sm text-slate-500 max-w-md truncate">
                       {item.tujuanKL}
                     </TableCell>
@@ -442,13 +442,7 @@ export default function PenetapanKonteksPage() {
 
             <div className="space-y-2">
               <Label htmlFor="sumberData">Sumber Data *</Label>
-              <Input 
-                id="sumberData"
-                placeholder="Contoh: Renstra, DIPA, dll" 
-                value={sumberData}
-                onChange={(e) => setSumberData(e.target.value)}
-                required
-              />
+              <Textarea id="sumberData" placeholder="Contoh: Renstra, DIPA, dll" value={sumberData} onChange={(e) => setSumberData(e.target.value)} required rows={3} className="min-h-[80px]" />
             </div>
 
             <div className="space-y-2">
