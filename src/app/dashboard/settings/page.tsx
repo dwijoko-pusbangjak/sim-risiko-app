@@ -101,7 +101,7 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-slate-800">Pengaturan Sistem</h2>
-        <p className="text-slate-500">Kelola konfigurasi global aplikasi SIM Risiko.</p>
+        <p className="text-slate-500">Kelola konfigurasi global aplikasi Si-MaRi.</p>
       </div>
 
       <Card className="max-w-2xl border-slate-200 shadow-sm">

@@ -237,7 +237,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex h-16 items-center px-6 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-6 w-6 text-emerald-500" />
-            <h1 className="text-xl font-bold text-white tracking-tight">SIM<span className="text-emerald-500">-Risiko</span></h1>
+            <h1 className="text-xl font-bold text-white tracking-tight">Si<span className="text-emerald-500">-MaRi</span></h1>
           </div>
         </div>
         
@@ -275,7 +275,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Button>
             <div className="ml-3 flex items-center gap-1.5">
               <ShieldAlert className="h-5 w-5 text-emerald-600" />
-              <h1 className="text-lg font-bold text-slate-900">SIM<span className="text-emerald-600">-Risiko</span></h1>
+              <h1 className="text-lg font-bold text-slate-900">Si<span className="text-emerald-600">-MaRi</span></h1>
             </div>
           </div>
           
@@ -339,7 +339,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex h-16 items-center justify-between border-b border-slate-800 px-6 shrink-0">
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-6 w-6 text-emerald-500" />
-            <h1 className="text-xl font-bold text-white tracking-tight">SIM<span className="text-emerald-500">-Risiko</span></h1>
+            <h1 className="text-xl font-bold text-white tracking-tight">Si<span className="text-emerald-500">-MaRi</span></h1>
           </div>
           <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)} className="text-slate-400 hover:text-white hover:bg-slate-800">
             <Menu className="h-5 w-5" />

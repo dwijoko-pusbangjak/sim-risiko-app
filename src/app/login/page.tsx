@@ -77,7 +77,7 @@ export default function LoginPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src={wallpaperUrl} 
-              alt="Pengumuman / Sosialisasi SIM-Risiko" 
+              alt="Pengumuman / Sosialisasi Si-MaRi" 
               className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
               onError={(e) => {
                  (e.target as HTMLImageElement).style.display = 'none';
@@ -102,7 +102,7 @@ export default function LoginPage() {
              <div className="p-4 bg-white/10 backdrop-blur-md rounded-2xl mb-6 shadow-xl border border-white/20">
                <ShieldCheck className="w-16 h-16 text-white" />
              </div>
-             <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 tracking-tight">SIM-Risiko</h1>
+             <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 tracking-tight">Si-MaRi</h1>
              <p className="text-lg md:text-xl text-slate-200 max-w-lg font-medium leading-relaxed">
                Sistem Informasi Manajemen Risiko Kementerian Desa dan Pembangunan Daerah Tertinggal
              </p>
@@ -118,7 +118,7 @@ export default function LoginPage() {
              <div className="inline-flex items-center justify-center p-3 bg-emerald-100 rounded-xl mb-4">
                <ShieldCheck className="w-10 h-10 text-emerald-700" />
              </div>
-             <h1 className="text-2xl font-bold tracking-tight text-slate-900">SIM-Risiko</h1>
+             <h1 className="text-2xl font-bold tracking-tight text-slate-900">Si-MaRi</h1>
              <p className="text-sm text-slate-500">Kemendes PDT</p>
           </div>
 
