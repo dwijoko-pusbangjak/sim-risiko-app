@@ -48,7 +48,7 @@ export default function ActivityLogsPage() {
         limit(200) // Batasi agar tidak terlalu berat
       );
       const snap = await getDocs(q);
-      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActivityLog));
+      const data = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as ActivityLog));
       setLogs(data);
     } catch (error) {
       console.error("Error fetching logs:", error);

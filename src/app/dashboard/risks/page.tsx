@@ -81,7 +81,7 @@ export default function RiskRegisterPage() {
       const querySnapshot = await getDocs(q);
       const fetchedRisks: RiskData[] = [];
       querySnapshot.forEach((doc) => {
-        fetchedRisks.push({ id: doc.id, ...doc.data() } as RiskData);
+        fetchedRisks.push({ ...doc.data(), id: doc.id } as RiskData);
       });
       
       // Urutkan secara manual (karena butuh composite index jika order di dalam query)

@@ -89,7 +89,7 @@ export default function UnitsManagementPage() {
       const snapshot = await getDocs(unitsRef);
       const fetched: UnitData[] = [];
       snapshot.forEach((doc) => {
-        fetched.push({ id: doc.id, ...doc.data() } as UnitData);
+        fetched.push({ ...doc.data(), id: doc.id } as UnitData);
       });
       // Sort Eselon 1 first, then Eselon 2
       fetched.sort((a, b) => a.level.localeCompare(b.level));

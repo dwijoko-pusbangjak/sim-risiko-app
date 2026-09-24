@@ -1,0 +1,434 @@
+            {/* 5. LAPORAN PENETAPAN KONTEKS */}
+            {reportType === "konteks" && (
+              <div className="space-y-6">
+                <div className="text-center font-bold text-base mb-6">
+                  <p>PENETAPAN KONTEKS RISIKO OPERASIONAL</p>
+                  <p className="uppercase">{unitData?.name || ""}</p>
+                </div>
+
+                <table className="w-full border-collapse border border-black text-sm mb-6">
+                  <tbody>
+                    <tr>
+                      <td className="border border-black p-2 font-bold w-1/4">Unit Pemilik Risiko</td>
+                      <td className="border border-black p-2 font-bold">{unitData?.name || "-"}</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2 font-bold">Tahun</td>
+                      <td className="border border-black p-2 font-bold">{konteksData?.tahun || "-"}</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2 font-bold align-top">Sumber Data</td>
+                      <td className="border border-black p-2 whitespace-pre-wrap">{konteksData?.sumberData || "-"}</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2 font-bold align-top">Tujuan K/L</td>
+                      <td className="border border-black p-2 whitespace-pre-wrap">{konteksData?.tujuanKL || "-"}</td>
+                    </tr>
+
+                    <tr>
+                      <td className="border border-black p-2 font-bold align-top">Sasaran Strategis K/L</td>
+                      <td className="border border-black p-2">
+                        {strategisList.map(s => <div key={s.id}>{s.name}</div>)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2 font-bold align-top">Indikator Sasaran Strategis K/L</td>
+                      <td className="border border-black p-0">
+                        <table className="w-full h-full border-collapse">
+                          <thead>
+                            <tr>
+                              <th className="border-b border-r border-black p-2 w-12 text-center">No</th>
+                              <th className="border-b border-r border-black p-2 text-center">IKU</th>
+                              <th className="border-b border-black p-2 text-center w-48">Target (2025 - 2029)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td colSpan={3} className="p-2 text-center">-</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td className="border border-black p-2 font-bold align-top">Sasaran Program</td>
+                      <td className="border border-black p-2">
+                        {programList.map(p => <div key={p.id}>{p.name}</div>)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2 font-bold align-top">Indikator Sasaran Program</td>
+                      <td className="border border-black p-0">
+                        <table className="w-full h-full border-collapse">
+                          <thead>
+                            <tr>
+                              <th className="border-b border-r border-black p-2 w-12 text-center">No</th>
+                              <th className="border-b border-r border-black p-2 text-center">IKU</th>
+                              <th className="border-b border-black p-2 text-center w-48">Target (2025 - 2029)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {programList.map((p, idx) => {
+                              const ika = p.indikators && p.indikators.length > 0 ? p.indikators : [{ name: p.ikp || "-", target: p.target || "-" }];
+                              return ika.map((ind, iIdx) => (
+                                <tr key={\`\${p.id}-\${iIdx}\`}>
+                                  {iIdx === 0 && <td className="border-b border-r border-black p-2 text-center align-top" rowSpan={ika.length}>{idx + 1}</td>}
+                                  <td className="border-b border-r border-black p-2 align-top">{ind.name}</td>
+                                  <td className="border-b border-black p-2 text-center align-top whitespace-pre-wrap">{ind.target}</td>
+                                </tr>
+                              ));
+                            })}
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+
+                    {unitData?.level === "eselon_2" && (
+                      <>
+                        <tr>
+                          <td className="border border-black p-2 font-bold align-top">Sasaran Kegiatan</td>
+                          <td className="border border-black p-2">
+                            {kegiatanList.map(k => <div key={k.id}>{k.name}</div>)}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="border border-black p-2 font-bold align-top">Indikator Sasaran Kegiatan</td>
+                          <td className="border border-black p-0">
+                            <table className="w-full h-full border-collapse">
+                              <thead>
+                                <tr>
+                                  <th className="border-b border-r border-black p-2 w-12 text-center">No</th>
+                                  <th className="border-b border-r border-black p-2 text-center">IKU</th>
+                                  <th className="border-b border-black p-2 text-center w-48">Target</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {kegiatanList.map((k, idx) => {
+                                  const ika = k.indikators && k.indikators.length > 0 ? k.indikators : [{ name: k.ikk || "-", target: k.target || "-" }];
+                                  return ika.map((ind, iIdx) => (
+                                    <tr key={\`\${k.id}-\${iIdx}\`}>
+                                      {iIdx === 0 && <td className="border-b border-r border-black p-2 text-center align-top" rowSpan={ika.length}>{idx + 1}</td>}
+                                      <td className="border-b border-r border-black p-2 align-top">{ind.name}</td>
+                                      <td className="border-b border-black p-2 text-center align-top whitespace-pre-wrap">{ind.target}</td>
+                                    </tr>
+                                  ));
+                                })}
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      </>
+                    )}
+                  </tbody>
+                </table>
+
+                {/* KEBIJAKAN TABLE */}
+                <table className="w-full border-collapse border border-black text-sm mb-6">
+                  <thead>
+                    <tr className="bg-[#e2efda]">
+                      <th colSpan={8} className="border border-black p-2 text-left font-bold">Kebijakan dan Daftar Pemangku Kepentingan Terkait</th>
+                    </tr>
+                    <tr>
+                      <th className="border border-black p-2 text-center w-10 font-bold" rowSpan={2}>No.</th>
+                      <th className="border border-black p-2 text-center font-bold" rowSpan={2}>Sasaran Strategis / Sasaran Program / Sasaran Kegiatan</th>
+                      <th className="border border-black p-2 text-center font-bold w-48" rowSpan={2}>Nama Peraturan</th>
+                      <th className="border border-black p-2 text-center font-bold" rowSpan={2}>Amanat Peraturan Terkait Unit Kerja</th>
+                      <th className="border border-black p-2 text-center font-bold" colSpan={2}>Stakeholder Internal</th>
+                      <th className="border border-black p-2 text-center font-bold" colSpan={2}>Stakeholder Eksternal</th>
+                    </tr>
+                    <tr>
+                      <th className="border border-black p-2 text-center font-bold w-32">Stakeholder</th>
+                      <th className="border border-black p-2 text-center font-bold w-32">Hubungan</th>
+                      <th className="border border-black p-2 text-center font-bold w-32">Stakeholder</th>
+                      <th className="border border-black p-2 text-center font-bold w-32">Hubungan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(konteksData?.kebijakanList && konteksData.kebijakanList.length > 0) ? (
+                      konteksData.kebijakanList.map((row: any, idx: number) => (
+                        <tr key={row.id || idx}>
+                          <td className="border border-black p-2 text-center align-top font-bold">{idx + 1}.</td>
+                          <td className="border border-black p-2 text-xs align-top whitespace-pre-wrap">{row.sasaran || "-"}</td>
+                          <td className="border border-black p-2 text-xs align-top whitespace-pre-wrap">{row.peraturan || "-"}</td>
+                          <td className="border border-black p-2 text-xs align-top whitespace-pre-wrap">{row.amanat || "-"}</td>
+                          <td className="border border-black p-2 text-xs align-top whitespace-pre-wrap">{row.pihakInternal || "-"}</td>
+                          <td className="border border-black p-2 text-xs align-top whitespace-pre-wrap">{row.hubInternal || "-"}</td>
+                          <td className="border border-black p-2 text-xs align-top whitespace-pre-wrap">{row.pihakEksternal || "-"}</td>
+                          <td className="border border-black p-2 text-xs align-top whitespace-pre-wrap">{row.hubEksternal || "-"}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr><td colSpan={8} className="border border-black p-4 text-center italic">Tidak ada data kebijakan</td></tr>
+                    )}
+                  </tbody>
+                </table>
+
+                {/* INSIDEN TABLE */}
+                <table className="w-full border-collapse border border-black text-sm mb-8">
+                  <thead>
+                    <tr className="bg-[#e2efda]">
+                      <th colSpan={3} className="border border-black p-2 text-left font-bold">Insiden Risiko / Temuan</th>
+                    </tr>
+                    <tr>
+                      <th className="border border-black p-2 text-center font-bold w-1/3">Sumber Temuan</th>
+                      <th className="border border-black p-2 text-center font-bold w-1/3">Uraian Temuan</th>
+                      <th className="border border-black p-2 text-center font-bold w-1/3">Penyebab Temuan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(konteksData?.insidenList && konteksData.insidenList.length > 0) ? (
+                      konteksData.insidenList.map((row: any, idx: number) => (
+                        <tr key={row.id || idx}>
+                          <td className="border border-black p-2 text-xs align-top whitespace-pre-wrap">{row.sumber || "-"}</td>
+                          <td className="border border-black p-2 text-xs align-top whitespace-pre-wrap">{row.uraian || "-"}</td>
+                          <td className="border border-black p-2 text-xs align-top whitespace-pre-wrap">{row.penyebab || "-"}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td className="border border-black p-2 text-xs align-top whitespace-pre-wrap">{konteksData?.sumberTemuan || "-"}</td>
+                        <td className="border border-black p-2 text-xs align-top whitespace-pre-wrap">{konteksData?.uraianTemuan || "-"}</td>
+                        <td className="border border-black p-2 text-xs align-top whitespace-pre-wrap">{konteksData?.penyebabTemuan || "-"}</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+
+                {/* KRITERIA RISIKO */}
+                <div className="font-bold text-sm mb-2">KRITERIA RISIKO</div>
+                <div className="font-bold text-sm mb-2">a. Kriteria Kemungkinan</div>
+                <table className="w-full border-collapse border border-black text-sm mb-6 text-center">
+                  <thead>
+                    <tr>
+                      <th className="border border-black p-2 font-bold w-1/4" rowSpan={2} colSpan={2}>Level Kemungkinan</th>
+                      <th className="border border-black p-2 font-bold" colSpan={2}>Kriteria Kemungkinan</th>
+                      <th className="border border-black p-2 font-bold w-1/4" rowSpan={2}>Low Tolerance Event</th>
+                    </tr>
+                    <tr>
+                      <th className="border border-black p-2 font-bold" colSpan={2}>Kemungkinan terjadinya non low tolerance event dalam 1 periode analisis</th>
+                    </tr>
+                    <tr>
+                      <th className="border border-black p-2 font-bold" colSpan={2}></th>
+                      <th className="border border-black p-2 font-bold">Persentase</th>
+                      <th className="border border-black p-2 font-bold">Jumlah Frekuensi</th>
+                      <th className="border border-black p-2 font-bold"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="border border-black p-2 w-8">1.</td>
+                      <td className="border border-black p-2 text-left">Hampir Tidak Terjadi (1)</td>
+                      <td className="border border-black p-2">x ≤ 1 %</td>
+                      <td className="border border-black p-2">&lt; 2 kali dalam 1 tahun</td>
+                      <td className="border border-black p-2">≤ 1 kejadian dalam lebih dari 5 tahun terakhir</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2">2.</td>
+                      <td className="border border-black p-2 text-left">Jarang Terjadi (2)</td>
+                      <td className="border border-black p-2">1 % &lt; x ≤ 10%</td>
+                      <td className="border border-black p-2">2 kali s.d 5 kali dalam 1 tahun</td>
+                      <td className="border border-black p-2">1 kejadian dalam 5 tahun terakhir</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2">3.</td>
+                      <td className="border border-black p-2 text-left">Kadang-Kadang Terjadi (3)</td>
+                      <td className="border border-black p-2">10% &lt; x ≤ 20%</td>
+                      <td className="border border-black p-2">6 kali s.d 9 kali dalam 1 tahun</td>
+                      <td className="border border-black p-2">1 kejadian dalam 3 tahun terakhir</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2">4.</td>
+                      <td className="border border-black p-2 text-left">Sering Terjadi (4)</td>
+                      <td className="border border-black p-2">20% &lt; x ≤ 50%</td>
+                      <td className="border border-black p-2">10 kali s.d 12 kali dalam 1 tahun</td>
+                      <td className="border border-black p-2">1 kejadian dalam 2 tahun terakhir</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2">5.</td>
+                      <td className="border border-black p-2 text-left">Hampir Pasti Terjadi (5)</td>
+                      <td className="border border-black p-2">x &gt; 50%</td>
+                      <td className="border border-black p-2">&gt; 12 kali dalam 1 tahun</td>
+                      <td className="border border-black p-2">Minimal 1 kejadian dalam 1 tahun terakhir</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div className="font-bold text-sm mb-2">b. Kriteria Dampak (sesuai Peraturan Menteri Desa, Pembangunan Daerah Tertinggal, dan Transmigrasi Nomor 9 Tahun 2020)</div>
+                <table className="w-full border-collapse border border-black text-xs mb-8 text-center">
+                  <thead>
+                    <tr>
+                      <th className="border border-black p-2 font-bold w-1/6" rowSpan={2} colSpan={2}>AREA DAMPAK</th>
+                      <th className="border border-black p-2 font-bold w-20" rowSpan={2}>Level</th>
+                      <th className="border border-black p-2 font-bold" colSpan={5}>LEVEL DAMPAK</th>
+                    </tr>
+                    <tr>
+                      <th className="border border-black p-2 font-bold">Tidak Signifikan (1)</th>
+                      <th className="border border-black p-2 font-bold">Minor (2)</th>
+                      <th className="border border-black p-2 font-bold">Moderat (3)</th>
+                      <th className="border border-black p-2 font-bold">Signifikan (4)</th>
+                      <th className="border border-black p-2 font-bold">Sangat Signifikan (5)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="border border-black p-2 font-bold text-left" rowSpan={3}>Beban Keuangan Negara</td>
+                      <td className="border border-black p-2 italic">Fraud</td>
+                      <td className="border border-black p-2 italic">K-Two</td>
+                      <td className="border border-black p-2">-</td>
+                      <td className="border border-black p-2">x ≤ Rp 1 juta</td>
+                      <td className="border border-black p-2">Rp 1 juta &lt; x ≤ Rp 10 juta</td>
+                      <td className="border border-black p-2">Rp 100 juta &lt; x ≤ Rp 1 M</td>
+                      <td className="border border-black p-2">x &gt; Rp 100 juta</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2 italic">Nonfraud penerimaan atau pembiayaan</td>
+                      <td className="border border-black p-2 italic">K-Wide-One-Two-Three</td>
+                      <td className="border border-black p-2">x ≤ 0,1 % dari nilai penerimaan atau pembiayaan yang dikelola UPR</td>
+                      <td className="border border-black p-2">0,1 % &lt; x ≤ 0,5 % dari nilai penerimaan atau pembiayaan yang dikelola UPR</td>
+                      <td className="border border-black p-2">0,5 % &lt; x ≤ 1 % dari nilai penerimaan atau pembiayaan yang dikelola UPR</td>
+                      <td className="border border-black p-2">1 % &lt; x ≤ 2 % dari nilai penerimaan atau pembiayaan yang dikelola UPR</td>
+                      <td className="border border-black p-2">x &gt; 2 % dari nilai penerimaan atau pembiayaan yang dikelola UPR</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2 italic">nonfraud lainnya</td>
+                      <td className="border border-black p-2 italic">K-Wide-One-Two-Three</td>
+                      <td className="border border-black p-2">x ≤ 0,05 % dari nilai belanja/aset/ kegiatan lainnya yang dikelola UPR</td>
+                      <td className="border border-black p-2">0,05 % &lt; x ≤ 0,25 % dari nilai belanja/aset/ kegiatan lainnya yang dikelola UPR</td>
+                      <td className="border border-black p-2">0,25 % &lt; x ≤ 0,5 % dari nilai belanja/aset/ kegiatan lainnya yang dikelola UPR</td>
+                      <td className="border border-black p-2">0,5 % &lt; x ≤ 1 % dari nilai belanja/aset/ kegiatan lainnya yang dikelola UPR</td>
+                      <td className="border border-black p-2">x &gt; 1 % dari nilai belanja/aset/ kegiatan lainnya yang dikelola UPR</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2 font-bold text-left" colSpan={2}>Gangguan terhadap Layanan Organisasi</td>
+                      <td className="border border-black p-2 italic">K-Two</td>
+                      <td className="border border-black p-2">x &lt; 10% dari jam layanan operasional harian</td>
+                      <td className="border border-black p-2">10% ≤ x &lt; 25% dari jam layanan operasional harian</td>
+                      <td className="border border-black p-2">25% ≤ x &lt; 50% dari jam layanan operasional harian</td>
+                      <td className="border border-black p-2">50% ≤ x &lt; 65% dari jam layanan operasional harian</td>
+                      <td className="border border-black p-2">x ≥ 65% dari jam layanan operasional harian</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2 font-bold text-left" colSpan={2}>Penurunan Kinerja</td>
+                      <td className="border border-black p-2 italic">K-Wide-One-Two-Three</td>
+                      <td className="border border-black p-2">x ≤ 5% dari target kinerja</td>
+                      <td className="border border-black p-2">5% &lt; x ≤ 10% dari target kinerja</td>
+                      <td className="border border-black p-2">10% &lt; x ≤ 20% dari target kinerja</td>
+                      <td className="border border-black p-2">20% &lt; x ≤ 25% dari target kinerja</td>
+                      <td className="border border-black p-2">x &gt; 25% dari target kinerja</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div className="font-bold text-sm mb-2">Matriks Analisis Risiko dan Level Risiko (sesuai Peraturan Menteri Desa, Pembangunan Daerah Tertinggal, dan Transmigrasi Nomor 9 Tahun 2020)</div>
+                <table className="w-full border-collapse border border-black text-sm mb-4 text-center">
+                  <thead>
+                    <tr>
+                      <th className="border border-black p-2 font-bold" rowSpan={2} colSpan={3}>MATRIKS ANALISIS RISIKO</th>
+                      <th className="border border-black p-2 font-bold" colSpan={5}>LEVEL DAMPAK</th>
+                    </tr>
+                    <tr>
+                      <th className="border border-black p-2 font-bold">1<br/>Tidak Signifikan</th>
+                      <th className="border border-black p-2 font-bold">2<br/>Minor</th>
+                      <th className="border border-black p-2 font-bold">3<br/>Moderat</th>
+                      <th className="border border-black p-2 font-bold">4<br/>Signifikan</th>
+                      <th className="border border-black p-2 font-bold">5<br/>Sangat Signifikan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="border border-black p-2 font-bold" rowSpan={5}>LEVEL<br/>KEMUNGKINAN</td>
+                      <td className="border border-black p-2 font-bold">5</td>
+                      <td className="border border-black p-2">Hampir Pasti Terjadi</td>
+                      <td className="border border-black p-2 bg-[#00b050] font-bold text-white">7</td>
+                      <td className="border border-black p-2 bg-[#ffff00] font-bold">12</td>
+                      <td className="border border-black p-2 bg-[#ffc000] font-bold">17</td>
+                      <td className="border border-black p-2 bg-[#ff0000] font-bold text-white">22</td>
+                      <td className="border border-black p-2 bg-[#ff0000] font-bold text-white">25</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2 font-bold">4</td>
+                      <td className="border border-black p-2">Sering Terjadi</td>
+                      <td className="border border-black p-2 bg-[#0070c0] font-bold text-white">4</td>
+                      <td className="border border-black p-2 bg-[#00b050] font-bold text-white">9</td>
+                      <td className="border border-black p-2 bg-[#ffff00] font-bold">14</td>
+                      <td className="border border-black p-2 bg-[#ffc000] font-bold">19</td>
+                      <td className="border border-black p-2 bg-[#ff0000] font-bold text-white">24</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2 font-bold">3</td>
+                      <td className="border border-black p-2">Kadang Terjadi</td>
+                      <td className="border border-black p-2 bg-[#0070c0] font-bold text-white">3</td>
+                      <td className="border border-black p-2 bg-[#00b050] font-bold text-white">8</td>
+                      <td className="border border-black p-2 bg-[#ffff00] font-bold">13</td>
+                      <td className="border border-black p-2 bg-[#ffc000] font-bold">18</td>
+                      <td className="border border-black p-2 bg-[#ff0000] font-bold text-white">23</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2 font-bold">2</td>
+                      <td className="border border-black p-2">Jarang Terjadi</td>
+                      <td className="border border-black p-2 bg-[#0070c0] font-bold text-white">2</td>
+                      <td className="border border-black p-2 bg-[#00b050] font-bold text-white">6</td>
+                      <td className="border border-black p-2 bg-[#00b050] font-bold text-white">11</td>
+                      <td className="border border-black p-2 bg-[#ffc000] font-bold">16</td>
+                      <td className="border border-black p-2 bg-[#ff0000] font-bold text-white">21</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2 font-bold">1</td>
+                      <td className="border border-black p-2">Hampir Tidak Terjadi</td>
+                      <td className="border border-black p-2 bg-[#0070c0] font-bold text-white">1</td>
+                      <td className="border border-black p-2 bg-[#0070c0] font-bold text-white">5</td>
+                      <td className="border border-black p-2 bg-[#00b050] font-bold text-white">10</td>
+                      <td className="border border-black p-2 bg-[#ffff00] font-bold">15</td>
+                      <td className="border border-black p-2 bg-[#ff0000] font-bold text-white">20</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div className="text-sm mb-4">
+                  <p className="font-bold mb-1">Selera Risiko (sesuai Permendes 9/2020)</p>
+                  <p>Area yang tinggi dari Tabel NR yang perlu dimitigasi</p>
+                  <p># Kategori Risiko Rendah dan Sangat Rendah (1-11) : Tidak dimitigasi / RTP (warna biru dan hijau)</p>
+                  <p># Kategori Risiko Sedang, Tinggi dan Sangat Tinggi (12-25) : Dimitigasi sampai menyentuh level risiko rendah (warna kuning, orange dan merah)</p>
+                  <br/>
+                  <p>Dampak X, Kemungkinan Y =NR</p>
+                </div>
+
+                <table className="w-1/2 border-collapse border border-black text-sm text-center">
+                  <thead>
+                    <tr>
+                      <th className="border border-black p-2 font-bold">Level Risiko</th>
+                      <th className="border border-black p-2 font-bold">Besaran Risiko</th>
+                      <th className="border border-black p-2 font-bold">Warna</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="border border-black p-2">Sangat Tinggi</td>
+                      <td className="border border-black p-2">20 - 25</td>
+                      <td className="border border-black p-2 bg-[#ff0000] font-bold text-white">merah</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2">Tinggi</td>
+                      <td className="border border-black p-2">16 - 19</td>
+                      <td className="border border-black p-2 bg-[#ffc000] font-bold">orange</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2">Sedang</td>
+                      <td className="border border-black p-2">12 - 15</td>
+                      <td className="border border-black p-2 bg-[#ffff00] font-bold">kuning</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2">Rendah</td>
+                      <td className="border border-black p-2">6 - 11</td>
+                      <td className="border border-black p-2 bg-[#00b050] font-bold text-white">hijau</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-black p-2">Sangat Rendah</td>
+                      <td className="border border-black p-2">1 - 5</td>
+                      <td className="border border-black p-2 bg-[#0070c0] font-bold text-white">biru</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}

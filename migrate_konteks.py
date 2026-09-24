@@ -1,141 +1,10 @@
-﻿"use client";
+import re
 
-import { useState, useEffect } from "react";
-import { collection, query, where, getDocs, doc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { useAuth } from "@/context/AuthContext";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Loader2, Save, Plus, Pencil, Trash2, X } from "lucide-react";
-import { toast } from "sonner";
+with open("scratch_mr_konteks.tsx", "r", encoding="utf-8") as f:
+    content = f.read()
 
-interface Indikator { name: string; target: string; }
-interface SasaranStrategis { id: string; name: string; }
-interface SasaranProgram { id: string; strategisId: string; unitName: string; name: string; ikp?: string; target?: string; indikators?: Indikator[]; }
-interface SasaranKegiatan { id: string; programId: string; unitName: string; name: string; ikk?: string; target?: string; indikators?: Indikator[]; }
-
-interface KebijakanRow {
-  id: string;
-  sasaran: string;
-  peraturan: string;
-  amanat: string;
-  pihakInternal: string;
-  hubInternal: string;
-  pihakEksternal: string;
-  hubEksternal: string;
-}
-
-interface InsidenRow {
-  id: string;
-  sumber: string;
-  uraian: string;
-  penyebab: string;
-}
-
-interface KonteksData {
-  id: string;
-  tahun: string;
-  sumberData: string;
-  tujuanKL: string;
-  kebijakanList?: KebijakanRow[];
-  insidenList?: InsidenRow[];
-  peraturan?: Record<string, string>;
-  amanatPeraturan?: Record<string, string>;
-  pihakInternal?: Record<string, string>;
-  hubunganInternal?: Record<string, string>;
-  pihakEksternal?: Record<string, string>;
-  hubunganEksternal?: Record<string, string>;
-  stakeholderInternal?: string; // legacy
-  stakeholderEksternal?: string; // legacy
-  sumberTemuan?: string;
-  uraianTemuan?: string;
-  penyebabTemuan?: string;
-}
-
-export default function PenetapanKonteksPage() {
-  const { user, loading: authLoading } = useAuth();
-  
-  // List State
-  const [konteksList, setKonteksList] = useState<KonteksData[]>([]);
-  const [isListLoading, setIsListLoading] = useState(true);
-  const [isFormVisible, setIsFormVisible] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-
-  // Form State
-  const [konteksId, setKonteksId] = useState("");
-  const [tahun, setTahun] = useState(new Date().getFullYear().toString());
-  const [sumberData, setSumberData] = useState("");
-  const [tujuanKL, setTujuanKL] = useState("");
-  const [kebijakanList, setKebijakanList] = useState<KebijakanRow[]>([]);
-  const [insidenListState, setInsidenListState] = useState<InsidenRow[]>([]);
-
-  // legacy fields to preserve on save
-  const [legacyData, setLegacyData] = useState<any>({});
-  
-  const [isSaving, setIsSaving] = useState(false);
-  
-  // Master Data
-  const [strategisList, setStrategisList] = useState<SasaranStrategis[]>([]);
-  const [programList, setProgramList] = useState<SasaranProgram[]>([]);
-  const [kegiatanList, setKegiatanList] = useState<SasaranKegiatan[]>([]);
-
-  useEffect(() => {
-    if (!authLoading && user) {
-      fetchMasterData();
-      fetchKonteksList();
-    }
-  }, [authLoading, user]);
-
-  const fetchMasterData = async () => {
-    try {
-      const stratSnap = await getDocs(collection(db, "sasaran_strategis"));
-      setStrategisList(stratSnap.docs.map(d => ({ ...d.data(), id: d.id } as SasaranStrategis)));
-
-      if (user?.role === "eselon_1") {
-        const progQ = query(collection(db, "sasaran_program"), where("unitName", "==", user.unitName));
-        const progSnap = await getDocs(progQ);
-        setProgramList(progSnap.docs.map(d => ({ ...d.data(), id: d.id } as SasaranProgram)));
-      } else if (user?.role === "eselon_2") {
-        const progSnap = await getDocs(collection(db, "sasaran_program"));
-        setProgramList(progSnap.docs.map(d => ({ ...d.data(), id: d.id } as SasaranProgram)));
-
-        const kegQ = query(collection(db, "sasaran_kegiatan"), where("unitName", "==", user.unitName));
-        const kegSnap = await getDocs(kegQ);
-        setKegiatanList(kegSnap.docs.map(d => ({ ...d.data(), id: d.id } as SasaranKegiatan)));
-      }
-    } catch (error) {
-      console.error("Gagal mengambil master data:", error);
-      toast.error("Gagal mengambil data sasaran.");
-    }
-  };
-
-  const fetchKonteksList = async () => {
-    setIsListLoading(true);
-    try {
-      if (!user?.unitName) {
-        setIsListLoading(false);
-        return;
-      }
-      const q = query(collection(db, "mr_konteks"), where("unitName", "==", user.unitName));
-      const snap = await getDocs(q);
-      const data = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as KonteksData));
-      // Urutkan tahun terbaru di atas
-      data.sort((a, b) => b.tahun.localeCompare(a.tahun));
-      setKonteksList(data);
-    } catch (error) {
-      console.error("Error fetching list:", error);
-      toast.error("Gagal memuat daftar penetapan konteks.");
-    } finally {
-      setIsListLoading(false);
-    }
-  };
-
-
+# 1. Replace resetForm and handleEdit and handleSave
+new_logic = """
   const generateId = () => Date.now().toString() + Math.random().toString().slice(2, 6);
 
   const resetForm = () => {
@@ -151,17 +20,18 @@ export default function PenetapanKonteksPage() {
   const handleCreateNew = () => {
     resetForm();
     
+    // Auto-populate kebijakan based on sasaranList
     const initialKebijakan: KebijakanRow[] = [];
     if (user?.role === "eselon_1") {
       programList.forEach(prog => {
         const strat = strategisList.find(s => s.id === prog.strategisId);
         const parentName = strat ? strat.name : "-";
         const indText = prog.indikators && prog.indikators.length > 0 
-          ? prog.indikators.map(i => `- ${i.name} (Target: ${i.target})`).join('\n')
+          ? prog.indikators.map(i => `- ${i.name} (Target: ${i.target})`).join('\\n')
           : `- ${prog.ikp} (Target: ${prog.target})`;
         initialKebijakan.push({
           id: generateId(),
-          sasaran: `Induk: ${parentName}\nSasaran: ${prog.name}\nIndikator:\n${indText}`,
+          sasaran: `Induk: ${parentName}\\nSasaran: ${prog.name}\\nIndikator:\\n${indText}`,
           peraturan: "", amanat: "", pihakInternal: "", hubInternal: "", pihakEksternal: "", hubEksternal: ""
         });
       });
@@ -170,11 +40,11 @@ export default function PenetapanKonteksPage() {
         const prog = programList.find(p => p.id === keg.programId);
         const parentName = prog ? prog.name : "-";
         const indText = keg.indikators && keg.indikators.length > 0 
-          ? keg.indikators.map(i => `- ${i.name} (Target: ${i.target})`).join('\n')
+          ? keg.indikators.map(i => `- ${i.name} (Target: ${i.target})`).join('\\n')
           : `- ${keg.ikk} (Target: ${keg.target})`;
         initialKebijakan.push({
           id: generateId(),
-          sasaran: `Induk: ${parentName}\nSasaran: ${keg.name}\nIndikator:\n${indText}`,
+          sasaran: `Induk: ${parentName}\\nSasaran: ${keg.name}\\nIndikator:\\n${indText}`,
           peraturan: "", amanat: "", pihakInternal: "", hubInternal: "", pihakEksternal: "", hubEksternal: ""
         });
       });
@@ -189,6 +59,7 @@ export default function PenetapanKonteksPage() {
     setSumberData(item.sumberData || "");
     setTujuanKL(item.tujuanKL || "");
     
+    // Parse legacy fields if needed
     setLegacyData({
       peraturan: item.peraturan || {},
       amanatPeraturan: item.amanatPeraturan || {},
@@ -205,6 +76,7 @@ export default function PenetapanKonteksPage() {
 
     let parsedKebijakan = item.kebijakanList || [];
     if (parsedKebijakan.length === 0 && item.peraturan && Object.keys(item.peraturan).length > 0) {
+      // Migrate legacy table
       const list = user?.role === "eselon_1" ? programList : kegiatanList;
       parsedKebijakan = list.map(sas => {
         let parentName = "-";
@@ -217,12 +89,12 @@ export default function PenetapanKonteksPage() {
         }
         
         const indText = sas.indikators && sas.indikators.length > 0 
-          ? sas.indikators.map((i: any) => `- ${i.name} (Target: ${i.target})`).join('\n')
+          ? sas.indikators.map((i: any) => `- ${i.name} (Target: ${i.target})`).join('\\n')
           : `- ${'ikp' in sas ? sas.ikp : 'ikk' in sas ? sas.ikk : ''} (Target: ${sas.target || '-'})`;
         
         return {
           id: generateId(),
-          sasaran: `Induk: ${parentName}\nSasaran: ${sas.name}\nIndikator:\n${indText}`,
+          sasaran: `Induk: ${parentName}\\nSasaran: ${sas.name}\\nIndikator:\\n${indText}`,
           peraturan: item.peraturan?.[sas.id] || "",
           amanat: item.amanatPeraturan?.[sas.id] || "",
           pihakInternal: item.pihakInternal?.[sas.id] || "",
@@ -274,7 +146,7 @@ export default function PenetapanKonteksPage() {
     
     setIsSaving(true);
     try {
-      const docId = `${user.unitName}-${tahun}`.replace(/\s+/g, '-').toLowerCase();
+      const docId = `${user.unitName}-${tahun}`.replace(/\\s+/g, '-').toLowerCase();
       const docRef = doc(db, "mr_konteks", docId);
       
       await setDoc(docRef, {
@@ -311,157 +183,10 @@ export default function PenetapanKonteksPage() {
   const handleInsidenChange = (id: string, field: keyof InsidenRow, value: string) => {
     setInsidenListState(prev => prev.map(row => row.id === id ? { ...row, [field]: value } : row));
   };
+"""
 
-  if (authLoading || (isListLoading && strategisList.length === 0)) {
-    return (
-      <div className="flex h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-800">Penetapan Konteks</h2>
-          <p className="text-slate-500">Daftar penetapan konteks manajemen risiko untuk unit kerja Anda.</p>
-        </div>
-        {!isFormVisible && (
-          <Button onClick={handleCreateNew} className="bg-emerald-600 hover:bg-emerald-700">
-            <Plus className="mr-2 h-4 w-4" /> Tambah Penetapan Konteks
-          </Button>
-        )}
-      </div>
-
-      {/* Tabel Daftar Konteks */}
-      {!isFormVisible && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in zoom-in-95">
-          <Table>
-            <TableHeader className="bg-slate-50">
-              <TableRow>
-                <TableHead className="w-[100px]">Tahun</TableHead>
-                <TableHead>Sumber Data</TableHead>
-                <TableHead className="hidden md:table-cell">Tujuan K/L</TableHead>
-                <TableHead className="text-center w-[150px]">Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isListLoading ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
-                    <Loader2 className="h-5 w-5 animate-spin mx-auto text-slate-400" />
-                  </TableCell>
-                </TableRow>
-              ) : konteksList.length > 0 ? (
-                konteksList.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-semibold text-slate-800">{item.tahun}</TableCell>
-                    <TableCell className="text-slate-600">{item.sumberData}</TableCell>
-                    <TableCell className="hidden md:table-cell text-sm text-slate-500 max-w-md truncate">
-                      {item.tujuanKL}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} title="Edit">
-                          <Pencil className="h-4 w-4 text-blue-600" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-slate-100 hover:text-slate-900 h-9 w-9 text-red-600" title="Hapus">
-                            <Trash2 className="h-4 w-4" />
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Hapus Penetapan Konteks?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Apakah Anda yakin ingin menghapus data penetapan konteks tahun {item.tahun}? Tindakan ini tidak dapat dibatalkan.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Batal</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(item.id)} className="bg-red-600 hover:bg-red-700">
-                                Hapus
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center text-slate-500">
-                    Belum ada data penetapan konteks. Klik tombol "Tambah Penetapan Konteks".
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-
-      {/* Form Penetapan Konteks */}
-      {isFormVisible && (
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-4">
-          <div className="flex justify-between items-center mb-6 pb-4 border-b">
-            <h3 className="text-lg font-bold text-slate-800">
-              {isEditMode ? "Edit Penetapan Konteks" : "Buat Penetapan Konteks Baru"}
-            </h3>
-            <Button variant="ghost" size="sm" onClick={() => setIsFormVisible(false)} className="text-slate-500">
-              <X className="h-4 w-4 mr-2" /> Tutup Form
-            </Button>
-          </div>
-
-          <form onSubmit={handleSave} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label>Unit Pemilik Risiko</Label>
-                <Input 
-                  value={user?.unitName || "Belum ada unit"} 
-                  disabled 
-                  className="bg-slate-100 text-slate-600 font-semibold"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tahun">Tahun Penetapan</Label>
-                <Select value={tahun} onValueChange={setTahun} disabled={isEditMode}>
-                  <SelectTrigger id="tahun" className={isEditMode ? "bg-slate-50" : ""}>
-                    <SelectValue placeholder="Pilih Tahun" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="2024">2024</SelectItem>
-                    <SelectItem value="2025">2025</SelectItem>
-                    <SelectItem value="2026">2026</SelectItem>
-                    <SelectItem value="2027">2027</SelectItem>
-                  </SelectContent>
-                </Select>
-                {isEditMode && <p className="text-xs text-slate-400">Tahun tidak dapat diubah saat edit.</p>}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="sumberData">Sumber Data *</Label>
-              <Input 
-                id="sumberData"
-                placeholder="Contoh: Renstra, DIPA, dll" 
-                value={sumberData}
-                onChange={(e) => setSumberData(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="tujuanKL">Tujuan K/L *</Label>
-              <Textarea 
-                id="tujuanKL"
-                placeholder="Tuliskan tujuan Kementerian/Lembaga..." 
-                value={tujuanKL}
-                onChange={(e) => setTujuanKL(e.target.value)}
-                className="min-h-[100px]"
-                required
-              />
-            </div>
+# 2. Replace Table JSX
+new_jsx = """
             <div className="space-y-4 pt-4 border-t">
               <div className="flex justify-between items-center">
                 <div>
@@ -622,18 +347,24 @@ export default function PenetapanKonteksPage() {
                 </div>
               )}
             </div>
-            <div className="flex justify-end pt-4 gap-3">
-              <Button type="button" variant="outline" onClick={() => setIsFormVisible(false)}>
-                Batal
-              </Button>
-              <Button type="submit" disabled={isSaving} className="bg-emerald-600 hover:bg-emerald-700">
-                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Simpan Data
-              </Button>
-            </div>
-          </form>
-        </div>
-      )}
-    </div>
-  );
-}
+"""
+
+# Regex replacements
+# Replace handlers
+content = re.sub(
+    r"  const resetForm = \(\) => \{.*?(?=  if \(authLoading \|\| \(isListLoading && strategisList\.length === 0\)\) \{)",
+    new_logic,
+    content,
+    flags=re.DOTALL
+)
+
+# Replace JSX
+content = re.sub(
+    r"            <div className=\"space-y-4 pt-4 border-t\">.*?<div className=\"flex justify-end pt-4 gap-3\">",
+    new_jsx + "\n            <div className=\"flex justify-end pt-4 gap-3\">",
+    content,
+    flags=re.DOTALL
+)
+
+with open("src/app/dashboard/mr-konteks/page.tsx", "w", encoding="utf-8") as f:
+    f.write(content)

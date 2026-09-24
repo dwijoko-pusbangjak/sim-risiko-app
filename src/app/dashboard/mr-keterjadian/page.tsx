@@ -90,7 +90,7 @@ export default function KeterjadianRisikoPage() {
       
       snap.docs.forEach(docSnap => {
         const data = docSnap.data();
-        rList.push({ id: docSnap.id, ...data });
+        rList.push({ ...data, id: docSnap.id });
         
         if (data.keterjadianList && Array.isArray(data.keterjadianList)) {
           data.keterjadianList.forEach((kejadian: any) => {

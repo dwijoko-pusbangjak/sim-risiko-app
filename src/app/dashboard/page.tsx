@@ -68,12 +68,12 @@ export default function DashboardPage() {
       
       // Fetch Units
       const snapUnits = await getDocs(collection(db, "units"));
-      const allUnits = snapUnits.docs.map(doc => ({ id: doc.id, ...doc.data() } as Unit));
+      const allUnits = snapUnits.docs.map(doc => ({ ...doc.data(), id: doc.id } as Unit));
       
       // Fetch ALL Risks for the year
       const qRisks = query(collection(db, "mr_identifikasi"), where("tahun", "==", safeYear));
       const snapRisks = await getDocs(qRisks);
-      const allRisks = snapRisks.docs.map(doc => ({ id: doc.id, ...doc.data() } as IdentifikasiRisiko));
+      const allRisks = snapRisks.docs.map(doc => ({ ...doc.data(), id: doc.id } as IdentifikasiRisiko));
       
       // Hitung Grand Total dari sumber asli (semua unit, tanpa peduli hierarki)
       const tRisiko = allRisks.length;
@@ -168,7 +168,7 @@ export default function DashboardPage() {
         where("tahun", "==", safeYear)
       );
       const snap = await getDocs(q);
-      const fetched = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as IdentifikasiRisiko));
+      const fetched = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as IdentifikasiRisiko));
       
       fetched.sort((a, b) => {
         if (!a.updatedAt) return 1;

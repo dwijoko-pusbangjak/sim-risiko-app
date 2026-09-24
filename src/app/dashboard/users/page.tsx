@@ -98,7 +98,7 @@ export default function UsersManagementPage() {
       const usersSnap = await getDocs(usersRef);
       const fetchedUsers: UserProfile[] = [];
       usersSnap.forEach((doc) => {
-        fetchedUsers.push({ id: doc.id, ...doc.data() } as UserProfile);
+        fetchedUsers.push({ ...doc.data(), id: doc.id } as UserProfile);
       });
       setUsersList(fetchedUsers);
 
@@ -107,7 +107,7 @@ export default function UsersManagementPage() {
       const unitsSnap = await getDocs(unitsRef);
       const fetchedUnits: UnitData[] = [];
       unitsSnap.forEach((doc) => {
-        fetchedUnits.push({ id: doc.id, ...doc.data() } as UnitData);
+        fetchedUnits.push({ ...doc.data(), id: doc.id } as UnitData);
       });
       setUnitsList(fetchedUnits);
 

@@ -90,7 +90,7 @@ export default function SasaranStrategisPage() {
       const snapshot = await getDocs(colRef);
       const fetched: SasaranStrategis[] = [];
       snapshot.forEach((doc) => {
-        fetched.push({ id: doc.id, ...doc.data() } as SasaranStrategis);
+        fetched.push({ ...doc.data(), id: doc.id } as SasaranStrategis);
       });
       setDataList(fetched);
     } catch (error) {

@@ -148,7 +148,7 @@ export default function SasaranKegiatanPage() {
       snapshot.forEach((doc) => {
         const data = doc.data();
         if (user?.role === "admin" || data.unitName === user?.unitName) {
-          fetchedKegiatan.push({ id: doc.id, ...data } as SasaranKegiatan);
+          fetchedKegiatan.push({ ...data, id: doc.id } as SasaranKegiatan);
         }
       });
       setDataList(fetchedKegiatan);

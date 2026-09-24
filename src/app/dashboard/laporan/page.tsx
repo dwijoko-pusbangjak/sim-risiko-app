@@ -87,12 +87,12 @@ export default function LaporanPage() {
         
         const stQ = collection(db, "sasaran_strategis");
         const stSnap = await getDocs(stQ);
-        const allStrategis = stSnap.docs.map(d => ({id: d.id, ...d.data()}));
+        const allStrategis = stSnap.docs.map(d => ({ ...d.data(), id: d.id }));
         
         if (uDataLevel === "eselon_1") {
           const progQ = query(collection(db, "sasaran_program"), where("unitName", "==", user.unitName));
           const progSnap = await getDocs(progQ);
-          const programs = progSnap.docs.map(d => ({id: d.id, ...d.data()}));
+          const programs = progSnap.docs.map(d => ({ ...d.data(), id: d.id }));
           
           const parentStrategisIds = [...new Set(programs.map(p => p.strategisId))];
           const filteredStrategis = allStrategis.filter(s => parentStrategisIds.includes(s.id));
@@ -105,10 +105,10 @@ export default function LaporanPage() {
         } else if (uDataLevel === "eselon_2") {
           const kegQ = query(collection(db, "sasaran_kegiatan"), where("unitName", "==", user.unitName));
           const kegSnap = await getDocs(kegQ);
-          const kegiatans = kegSnap.docs.map(d => ({id: d.id, ...d.data()}));
+          const kegiatans = kegSnap.docs.map(d => ({ ...d.data(), id: d.id }));
           
           const progSnap = await getDocs(collection(db, "sasaran_program"));
-          const allPrograms = progSnap.docs.map(d => ({id: d.id, ...d.data()}));
+          const allPrograms = progSnap.docs.map(d => ({ ...d.data(), id: d.id }));
           
           const parentProgramIds = [...new Set(kegiatans.map(k => k.programId))];
           const filteredPrograms = allPrograms.filter(p => parentProgramIds.includes(p.id));
@@ -130,7 +130,7 @@ export default function LaporanPage() {
           where("tahun", "==", activeYear)
         );
         const riskSnap = await getDocs(riskQ);
-        const data = riskSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const data = riskSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
         
         // Sort berdasarkan Besaran Risiko Awal (Skala tertinggi ke terendah) - opsional
         data.sort((a: any, b: any) => (b.besaranRisiko || 0) - (a.besaranRisiko || 0));

@@ -120,7 +120,7 @@ export default function SasaranProgramPage() {
       snapshot.forEach((doc) => {
         const data = doc.data();
         if (user?.role === "admin" || data.unitName === user?.unitName) {
-          fetchedProg.push({ id: doc.id, ...data } as SasaranProgram);
+          fetchedProg.push({ ...data, id: doc.id } as SasaranProgram);
         }
       });
       setDataList(fetchedProg);

@@ -95,7 +95,7 @@ export default function AnalisisRisikoPage() {
         where("tahun", "==", safeYear)
       );
       const snap = await getDocs(q);
-      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as IdentifikasiRisiko));
+      const data = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as IdentifikasiRisiko));
       setRisikoList(data);
     } catch (error: any) {
       console.error("Error fetching list:", error);

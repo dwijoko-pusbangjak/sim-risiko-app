@@ -82,7 +82,7 @@ export default function RtpPage() {
         where("tahun", "==", safeYear)
       );
       const snap = await getDocs(q);
-      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as IdentifikasiRisiko));
+      const data = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as IdentifikasiRisiko));
       
       // Filter hanya risiko dengan besaran > 11
       const filteredData = data.filter(r => r.besaranRisiko && r.besaranRisiko > 11);
