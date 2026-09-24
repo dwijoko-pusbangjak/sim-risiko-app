@@ -99,9 +99,13 @@ export default function DashboardPage() {
         const e1Risks = risksByUnit[e1.name] || [];
         e1Risks.forEach(r => mappedRiskIds.add(r.id));
         
-        let totalRisiko = e1Risks.length;
-        let risikoPrioritas = e1Risks.filter(r => (r.besaranRisiko || 0) >= 12).length;
-        let totalRtp = e1Risks.reduce((acc, r) => acc + (r.rtpList?.length || 0), 0);
+        const e1OwnTotalRisiko = e1Risks.length;
+        const e1OwnRisikoPrioritas = e1Risks.filter(r => (r.besaranRisiko || 0) >= 12).length;
+        const e1OwnTotalRtp = e1Risks.reduce((acc, r) => acc + (r.rtpList?.length || 0), 0);
+        
+        let totalRisiko = e1OwnTotalRisiko;
+        let risikoPrioritas = e1OwnRisikoPrioritas;
+        let totalRtp = e1OwnTotalRtp;
         
         const childrenData = children.map(e2 => {
           const e2Risks = risksByUnit[e2.name] || [];
@@ -128,6 +132,9 @@ export default function DashboardPage() {
           totalRisiko,
           risikoPrioritas,
           totalRtp,
+          e1OwnTotalRisiko,
+          e1OwnRisikoPrioritas,
+          e1OwnTotalRtp,
           children: childrenData
         };
       });
@@ -294,8 +301,19 @@ export default function DashboardPage() {
                           </TableRow>
                           
                           {/* Rows Eselon 2 (Children) */}
-                          {isOpen && e1.children.map((e2: any) => (
-                            <TableRow key={e2.id} className="bg-white hover:bg-slate-50 transition-colors">
+                          {isOpen && (
+                            <>
+                              <TableRow className="bg-slate-50/30 hover:bg-slate-50 transition-colors">
+                                <TableCell className="pl-12 py-3 text-emerald-700 font-semibold relative before:absolute before:left-[1.35rem] before:top-0 before:bottom-0 before:w-px before:bg-slate-200">
+                                  <div className="absolute left-[1.35rem] top-1/2 -translate-y-1/2 w-3 h-px bg-slate-200"></div>
+                                  <span className="truncate block pr-4">Internal {e1.name}</span>
+                                </TableCell>
+                                <TableCell className="text-center font-semibold text-emerald-700">{e1.e1OwnTotalRisiko}</TableCell>
+                                <TableCell className="text-center font-semibold text-emerald-700">{e1.e1OwnRisikoPrioritas}</TableCell>
+                                <TableCell className="text-center font-semibold text-emerald-700">{e1.e1OwnTotalRtp}</TableCell>
+                              </TableRow>
+                              {e1.children.map((e2: any) => (
+                                <TableRow key={e2.id} className="bg-white hover:bg-slate-50 transition-colors">
                               <TableCell className="pl-12 py-3 text-slate-600 font-medium relative before:absolute before:left-[1.35rem] before:top-0 before:bottom-0 before:w-px before:bg-slate-200">
                                 <div className="absolute left-[1.35rem] top-1/2 -translate-y-1/2 w-3 h-px bg-slate-200"></div>
                                 <span className="truncate block pr-4">{e2.name}</span>
@@ -304,7 +322,9 @@ export default function DashboardPage() {
                               <TableCell className="text-center font-semibold text-slate-700">{e2.risikoPrioritas}</TableCell>
                               <TableCell className="text-center font-semibold text-slate-700">{e2.totalRtp}</TableCell>
                             </TableRow>
-                          ))}
+                              ))}
+                            </>
+                          )}
                         </div>
                       );
                     })
