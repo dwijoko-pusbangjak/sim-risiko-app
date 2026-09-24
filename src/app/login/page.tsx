@@ -65,14 +65,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center p-4 relative overflow-hidden">
+    <div className="flex min-h-screen w-full items-center justify-center bg-slate-100 p-4 relative overflow-hidden">
       {/* Gambar Latar Belakang Penuh */}
       <div 
-        className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat"
+        className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat opacity-20 mix-blend-multiply"
         style={{ backgroundImage: "url('/bg-kemendes.jpg')" }}
       />
-      {/* Overlay Samar (Blur + Warna Gelap) */}
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm pointer-events-none" />
+      {/* Overlay Blur Halus */}
+      <div className="absolute inset-0 backdrop-blur-sm pointer-events-none" />
 
       {/* Kotak Utama Login (Tengah) */}
       <div className="w-full max-w-[1000px] bg-white rounded-3xl overflow-hidden flex flex-col md:flex-row z-10 min-h-[600px]" style={{ boxShadow: "0 30px 60px -10px rgba(0,0,0,0.8), 0 20px 40px -20px rgba(0,0,0,0.6)" }}>
