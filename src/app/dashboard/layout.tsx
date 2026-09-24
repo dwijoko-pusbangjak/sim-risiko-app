@@ -302,6 +302,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </div>
                 </div>
                 <DropdownMenuSeparator className="my-1" />
+                  <DropdownMenuItem onClick={() => setIsPasswordModalOpen(true)} className="cursor-pointer rounded-lg mb-1">
+                    <KeyRound className="mr-2 h-4 w-4 text-slate-600" />
+                    <span className="font-medium text-slate-700">Ubah Password</span>
+                  </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:bg-red-50 focus:text-red-700 cursor-pointer rounded-lg">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span className="font-medium">Keluar dari Sistem</span>
