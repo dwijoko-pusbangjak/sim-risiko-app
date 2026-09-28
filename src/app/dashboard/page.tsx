@@ -537,77 +537,12 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Area Konten Tambahan */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        
-        {/* Grafik Sebaran Level Risiko */}
-        <Card className="shadow-sm lg:col-span-1 border-t-4 border-t-slate-800">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center text-lg">
-              <BarChart3 className="mr-2 h-5 w-5 text-slate-600" /> Peta Level Risiko
-            </CardTitle>
-            <CardDescription>Distribusi berdasarkan hasil Analisis Risiko</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {totalRisiko > 0 ? (
-              <div className="space-y-4 pt-2">
-                {levelCount.map((item, idx) => (
-                  <div key={idx} className="space-y-1.5">
-                    <div className="flex justify-between text-sm font-medium">
-                      <span className="text-slate-700">{item.label}</span>
-                      <span className="text-slate-900 font-bold">{item.count}</span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden flex">
-                      <div 
-                        className={`h-2.5 rounded-full ${item.color} transition-all duration-1000 ease-out`}
-                        style={{ width: maxLevelVal > 0 ? `${(item.count / maxLevelVal) * 100}%` : '0%' }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="h-40 flex items-center justify-center text-slate-400 text-sm">
-                Belum ada data risiko.
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            {/* Area Konten Tambahan */}
+      <div className="mt-8">
+        <DashboardCharts risks={data} />
+      </div>
 
-        {/* Grafik Sebaran Kategori */}
-        <Card className="shadow-sm lg:col-span-1 border-t-4 border-t-slate-800">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center text-lg">
-              <BarChart3 className="mr-2 h-5 w-5 text-slate-600" /> Kategori Risiko
-            </CardTitle>
-            <CardDescription>Klasifikasi risiko berdasarkan kategori</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {kategoriList.length > 0 ? (
-              <div className="space-y-4 pt-2">
-                {kategoriList.map((item, idx) => (
-                  <div key={idx} className="space-y-1.5">
-                    <div className="flex justify-between text-sm font-medium">
-                      <span className="text-slate-700 truncate pr-2">{item.name}</span>
-                      <span className="text-slate-900 font-bold">{item.count}</span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden flex">
-                      <div 
-                        className="bg-indigo-500 h-2.5 rounded-full transition-all duration-1000 ease-out"
-                        style={{ width: `${item.percentage}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="h-40 flex items-center justify-center text-slate-400 text-sm">
-                Belum ada data risiko.
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
+      <div className="grid gap-6 mt-6">
         {/* Daftar Risiko Terbaru */}
         <Card className="shadow-sm lg:col-span-1 border-t-4 border-t-slate-800">
           <CardHeader className="pb-3">
@@ -649,7 +584,6 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
-
       </div>
     </div>
   );
