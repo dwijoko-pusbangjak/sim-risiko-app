@@ -375,7 +375,7 @@ export default function LaporanPage() {
 
       {/* AREA PRINT (Previu Laporan) */}
       {showPreview && (
-        <div id="print-area" className="bg-white border-2 border-slate-200 print:border-none p-8 md:p-12 min-h-[297mm] shadow-lg print:shadow-none print:p-0" style={{ fontFamily: 'Tahoma, sans-serif' }}>
+        <div id="print-area" className="bg-white border-2 border-slate-200 print:border-none p-8 md:p-12 min-h-[297mm] shadow-lg print:shadow-none print:p-0 overflow-x-auto print:overflow-visible" style={{ fontFamily: 'Tahoma, sans-serif' }}>
           
           {/* HEADER LAPORAN */}
           <div className="text-center space-y-1 mb-8">
@@ -1091,8 +1091,15 @@ export default function LaporanPage() {
             }
             table {
               page-break-inside: auto;
+              font-size: 10px !important;
               width: 100% !important;
+              max-width: 100% !important;
               table-layout: auto !important;
+            }
+            th, td {
+              word-wrap: break-word !important;
+              overflow-wrap: break-word !important;
+              white-space: normal !important;
             }
             tr {
               page-break-inside: avoid;
@@ -1100,6 +1107,14 @@ export default function LaporanPage() {
             }
             thead {
               display: table-header-group;
+            }
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            body {
+               /* Skala khusus saat print agar tabel muat */
+               zoom: 0.8;
             }
             tfoot {
               display: table-footer-group;
