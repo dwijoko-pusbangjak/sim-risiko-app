@@ -75,7 +75,7 @@ export default function LoginPage() {
       <div className="absolute inset-0 backdrop-blur-sm pointer-events-none" />
 
       {/* Kotak Utama Login (Tengah) */}
-      <div className="w-full max-w-[1000px] bg-white rounded-3xl overflow-hidden flex flex-col md:flex-row z-10 min-h-[600px]" style={{ boxShadow: "0 30px 60px -10px rgba(0,0,0,0.8), 0 20px 40px -20px rgba(0,0,0,0.6)" }}>
+      <div className="w-full max-w-[850px] lg:max-w-[1000px] bg-white rounded-3xl overflow-hidden flex flex-col md:flex-row z-10 min-h-[500px] lg:min-h-[600px]" style={{ boxShadow: "0 30px 60px -10px rgba(0,0,0,0.8), 0 20px 40px -20px rgba(0,0,0,0.6)" }}>
         
         {/* Sisi Kiri: Wallpaper / Gambar Sosialisasi */}
         <div className="hidden md:flex md:w-[50%] relative bg-slate-900 overflow-hidden items-center justify-center">
@@ -104,10 +104,10 @@ export default function LoginPage() {
           {!wallpaperUrl && (
              <div className="relative z-10 flex flex-col items-center justify-center text-center px-8 animate-in fade-in duration-1000">
                <div className="p-4 bg-white/10 backdrop-blur-md rounded-2xl mb-6 shadow-xl border border-white/20">
-                 <ShieldCheck className="w-14 h-14 text-white" />
+                 <ShieldCheck className="w-12 h-12 lg:w-14 lg:h-14 text-white" />
                </div>
-               <h1 className="text-3xl font-extrabold text-white mb-3 tracking-tight">Si-MaRi</h1>
-               <p className="text-base text-slate-200 max-w-sm font-medium leading-relaxed">
+               <h1 className="text-2xl lg:text-3xl font-extrabold text-white mb-3 tracking-tight">Si-MaRi</h1>
+               <p className="text-sm lg:text-base text-slate-200 max-w-sm font-medium leading-relaxed">
                  Sistem Informasi Manajemen Risiko Kementerian Desa dan Pembangunan Daerah Tertinggal
                </p>
              </div>
@@ -115,8 +115,8 @@ export default function LoginPage() {
         </div>
 
         {/* Sisi Kanan: Form Login */}
-        <div className="w-full md:w-[50%] flex items-center justify-center p-8 sm:p-12 bg-white relative">
-          <div className="w-full max-w-[360px] space-y-8 animate-in fade-in slide-in-from-right-8 duration-700 delay-150 fill-mode-both">
+        <div className="w-full md:w-[50%] flex items-center justify-center p-6 sm:p-8 lg:p-12 bg-white relative">
+          <div className="w-full max-w-[320px] lg:max-w-[360px] space-y-6 lg:space-y-8 animate-in fade-in slide-in-from-right-8 duration-700 delay-150 fill-mode-both">
             
             <div className="space-y-2 md:hidden mb-8 text-center">
                <div className="inline-flex items-center justify-center p-3 bg-emerald-100 rounded-xl mb-3">
@@ -127,8 +127,8 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-3xl font-bold tracking-tight text-slate-900">Masuk</h2>
-              <p className="text-sm text-slate-500 font-medium">
+              <h2 className="text-2xl lg:text-3xl font-bold tracking-tight text-slate-900">Masuk</h2>
+              <p className="text-xs lg:text-sm text-slate-500 font-medium">
                 Silakan masuk ke akun Anda untuk melanjutkan.
               </p>
             </div>
@@ -142,7 +142,7 @@ export default function LoginPage() {
               )}
               
               <div className="space-y-2.5">
-                <Label htmlFor="year" className="text-slate-700 font-semibold">Tahun Manajemen Risiko</Label>
+                <Label htmlFor="year" className="text-slate-700 font-semibold text-sm text-sm text-sm">Tahun Manajemen Risiko</Label>
                 <Select value={selectedYear} onValueChange={setSelectedYear}>
                   <SelectTrigger id="year" className="h-11 bg-slate-50 border-slate-200 focus:ring-emerald-500">
                     <SelectValue placeholder="Pilih Tahun" />
@@ -158,7 +158,7 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-2.5">
-                <Label htmlFor="email" className="text-slate-700 font-semibold">Alamat Email / ID Pengguna</Label>
+                <Label htmlFor="email" className="text-slate-700 font-semibold text-xs lg:text-sm">Alamat Email / ID Pengguna</Label>
                 <Input 
                   id="email" 
                   type="email" 
@@ -172,7 +172,7 @@ export default function LoginPage() {
 
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-slate-700 font-semibold">Kata Sandi</Label>
+                  <Label htmlFor="password" className="text-slate-700 font-semibold text-xs lg:text-sm">Kata Sandi</Label>
                 </div>
                 <Input 
                   id="password" 
