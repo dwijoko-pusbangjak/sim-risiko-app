@@ -231,7 +231,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   });
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-slate-50 print:h-auto print:min-h-0 print:block print:overflow-visible">
       {/* Sidebar untuk Desktop (Dark Theme) */}
       <aside className="hidden w-72 flex-col border-r border-slate-800 bg-[#0f172a] md:flex shrink-0 print:hidden">
         <div className="flex h-16 items-center px-6 border-b border-slate-800 shrink-0">
@@ -266,7 +266,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* Area Konten Utama */}
-      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden print:block print:overflow-visible">
         {/* Header / Topbar */}
         <header className="flex h-16 items-center justify-between border-b bg-white px-4 md:px-6 shrink-0 shadow-sm shadow-slate-100/50 print:hidden">
           <div className="flex items-center md:hidden">
