@@ -7,6 +7,8 @@ import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle, ShieldCheck, Loader2, Target, BarChart3, AlertOctagon, Building2, ChevronRight, ChevronDown } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DashboardCharts } from "@/components/DashboardCharts";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface IdentifikasiRisiko {
   id: string;
@@ -47,6 +49,8 @@ export default function DashboardPage() {
   const [adminHierarchy, setAdminHierarchy] = useState<any[]>([]);
   const [expandedE1, setExpandedE1] = useState<Record<string, boolean>>({});
   const [adminTotals, setAdminTotals] = useState({ totalRisiko: 0, risikoPrioritas: 0, totalRtp: 0 });
+  const [allRisks, setAllRisks] = useState<IdentifikasiRisiko[]>([]);
+  const [selectedChartUnit, setSelectedChartUnit] = useState<string>("all");
   
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"admin" | "eselon_1" | "eselon_2">("eselon_2");
@@ -178,6 +182,10 @@ export default function DashboardPage() {
       hierarchy.forEach(h => initialExpand[h.id] = true);
       setExpandedE1(initialExpand);
       
+      // Save only risks that belong to this hierarchy
+      const visibleRisks = allRisks.filter(r => mappedRiskIds.has(r.id));
+      setAllRisks(visibleRisks);
+      
       setAdminHierarchy(hierarchy);
     } catch (error) {
       console.error(error);
@@ -242,6 +250,39 @@ export default function DashboardPage() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">{viewMode === "admin" ? "Dashboard Konsolidasi Nasional" : "Dashboard Konsolidasi Eselon 1"}</h2>
           <p className="text-slate-500 mt-1">{viewMode === "admin" ? "Gabungan profil risiko dari seluruh unit kerja Eselon 1 dan Eselon 2" : "Gabungan profil risiko dari unit kerja Anda dan Eselon 2 di bawahnya"} di Tahun {activeYear}.</p>
+        </div>
+
+        
+        {/* DROPDOWN FILTER & CHARTS */}
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-slate-800">Visualisasi & Rekapitulasi Risiko</h3>
+              <p className="text-sm text-slate-500">Pilih unit kerja untuk melihat grafik distribusinya.</p>
+            </div>
+            <div className="w-full md:w-[350px]">
+              <Select value={selectedChartUnit} onValueChange={setSelectedChartUnit}>
+                <SelectTrigger className="w-full bg-slate-50 border-slate-300">
+                  <SelectValue placeholder="Pilih Unit Kerja" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="font-bold">Semua Unit (Konsolidasi)</SelectItem>
+                  {adminHierarchy.map(e1 => (
+                    <div key={e1.id}>
+                      <SelectItem value={e1.name} className="font-semibold text-blue-700">UKE I - {e1.name}</SelectItem>
+                      {e1.children.map((e2: any) => (
+                        <SelectItem key={e2.id} value={e2.name} className="pl-8 text-slate-700">UKE II - {e2.name}</SelectItem>
+                      ))}
+                    </div>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <DashboardCharts 
+            risks={selectedChartUnit === "all" ? allRisks : allRisks.filter(r => r.unitName === selectedChartUnit)} 
+          />
         </div>
 
         {/* Kartu Ringkasan Admin */}
