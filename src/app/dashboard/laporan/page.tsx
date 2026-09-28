@@ -280,7 +280,7 @@ export default function LaporanPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-full overflow-hidden">
+    <div className="space-y-6 max-w-full overflow-hidden print:overflow-visible print:max-w-none">
       
       {/* KOTAK KONTROL - Disembunyikan saat di-print (print:hidden) */}
       <div className="print:hidden space-y-6 no-print">
@@ -1073,55 +1073,43 @@ export default function LaporanPage() {
       
       {/* GLOBAL PRINT STYLE OVERRIDES */}
       <style dangerouslySetInnerHTML={{__html: `
-        @media print {
-          /* Sembunyikan SEMUA elemen body secara default */
-          body * {
-            visibility: hidden;
+          @media print {
+            .no-print, .print\\:hidden {
+              display: none !important;
+            }
+            html, body {
+              overflow: visible !important;
+              height: auto !important;
+              min-height: auto !important;
+            }
+            #print-area {
+              margin: 0 !important;
+              padding: 0 !important;
+              border: none !important;
+              box-shadow: none !important;
+              width: 100% !important;
+            }
+            table {
+              page-break-inside: auto;
+              width: 100% !important;
+              table-layout: auto !important;
+            }
+            tr {
+              page-break-inside: avoid;
+              page-break-after: auto;
+            }
+            thead {
+              display: table-header-group;
+            }
+            tfoot {
+              display: table-footer-group;
+            }
+            @page {
+              size: landscape;
+              margin: 10mm;
+            }
           }
-          
-          /* Sembunyikan spesifik class UI yang tidak diperlukan di DOM */
-          aside, header, .no-print, .print\\:hidden {
-            display: none !important;
-          }
-
-          /* Tampilkan HANYA kontainer print-area beserta seluruh isi dalamnya */
-          #print-area, #print-area * {
-            visibility: visible;
-          }
-          
-          /* Tarik print area ke pojok kiri atas menutupi semua padding/margin layout */
-          #print-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100vw;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: none !important;
-            box-shadow: none !important;
-          }
-
-          /* Pastikan tidak ada halaman kosong akibat scroll container Next.js */
-          html, body {
-            overflow: visible !important;
-            height: auto !important;
-            min-height: 100vh;
-          }
-          
-          /* Custom table printing rules to avoid page break inside rows */
-          tr {
-            page-break-inside: avoid;
-          }
-          thead {
-            display: table-header-group;
-          }
-          
-          @page {
-            size: landscape;
-            margin: 1.5cm;
-          }
-        }
-      `}} />
+        `}} />
     </div>
   );
 }

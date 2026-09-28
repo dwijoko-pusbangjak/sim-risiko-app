@@ -233,7 +233,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
       {/* Sidebar untuk Desktop (Dark Theme) */}
-      <aside className="hidden w-72 flex-col border-r border-slate-800 bg-[#0f172a] md:flex shrink-0">
+      <aside className="hidden w-72 flex-col border-r border-slate-800 bg-[#0f172a] md:flex shrink-0 print:hidden">
         <div className="flex h-16 items-center px-6 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-6 w-6 text-emerald-500" />
@@ -268,7 +268,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Area Konten Utama */}
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
         {/* Header / Topbar */}
-        <header className="flex h-16 items-center justify-between border-b bg-white px-4 md:px-6 shrink-0 shadow-sm shadow-slate-100/50">
+        <header className="flex h-16 items-center justify-between border-b bg-white px-4 md:px-6 shrink-0 shadow-sm shadow-slate-100/50 print:hidden">
           <div className="flex items-center md:hidden">
             <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
               <Menu className="h-6 w-6" />
@@ -317,8 +317,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Konten Halaman */}
         <ChangePasswordModal isOpen={isPasswordModalOpen} onClose={() => setIsPasswordModalOpen(false)} />
-          <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#f8fafc] relative">
-          <div className="mx-auto max-w-7xl">
+          <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#f8fafc] relative print:overflow-visible print:bg-white print:p-0 print:m-0">
+          <div className="mx-auto max-w-7xl print:max-w-none print:w-full">
             {children}
           </div>
         </main>
