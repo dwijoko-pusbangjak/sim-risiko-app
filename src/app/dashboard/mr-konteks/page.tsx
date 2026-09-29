@@ -469,7 +469,7 @@ export default function PenetapanKonteksPage() {
                 </Button>
               </div>
               
-              <div className="border rounded-lg overflow-x-auto">
+              <div className="border rounded-lg overflow-auto max-h-[calc(100vh-230px)] relative custom-scrollbar">
                 <Table className="min-w-[1400px]">
                   <TableHeader className="bg-slate-50">
                     <TableRow>

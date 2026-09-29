@@ -268,7 +268,7 @@ export default function RiskRegisterPage() {
       </div>
 
       {/* Tabel Data */}
-      <div className="rounded-md border bg-white overflow-x-auto">
+      <div className="rounded-md border bg-white overflow-auto max-h-[calc(100vh-230px)] relative custom-scrollbar">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50">

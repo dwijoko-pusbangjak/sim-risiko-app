@@ -316,7 +316,7 @@ export default function SasaranStrategisPage() {
         </div>
       </div>
 
-      <div className="rounded-md border bg-white overflow-x-auto pb-8">
+      <div className="rounded-md border bg-white overflow-auto max-h-[calc(100vh-230px)] relative pb-8 custom-scrollbar">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50">

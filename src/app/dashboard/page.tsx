@@ -366,7 +366,7 @@ export default function DashboardPage() {
             <CardDescription>Klik nama Eselon 1 untuk memperluas (melihat data per Eselon 2).</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
+            <div className="overflow-auto max-h-[calc(100vh-230px)] relative custom-scrollbar">
               <Table>
                 <TableHeader className="bg-slate-50">
                   <TableRow>

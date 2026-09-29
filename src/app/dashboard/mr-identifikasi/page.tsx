@@ -293,7 +293,7 @@ export default function IdentifikasiRisikoPage() {
       {/* Tabel Daftar Risiko */}
       {!isFormVisible && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in zoom-in-95">
-          <div className="overflow-x-auto custom-scrollbar pb-2">
+          <div className="overflow-auto max-h-[calc(100vh-230px)] relative custom-scrollbar pb-2">
             <Table>
               <TableHeader className="bg-slate-50">
                 <TableRow>

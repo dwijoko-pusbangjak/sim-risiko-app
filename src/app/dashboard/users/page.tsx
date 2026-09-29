@@ -358,7 +358,7 @@ export default function UsersManagementPage() {
       </div>
 
       {/* Tabel Data */}
-      <div className="rounded-md border bg-white overflow-x-auto pb-16">
+      <div className="rounded-md border bg-white overflow-auto max-h-[calc(100vh-230px)] relative pb-16 custom-scrollbar">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50">
