@@ -280,10 +280,10 @@ export default function LaporanPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-full overflow-hidden print:overflow-visible print:max-w-none">
+    <div className="space-y-6 max-w-full print:overflow-visible print:max-w-none">
       
       {/* KOTAK KONTROL - Disembunyikan saat di-print (print:hidden) */}
-      <div className="print:hidden space-y-6 no-print">
+      <div className="print:hidden space-y-4 no-print shrink-0">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-2xl font-bold tracking-tight text-slate-800">Cetak Laporan</h2>
@@ -375,7 +375,7 @@ export default function LaporanPage() {
 
       {/* AREA PRINT (Previu Laporan) */}
       {showPreview && (
-        <div id="print-area" className="bg-white border-2 border-slate-200 print:border-none p-8 md:p-12 min-h-[500px] max-h-[75vh] print:min-h-[297mm] print:max-h-none shadow-lg print:shadow-none print:p-0 overflow-auto print:overflow-visible custom-scrollbar" style={{ fontFamily: 'Tahoma, sans-serif' }}>
+        <div id="print-area" className="h-[55vh] lg:h-[calc(100vh-320px)] overflow-auto bg-white border-2 border-slate-200 print:border-none p-8 md:p-12 print:min-h-[297mm] print:h-auto shadow-lg print:shadow-none print:p-0 print:overflow-visible custom-scrollbar" style={{ fontFamily: 'Tahoma, sans-serif' }}>
           
           {/* HEADER LAPORAN */}
           <div className="text-center space-y-1 mb-8">
