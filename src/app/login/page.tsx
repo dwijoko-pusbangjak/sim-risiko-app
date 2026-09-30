@@ -65,7 +65,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-slate-100 p-4 relative overflow-hidden">
+    <div className="flex min-h-screen w-full items-center justify-center bg-slate-100 p-4 sm:p-8 relative overflow-hidden">
       {/* Gambar Latar Belakang Penuh */}
       <div 
         className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat opacity-20 mix-blend-multiply"
@@ -75,7 +75,7 @@ export default function LoginPage() {
       <div className="absolute inset-0 backdrop-blur-sm pointer-events-none" />
 
       {/* Kotak Utama Login (Tengah) */}
-      <div className="w-full max-w-[850px] lg:max-w-[1000px] bg-white rounded-3xl overflow-hidden flex flex-col md:flex-row z-10 min-h-[500px] lg:min-h-[600px]" style={{ boxShadow: "0 30px 60px -10px rgba(0,0,0,0.8), 0 20px 40px -20px rgba(0,0,0,0.6)" }}>
+      <div className="w-full max-w-[750px] xl:max-w-[900px] bg-white rounded-2xl md:rounded-3xl overflow-hidden flex flex-col md:flex-row z-10 min-h-[400px] xl:min-h-[500px]" style={{ boxShadow: "0 30px 60px -10px rgba(0,0,0,0.8), 0 20px 40px -20px rgba(0,0,0,0.6)" }}>
         
         {/* Sisi Kiri: Wallpaper / Gambar Sosialisasi */}
         <div className="hidden md:flex md:w-[50%] relative bg-slate-900 overflow-hidden items-center justify-center">
@@ -115,8 +115,8 @@ export default function LoginPage() {
         </div>
 
         {/* Sisi Kanan: Form Login */}
-        <div className="w-full md:w-[50%] flex items-center justify-center p-6 sm:p-8 lg:p-12 bg-white relative">
-          <div className="w-full max-w-[320px] lg:max-w-[360px] space-y-6 lg:space-y-8 animate-in fade-in slide-in-from-right-8 duration-700 delay-150 fill-mode-both">
+        <div className="w-full md:w-[50%] flex items-center justify-center p-6 sm:p-8 bg-white relative">
+          <div className="w-full max-w-[320px] space-y-4 xl:space-y-5 animate-in fade-in slide-in-from-right-8 duration-700 delay-150 fill-mode-both">
             
             <div className="space-y-2 md:hidden mb-8 text-center">
                <div className="inline-flex items-center justify-center p-3 bg-emerald-100 rounded-xl mb-3">
@@ -127,8 +127,8 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-2xl lg:text-3xl font-bold tracking-tight text-slate-900">Masuk</h2>
-              <p className="text-xs lg:text-sm text-slate-500 font-medium">
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Masuk</h2>
+              <p className="text-xs text-slate-500 font-medium">
                 Silakan masuk ke akun Anda untuk melanjutkan.
               </p>
             </div>
@@ -142,9 +142,9 @@ export default function LoginPage() {
               )}
               
               <div className="space-y-2.5">
-                <Label htmlFor="year" className="text-slate-700 font-semibold text-sm text-sm text-sm">Tahun Manajemen Risiko</Label>
+                <Label htmlFor="year" className="text-slate-700 font-semibold text-xs sm:text-sm">Tahun Manajemen Risiko</Label>
                 <Select value={selectedYear} onValueChange={setSelectedYear}>
-                  <SelectTrigger id="year" className="h-11 bg-slate-50 border-slate-200 focus:ring-emerald-500">
+                  <SelectTrigger id="year" className="h-10 bg-slate-50 border-slate-200 focus:ring-emerald-500">
                     <SelectValue placeholder="Pilih Tahun" />
                   </SelectTrigger>
                   <SelectContent>
@@ -165,7 +165,7 @@ export default function LoginPage() {
                   placeholder="nama@kemendesa.go.id" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-11 bg-slate-50 border-slate-200 focus:border-emerald-500 focus:ring-emerald-500"
+                  className="h-10 bg-slate-50 border-slate-200 focus:border-emerald-500 focus:ring-emerald-500"
                   required
                 />
               </div>
@@ -180,14 +180,14 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 bg-slate-50 border-slate-200 focus:border-emerald-500 focus:ring-emerald-500"
+                  className="h-10 bg-slate-50 border-slate-200 focus:border-emerald-500 focus:ring-emerald-500"
                   required
                 />
               </div>
 
               <Button 
                 type="submit" 
-                className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-all shadow-md hover:shadow-lg mt-6" 
+                className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-all shadow-md hover:shadow-lg mt-4" 
                 disabled={loading}
               >
                 {loading ? (
