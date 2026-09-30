@@ -227,6 +227,7 @@ export default function UsersManagementPage() {
       case "admin": return <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-md text-xs font-bold">Admin</span>;
       case "eselon_1": return <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-semibold">Eselon 1</span>;
       case "eselon_2": return <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md text-xs font-semibold">Eselon 2</span>;
+        case "pimpinan": return <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-md text-xs font-semibold">Pimpinan</span>;
       default: return <span className="bg-slate-100 text-slate-800 px-2 py-1 rounded-md text-xs">Unknown</span>;
     }
   };
@@ -263,6 +264,7 @@ export default function UsersManagementPage() {
                     <SelectTrigger><SelectValue placeholder="Pilih Role" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">Administrator (Pusat)</SelectItem>
+<SelectItem value="pimpinan">Pimpinan Unit Kerja</SelectItem>
                       <SelectItem value="eselon_1">Unit Kerja Eselon 1</SelectItem>
                       <SelectItem value="eselon_2">Unit Kerja Eselon 2</SelectItem>
                     </SelectContent>
@@ -274,12 +276,12 @@ export default function UsersManagementPage() {
                     <Input id="unitName" required placeholder="Contoh: Pusat" value={formData.unitName} onChange={(e) => setFormData({...formData, unitName: e.target.value})} />
                   ) : (
                     <Select required value={formData.unitName} onValueChange={(val: any) => setFormData({...formData, unitName: val})}>
-                      <SelectTrigger><SelectValue placeholder={`Pilih Unit ${formData.role === 'eselon_1' ? 'Eselon 1' : 'Eselon 2'}`} /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={`Pilih Unit ${formData.role === "pimpinan" ? "Kerja (Semua Level)" : formData.role === "eselon_1" ? "Eselon 1" : "Eselon 2"}`} /></SelectTrigger>
                       <SelectContent>
-                        {unitsList.filter(u => u.level === formData.role).map((unit) => (
+                        {unitsList.filter(u => formData.role === "pimpinan" ? true : u.level === formData.role).map((unit) => (
                           <SelectItem key={unit.id} value={unit.name}>{unit.name}</SelectItem>
                         ))}
-                        {unitsList.filter(u => u.level === formData.role).length === 0 && (
+                        {unitsList.filter(u => formData.role === "pimpinan" ? true : u.level === formData.role).length === 0 && (
                           <SelectItem value="kosong" disabled>Belum ada data unit kerja terdaftar.</SelectItem>
                         )}
                       </SelectContent>
@@ -312,6 +314,7 @@ export default function UsersManagementPage() {
                     <SelectTrigger><SelectValue placeholder="Pilih Role" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">Administrator (Pusat)</SelectItem>
+<SelectItem value="pimpinan">Pimpinan Unit Kerja</SelectItem>
                       <SelectItem value="eselon_1">Unit Kerja Eselon 1</SelectItem>
                       <SelectItem value="eselon_2">Unit Kerja Eselon 2</SelectItem>
                     </SelectContent>
@@ -323,9 +326,9 @@ export default function UsersManagementPage() {
                     <Input id="unitName_edit" required value={formData.unitName} onChange={(e) => setFormData({...formData, unitName: e.target.value})} />
                   ) : (
                     <Select required value={formData.unitName} onValueChange={(val: any) => setFormData({...formData, unitName: val})}>
-                      <SelectTrigger><SelectValue placeholder={`Pilih Unit ${formData.role === 'eselon_1' ? 'Eselon 1' : 'Eselon 2'}`} /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={`Pilih Unit ${formData.role === "pimpinan" ? "Kerja (Semua Level)" : formData.role === "eselon_1" ? "Eselon 1" : "Eselon 2"}`} /></SelectTrigger>
                       <SelectContent>
-                        {unitsList.filter(u => u.level === formData.role).map((unit) => (
+                        {unitsList.filter(u => formData.role === "pimpinan" ? true : u.level === formData.role).map((unit) => (
                           <SelectItem key={unit.id} value={unit.name}>{unit.name}</SelectItem>
                         ))}
                       </SelectContent>

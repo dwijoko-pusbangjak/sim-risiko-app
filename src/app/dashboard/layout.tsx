@@ -102,25 +102,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Group 3: Manajemen Risiko (Khusus non-admin)
   if (user.role !== "admin") {
-    navGroups.push({
-      title: "Manajemen Risiko",
-      items: [
-        { name: "Penetapan Konteks", href: "/dashboard/mr-konteks", icon: ClipboardList },
-        {
-          name: "Proses Manajemen Risiko",
-          icon: FolderTree,
-          children: [
-            { name: "Identifikasi Risiko", href: "/dashboard/mr-identifikasi" },
-            { name: "Analisis Risiko", href: "/dashboard/mr-analisis" },
-            { name: "Rencana Tindak Pengendalian", href: "/dashboard/mr-rtp" },
-            { name: "Pemantauan RTP", href: "/dashboard/mr-pemantauan" },
-            { name: "Pencatatan Keterjadian", href: "/dashboard/mr-keterjadian" },
-            { name: "Efektifitas RTP", href: "/dashboard/mr-efektifitas" },
-          ]
-        },
-        { name: "Cetak Laporan", href: "/dashboard/laporan", icon: BarChart4 }
-      ]
-    });
+    if (user.role === "pimpinan") {
+      navGroups.push({
+        title: "Pemantauan & Laporan",
+        items: [
+          { name: "Cetak Laporan", href: "/dashboard/laporan", icon: BarChart4 }
+        ]
+      });
+    } else {
+      navGroups.push({
+        title: "Manajemen Risiko",
+        items: [
+          { name: "Penetapan Konteks", href: "/dashboard/mr-konteks", icon: ClipboardList },
+          {
+            name: "Proses Manajemen Risiko",
+            icon: FolderTree,
+            children: [
+              { name: "Identifikasi Risiko", href: "/dashboard/mr-identifikasi" },
+              { name: "Analisis Risiko", href: "/dashboard/mr-analisis" },
+              { name: "Rencana Tindak Pengendalian", href: "/dashboard/mr-rtp" },
+              { name: "Pemantauan RTP", href: "/dashboard/mr-pemantauan" },
+              { name: "Pencatatan Keterjadian", href: "/dashboard/mr-keterjadian" },
+              { name: "Efektifitas RTP", href: "/dashboard/mr-efektifitas" },
+            ]
+          },
+          { name: "Cetak Laporan", href: "/dashboard/laporan", icon: BarChart4 }
+        ]
+      });
+    }
   }
 
   // Group 4: Administrator (khusus admin)
@@ -140,6 +149,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (role === "admin") return "Administrator";
     if (role === "eselon_1") return "Unit Kerja Eselon 1";
     if (role === "eselon_2") return "Unit Kerja Eselon 2";
+    if (role === "pimpinan") return "Pimpinan Unit Kerja";
     return "Pengguna";
   };
 
