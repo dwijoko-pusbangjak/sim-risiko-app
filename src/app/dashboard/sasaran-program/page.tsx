@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus, Search, Loader2, Pencil, Trash2, Target, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -412,24 +412,35 @@ export default function SasaranProgramPage() {
                 </TableCell>
               </TableRow>
             ) : filteredData.length > 0 ? (
-              filteredData.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium text-slate-800">
+              Object.values(
+                  filteredData.reduce((acc, item) => {
+                    const key = `${item.name}-${item.strategisId}-${item.unitName}`;
+                    if (!acc[key]) acc[key] = [];
+                    acc[key].push(item);
+                    return acc;
+                  }, {} as Record<string, typeof filteredData>)
+                ).map((group, gIdx) => (
+                  <React.Fragment key={gIdx}>
+                    {group.map((item, index) => (
+                      <TableRow key={item.id}>
+                        {index === 0 && (<>
+                    <TableCell rowSpan={group.length} className="font-medium text-slate-800 align-top">
                     {item.name}
                   </TableCell>
-                  <TableCell className="text-slate-500 text-xs leading-relaxed">
+                  <TableCell rowSpan={group.length} className="text-slate-500 text-xs leading-relaxed align-top">
                     <div className="flex items-start gap-1">
                       <LinkIcon className="w-3 h-3 mt-0.5 text-blue-500 shrink-0" />
                       {getStrategisName(item.strategisId)}
                     </div>
                   </TableCell>
                   {user.role === "admin" && (
-                    <TableCell>
+                      <TableCell rowSpan={group.length} className="align-top">
                       <span className="px-2 py-1 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-800">
                         {item.unitName}
                       </span>
                     </TableCell>
-                  )}
+                    )}
+                    </>)}
                   <TableCell className="text-slate-600 align-top">
                     {item.indikators && item.indikators.length > 0 ? (
                       <ul className="list-disc pl-4 space-y-2">
@@ -468,8 +479,11 @@ export default function SasaranProgramPage() {
                       </div>
                     </TableCell>
                   )}
-                </TableRow>
-              ))
+                
+                      </TableRow>
+                    ))}
+                  </React.Fragment>
+                ))
             ) : (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center text-slate-500">

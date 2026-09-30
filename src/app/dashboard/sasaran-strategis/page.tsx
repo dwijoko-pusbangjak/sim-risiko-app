@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus, Search, Loader2, Pencil, Trash2, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -334,14 +334,25 @@ export default function SasaranStrategisPage() {
                 </TableCell>
               </TableRow>
             ) : filteredData.length > 0 ? (
-              filteredData.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium text-slate-800">
+              Object.values(
+                  filteredData.reduce((acc, item) => {
+                    const key = item.name; // Only group by name
+                    if (!acc[key]) acc[key] = [];
+                    acc[key].push(item);
+                    return acc;
+                  }, {} as Record<string, typeof filteredData>)
+                ).map((group, gIdx) => (
+                  <React.Fragment key={gIdx}>
+                    {group.map((item, index) => (
+                      <TableRow key={item.id}>
+                        {index === 0 && (
+                    <TableCell rowSpan={group.length} className="font-medium text-slate-800 align-top">
                     <div className="flex items-start gap-2">
                       <Target className="w-4 h-4 text-purple-600 mt-1 shrink-0" />
                       {item.name}
                     </div>
                   </TableCell>
+                    )}
                   <TableCell className="text-slate-600 align-top">
                     {item.indikators && item.indikators.length > 0 ? (
                       <ul className="list-disc pl-4 space-y-2">
@@ -378,8 +389,11 @@ export default function SasaranStrategisPage() {
                       </Button>
                     </div>
                   </TableCell>
-                </TableRow>
-              ))
+                
+                      </TableRow>
+                    ))}
+                  </React.Fragment>
+                ))
             ) : (
               <TableRow>
                 <TableCell colSpan={4} className="h-24 text-center text-slate-500">
