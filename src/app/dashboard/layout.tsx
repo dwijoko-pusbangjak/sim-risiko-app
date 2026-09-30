@@ -170,7 +170,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div key={item.name} className="flex flex-col space-y-1">
                   <button
                     onClick={() => toggleMenu(item.name)}
-                    className={`group flex items-center justify-between rounded-lg px-3 py-2.5 text-[14px] font-medium transition-all w-full ${
+                    className={`group flex items-center justify-between rounded-lg px-3 py-2.5 text-[13px] xl:text-[14px] font-medium transition-all w-full ${
                       isActive ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/20" : "text-slate-300 hover:bg-slate-800 hover:text-white"
                     }`}
                   >
@@ -214,7 +214,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 key={item.name}
                 href={item.href!}
                 onClick={() => isMobile && setIsSidebarOpen(false)}
-                className={`group flex items-center rounded-lg px-3 py-2.5 text-[14px] font-medium transition-all ${
+                className={`group flex items-center rounded-lg px-3 py-2.5 text-[13px] xl:text-[14px] font-medium transition-all ${
                   isActive ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/20" : "text-slate-300 hover:bg-slate-800 hover:text-white"
                 }`}
               >
@@ -243,8 +243,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 print:h-auto print:min-h-0 print:block print:overflow-visible">
       {/* Sidebar untuk Desktop (Dark Theme) */}
-      <aside className="hidden w-72 flex-col border-r border-slate-800 bg-[#0f172a] md:flex shrink-0 print:hidden">
-        <div className="flex h-16 items-center px-6 border-b border-slate-800 shrink-0">
+      <aside className="hidden w-64 xl:w-72 flex-col border-r border-slate-800 bg-[#0f172a] md:flex shrink-0 print:hidden">
+        <div className="flex h-16 items-center px-4 xl:px-6 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-6 w-6 text-emerald-500" />
             <h1 className="text-xl font-bold text-white tracking-tight">Si<span className="text-emerald-500">-MaRi</span></h1>
@@ -252,8 +252,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         
         {/* Info Profil di Sidebar */}
-        <div className="border-b border-slate-800 px-6 py-5 bg-[#111827]/50 shrink-0">
-          <p className="text-sm font-semibold text-white whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
+        <div className="border-b border-slate-800 px-4 xl:px-6 py-5 bg-[#111827]/50 shrink-0">
+          <p className="text-xs xl:text-sm font-semibold text-white whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
             {user.unitName || user.email}
           </p>
           <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -278,7 +278,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Area Konten Utama */}
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden print:block print:overflow-visible">
         {/* Header / Topbar */}
-        <header className="flex h-16 items-center justify-between border-b bg-white px-4 md:px-6 shrink-0 shadow-sm shadow-slate-100/50 print:hidden">
+        <header className="flex h-16 items-center justify-between border-b bg-white px-4 md:px-4 xl:px-6 shrink-0 shadow-sm shadow-slate-100/50 print:hidden">
           <div className="flex items-center md:hidden">
             <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
               <Menu className="h-6 w-6" />
@@ -303,7 +303,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <DropdownMenuContent align="end" className="w-80 p-2 rounded-xl max-w-[90vw]">
                 <div className="px-2 py-1.5">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-semibold text-slate-800 whitespace-normal break-words" title={user.unitName || user.email || ""}>
+                    <p className="text-xs xl:text-sm font-semibold text-slate-800 whitespace-normal break-words" title={user.unitName || user.email || ""}>
                       {user.unitName || user.email}
                     </p>
                     <p className="text-xs font-medium text-emerald-600 mt-0.5">
@@ -343,10 +343,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
       
       {/* Sidebar Mobile (Dark Theme) */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-[#0f172a] shadow-2xl transition-transform duration-300 ease-in-out md:hidden flex flex-col ${
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 xl:w-72 transform bg-[#0f172a] shadow-2xl transition-transform duration-300 ease-in-out md:hidden flex flex-col ${
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       }`}>
-        <div className="flex h-16 items-center justify-between border-b border-slate-800 px-6 shrink-0">
+        <div className="flex h-16 items-center justify-between border-b border-slate-800 px-4 xl:px-6 shrink-0">
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-6 w-6 text-emerald-500" />
             <h1 className="text-xl font-bold text-white tracking-tight">Si<span className="text-emerald-500">-MaRi</span></h1>
@@ -355,8 +355,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Menu className="h-5 w-5" />
           </Button>
         </div>
-        <div className="border-b border-slate-800 px-6 py-5 bg-[#111827]/50 shrink-0">
-          <p className="text-sm font-semibold text-white whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
+        <div className="border-b border-slate-800 px-4 xl:px-6 py-5 bg-[#111827]/50 shrink-0">
+          <p className="text-xs xl:text-sm font-semibold text-white whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
             {user.unitName || user.email}
           </p>
           <div className="flex flex-wrap items-center gap-2 mt-2">
