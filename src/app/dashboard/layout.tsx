@@ -170,13 +170,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div key={item.name} className="flex flex-col space-y-1">
                   <button
                     onClick={() => toggleMenu(item.name)}
-                    className={`group flex items-center justify-between rounded-lg px-3 py-2.5 text-[13px] xl:text-[14px] font-medium transition-all w-full ${
+                    className={`group flex items-center justify-between rounded-lg px-3 py-2.5 text-[12px] xl:text-[11px] xl:text-[12px] font-medium transition-all w-full ${
                       isActive ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/20" : "text-slate-300 hover:bg-slate-800 hover:text-white"
                     }`}
                   >
-                    <div className="flex items-center">
+                    <div className="flex items-center flex-1 min-w-0 pr-2">
                       <Icon className={`mr-3 h-[18px] w-[18px] transition-colors ${isActive ? "text-white" : "text-slate-400 group-hover:text-emerald-400"}`} />
-                      <span className={`${isActive ? "font-semibold tracking-wide" : ""}`}>{item.name}</span>
+                      <span className={`text-left leading-tight break-words flex-1 ${isActive ? "font-semibold tracking-wide" : ""}`}>{item.name}</span>
                     </div>
                     {isOpen ? <ChevronDown className={`h-4 w-4 ${isActive ? "text-emerald-200" : "text-slate-500"}`} /> : <ChevronRight className={`h-4 w-4 ${isActive ? "text-emerald-200" : "text-slate-500"}`} />}
                   </button>
@@ -191,7 +191,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                               key={child.name}
                               href={child.href}
                               onClick={() => isMobile && setIsSidebarOpen(false)}
-                              className={`relative flex items-center rounded-md px-3 py-2 text-[13px] font-medium transition-all ${
+                              className={`relative flex items-center rounded-md px-3 py-2 text-[11px] xl:text-[12px] font-medium transition-all ${
                                 isChildActive ? "text-white bg-slate-800" : "text-slate-400 hover:bg-slate-800/50 hover:text-emerald-300"
                               }`}
                             >
@@ -214,12 +214,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 key={item.name}
                 href={item.href!}
                 onClick={() => isMobile && setIsSidebarOpen(false)}
-                className={`group flex items-center rounded-lg px-3 py-2.5 text-[13px] xl:text-[14px] font-medium transition-all ${
+                className={`group flex items-center rounded-lg px-3 py-2.5 text-[12px] xl:text-[11px] xl:text-[12px] font-medium transition-all ${
                   isActive ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/20" : "text-slate-300 hover:bg-slate-800 hover:text-white"
                 }`}
               >
                 <Icon className={`mr-3 h-[18px] w-[18px] transition-colors ${isActive ? "text-white" : "text-slate-400 group-hover:text-emerald-400"}`} />
-                <span className={`${isActive ? "font-semibold tracking-wide" : ""}`}>{item.name}</span>
+                <span className={`text-left leading-tight break-words flex-1 ${isActive ? "font-semibold tracking-wide" : ""}`}>{item.name}</span>
               </Link>
             );
           })}
