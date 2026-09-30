@@ -296,7 +296,7 @@ export default function SasaranKegiatanPage() {
                     onValueChange={(val) => setFormData({...formData, programId: val})}
                   >
                     <SelectTrigger>
-                      <span className="truncate text-left w-full">
+                      <span className="line-clamp-3 break-words text-left flex-1 min-w-0">
                         {formData.programId ? getProgramName(formData.programId) : "Pilih Sasaran Program"}
                       </span>
                     </SelectTrigger>

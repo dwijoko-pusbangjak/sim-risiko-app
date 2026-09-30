@@ -414,7 +414,7 @@ export default function IdentifikasiRisikoPage() {
                   <Select value={formData.indikatorKinerja} onValueChange={handleIndikatorChange} required>
                     <SelectTrigger id="indikatorKinerja">
                       {formData.indikatorKinerja ? (
-                        <span className="truncate">{formData.indikatorKinerja}</span>
+                        <span className="line-clamp-3 break-words text-left flex-1 min-w-0">{formData.indikatorKinerja}</span>
                       ) : (
                         <span className="text-slate-500">Pilih Indikator Kinerja...</span>
                       )}

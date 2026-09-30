@@ -267,7 +267,7 @@ export default function SasaranProgramPage() {
                     onValueChange={(val) => setFormData({...formData, strategisId: val})}
                   >
                     <SelectTrigger>
-                      <span className="truncate text-left w-full">
+                      <span className="line-clamp-3 break-words text-left flex-1 min-w-0">
                         {formData.strategisId ? getStrategisName(formData.strategisId) : "Pilih Sasaran Strategis"}
                       </span>
                     </SelectTrigger>
