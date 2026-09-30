@@ -227,7 +227,7 @@ export default function RtpPage() {
             <ShieldCheck className="mr-2 h-5 w-5 text-indigo-600" /> Daftar Risiko Prioritas (Sedang - Sangat Tinggi)
           </h3>
         </div>
-        <div className="overflow-auto max-h-[calc(100vh-230px)] relative custom-scrollbar pb-2">
+        <div className="overflow-auto max-h-[calc(100vh-14.5rem)] relative custom-scrollbar pb-2">
           <Table>
             <TableHeader className="bg-white">
               <TableRow>
@@ -316,7 +316,7 @@ export default function RtpPage() {
                   </div>
                   
                   <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="overflow-auto max-h-[calc(100vh-230px)] relative custom-scrollbar pb-2">
+                    <div className="overflow-auto max-h-[calc(100vh-14.5rem)] relative custom-scrollbar pb-2">
                       <Table>
                         <TableHeader className="bg-slate-50">
                           <TableRow>

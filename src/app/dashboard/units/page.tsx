@@ -300,7 +300,7 @@ export default function UnitsManagementPage() {
         </div>
       </div>
 
-      <div className="rounded-md border bg-white overflow-auto max-h-[calc(100vh-230px)] relative pb-8 custom-scrollbar">
+      <div className="rounded-md border bg-white overflow-auto max-h-[calc(100vh-14.5rem)] relative pb-8 custom-scrollbar">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50">

@@ -267,7 +267,7 @@ export default function KeterjadianRisikoPage() {
       </div>
 
       <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-        <div className="overflow-auto max-h-[calc(100vh-230px)] relative pb-4 custom-scrollbar">
+        <div className="overflow-auto max-h-[calc(100vh-14.5rem)] relative pb-4 custom-scrollbar">
           <Table className="w-full">
             <TableHeader>
               <TableRow className="bg-slate-50">

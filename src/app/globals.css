@@ -130,3 +130,28 @@
 }.custom-scrollbar::-webkit-scrollbar { width: 4px; }  
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }  
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; } 
+
+/* Responsive Base Scaling */
+@media screen and (max-width: 1440px), screen and (max-height: 850px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media screen and (max-width: 1280px), screen and (max-height: 750px) {
+  html {
+    font-size: 13px;
+  }
+}
+
+@media screen and (max-width: 1024px) {
+  html {
+    font-size: 14px; /* Slightly larger for tablets */
+  }
+}
+
+@media screen and (max-width: 768px) {
+  html {
+    font-size: 16px; /* Reset for mobile touch targets */
+  }
+}

@@ -376,7 +376,7 @@ export default function LaporanPage() {
       {/* AREA PRINT (Previu Laporan) */}
       {showPreview && (
         
-      <div id="print-area" className="h-[55vh] lg:h-[calc(100vh-320px)] overflow-auto bg-white border-2 border-slate-200 print:border-none p-8 md:p-12 print:min-h-[297mm] print:h-auto shadow-lg print:shadow-none print:p-0 print:overflow-visible custom-scrollbar" style={{ fontFamily: 'Tahoma, sans-serif' }}>
+      <div id="print-area" className="h-[55vh] lg:h-[calc(100vh-20rem)] overflow-auto bg-white border-2 border-slate-200 print:border-none p-8 md:p-12 print:min-h-[297mm] print:h-auto shadow-lg print:shadow-none print:p-0 print:overflow-visible custom-scrollbar" style={{ fontFamily: 'Tahoma, sans-serif' }}>
           
           {/* HEADER LAPORAN */}
           <div className="text-center space-y-1 mb-8">

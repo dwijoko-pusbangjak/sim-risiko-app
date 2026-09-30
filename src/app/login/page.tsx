@@ -75,7 +75,7 @@ export default function LoginPage() {
       <div className="absolute inset-0 backdrop-blur-sm pointer-events-none" />
 
       {/* Kotak Utama Login (Tengah) */}
-      <div className="w-full max-w-[750px] xl:max-w-[900px] bg-white rounded-2xl md:rounded-3xl overflow-hidden flex flex-col md:flex-row z-10 min-h-[400px] xl:min-h-[500px]" style={{ boxShadow: "0 30px 60px -10px rgba(0,0,0,0.8), 0 20px 40px -20px rgba(0,0,0,0.6)" }}>
+      <div className="w-full max-w-4xl xl:max-w-5xl bg-white rounded-2xl md:rounded-3xl overflow-hidden flex flex-col md:flex-row z-10 min-h-[28rem] xl:min-h-[36rem]" style={{ boxShadow: "0 30px 60px -10px rgba(0,0,0,0.8), 0 20px 40px -20px rgba(0,0,0,0.6)" }}>
         
         {/* Sisi Kiri: Wallpaper / Gambar Sosialisasi */}
         <div className="hidden md:flex md:w-[50%] relative bg-slate-900 overflow-hidden items-center justify-center">
@@ -116,7 +116,7 @@ export default function LoginPage() {
 
         {/* Sisi Kanan: Form Login */}
         <div className="w-full md:w-[50%] flex items-center justify-center p-6 sm:p-8 bg-white relative">
-          <div className="w-full max-w-[320px] space-y-4 xl:space-y-5 animate-in fade-in slide-in-from-right-8 duration-700 delay-150 fill-mode-both">
+          <div className="w-full max-w-[20rem] space-y-4 xl:space-y-5 animate-in fade-in slide-in-from-right-8 duration-700 delay-150 fill-mode-both">
             
             <div className="space-y-2 md:hidden mb-8 text-center">
                <div className="inline-flex items-center justify-center p-3 bg-emerald-100 rounded-xl mb-3">
