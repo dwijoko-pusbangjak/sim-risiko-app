@@ -48,6 +48,36 @@ type NavGroup = {
   items: NavItem[];
 };
 
+
+const LiveClock = () => {
+  const [time, setTime] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setTime(new Date());
+    const interval = setInterval(() => {
+      setTime(new Date());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!time) return <div className="h-4"></div>;
+
+  return (
+    <div className="text-[11px] xl:text-[12px] font-medium text-slate-500 flex items-center mt-0.5">
+      {time.toLocaleDateString("id-ID", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })} - {time.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })}
+    </div>
+  );
+};
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -289,10 +319,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
           
-          <div className="hidden md:flex items-center min-w-0 truncate">
-            <h2 className="text-lg font-bold text-slate-800 tracking-tight truncate">
+          <div className="hidden md:flex flex-col min-w-0 truncate justify-center">
+            <h2 className="text-lg font-bold text-slate-800 tracking-tight truncate leading-tight">
               {currentPageName}
             </h2>
+            <LiveClock />
           </div>
 
           <div className="flex items-center gap-4 ml-auto">
