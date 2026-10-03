@@ -484,9 +484,9 @@ export default function LaporanPage() {
                               <td className="border border-black p-2 whitespace-pre-wrap">{rtp.pemantauan?.progres || "-"}</td>
                               <td className="border border-black p-2 text-center">{rtp.pemantauan?.waktuPelaksanaan || "-"}</td>
                               <td className="border border-black p-2 text-center font-bold">{rtp.pemantauan?.persentase || 0}%</td>
-                              <td className="border border-black p-2 text-center text-xs break-all">
+                              <td className="border border-black p-2 text-left text-xs break-all max-w-[200px]">
                                 {rtp.pemantauan?.linkEviden ? (
-                                  <a href={rtp.pemantauan.linkEviden} target="_blank" rel="noreferrer" className="text-blue-600 underline">Link</a>
+                                  <a href={rtp.pemantauan.linkEviden} target="_blank" rel="noreferrer" className="text-blue-600 underline">{rtp.pemantauan.linkEviden}</a>
                                 ) : "-"}
                               </td>
                             </tr>
