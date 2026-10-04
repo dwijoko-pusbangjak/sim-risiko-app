@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Printer, FileText, Download } from "lucide-react";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 import { logActivity } from "@/lib/logger";
 
 type ReportType = "peta_risiko" | "pemantauan_rtp" | "keterjadian" | "efektifitas" | "konteks";
@@ -162,37 +163,70 @@ export default function LaporanPage() {
   };
 
   const handleExportExcel = () => {
-    let csvContent = '\uFEFF'; // BOM for UTF-8
-    let filename = `Laporan_${activeYear}_${reportType}.csv`;
+    let filename = `Laporan_${activeYear}_${reportType}.xlsx`;
+    const wsData: any[][] = [];
 
     if (reportType === "peta_risiko") {
       const sasaranTitle = unitData?.level === "eselon_1" ? "Sasaran Program" : "Sasaran Kegiatan";
-      csvContent += `No,${sasaranTitle},Indikator Kinerja Utama,Risiko,Sumber Risiko,Kategori Risiko,Penyebab,Dampak,Pengendalian yang ada,Sisa Risiko,Pemilik Risiko,K,D,Skala,Level Risiko\n`;
+      wsData.push(["No", sasaranTitle, "Indikator Kinerja Utama", "Risiko", "Sumber Risiko", "Kategori Risiko", "Penyebab", "Dampak", "Pengendalian yang ada", "Sisa Risiko", "Pemilik Risiko", "K", "D", "Skala", "Level Risiko"]);
       risikoData.forEach((item, idx) => {
-        csvContent += `${idx + 1},${escapeCSV(item.sasaranTerkait)},${escapeCSV(item.indikatorKinerja)},${escapeCSV(item.pernyataanRisiko)},${escapeCSV(item.sumberPenyebab)},${escapeCSV(item.kategori)},${escapeCSV(item.uraianPenyebab)},${escapeCSV(item.uraianDampak)},${escapeCSV(item.pengendalianAda)},${escapeCSV(item.sisaRisiko)},${escapeCSV(item.pemilikRisiko)},${item.levelKemungkinan || ''},${item.levelDampak || ''},${item.besaranRisiko || ''},${escapeCSV(item.levelRisiko)}\n`;
+        wsData.push([
+          idx + 1,
+          item.sasaranTerkait || "",
+          item.indikatorKinerja || "",
+          item.pernyataanRisiko || "",
+          item.sumberPenyebab || "",
+          item.kategori || "",
+          item.uraianPenyebab || "",
+          item.uraianDampak || "",
+          item.pengendalianAda || "",
+          item.sisaRisiko || "",
+          item.pemilikRisiko || "",
+          item.levelKemungkinan || "",
+          item.levelDampak || "",
+          item.besaranRisiko || "",
+          item.levelRisiko || ""
+        ]);
       });
     } else if (reportType === "pemantauan_rtp") {
-      csvContent += "No,Pernyataan Risiko,Rencana Tindak Pengendalian,Progres RTP,Waktu Pelaksanaan RTP,Persentase RTP (%),Link Eviden\n";
+      wsData.push(["No", "Pernyataan Risiko", "Rencana Tindak Pengendalian", "Progres RTP", "Waktu Pelaksanaan RTP", "Persentase RTP (%)", "Link Eviden"]);
       let no = 1;
       risikoData.forEach(risk => {
         if (risk.rtpList && risk.rtpList.length > 0) {
           risk.rtpList.forEach((rtp: any) => {
-            csvContent += `${no++},${escapeCSV(risk.pernyataanRisiko)},${escapeCSV(rtp.rencana)},${escapeCSV(rtp.pemantauan?.progres)},${escapeCSV(rtp.pemantauan?.waktuPelaksanaan)},${rtp.pemantauan?.persentase || 0},${escapeCSV(rtp.pemantauan?.linkEviden)}\n`;
+            wsData.push([
+              no++,
+              risk.pernyataanRisiko || "",
+              rtp.rencana || "",
+              rtp.pemantauan?.progres || "",
+              rtp.pemantauan?.waktuPelaksanaan || "",
+              rtp.pemantauan?.persentase || 0,
+              rtp.pemantauan?.linkEviden || ""
+            ]);
           });
         }
       });
     } else if (reportType === "keterjadian") {
-      csvContent += "No,Risiko,Uraian Peristiwa,Waktu,Penyebab,Dampak,Rincian Mitigasi,Kondisi Setelah Mitigasi\n";
+      wsData.push(["No", "Risiko", "Uraian Peristiwa", "Waktu", "Penyebab", "Dampak", "Rincian Mitigasi", "Kondisi Setelah Mitigasi"]);
       let no = 1;
       risikoData.forEach(risk => {
         if (risk.keterjadianList && risk.keterjadianList.length > 0) {
           risk.keterjadianList.forEach((kejadian: any) => {
-            csvContent += `${no++},${escapeCSV(risk.pernyataanRisiko)},${escapeCSV(kejadian.kronologi)},${escapeCSV(kejadian.tanggal)},${escapeCSV(kejadian.penyebab)},${escapeCSV(kejadian.dampak)},${escapeCSV(kejadian.rincianMitigasi)},${escapeCSV(kejadian.kondisiSetelahMitigasi)}\n`;
+            wsData.push([
+              no++,
+              risk.pernyataanRisiko || "",
+              kejadian.kronologi || "",
+              kejadian.tanggal || "",
+              kejadian.penyebab || "",
+              kejadian.dampak || "",
+              kejadian.rincianMitigasi || "",
+              kejadian.kondisiSetelahMitigasi || ""
+            ]);
           });
         }
       });
     } else if (reportType === "efektifitas") {
-      csvContent += "No,Risiko,RTP,% Progres RTP,K Awal,D Awal,SR Awal,K Target,D Target,SR Target,K Aktual,D Aktual,SR Aktual,Deviasi,Langkah Perbaikan\n";
+      wsData.push(["No", "Risiko", "RTP", "% Progres RTP", "K Awal", "D Awal", "SR Awal", "K Target", "D Target", "SR Target", "K Aktual", "D Aktual", "SR Aktual", "Deviasi", "Langkah Perbaikan"]);
       let no = 1;
       risikoData.forEach(risk => {
         if (risk.rtpList && risk.rtpList.length > 0) {
@@ -200,65 +234,84 @@ export default function LaporanPage() {
             const e = rtp.efektifitas;
             const progress = rtp.pemantauan?.persentase || 0;
             const deviasi = e?.deviasi !== undefined ? (e.deviasi > 0 ? `+${e.deviasi}` : e.deviasi) : "";
-            csvContent += `${no++},${escapeCSV(risk.pernyataanRisiko)},${escapeCSV(rtp.rencana)},${progress},${risk.levelKemungkinan || ''},${risk.levelDampak || ''},${risk.besaranRisiko || ''},${e?.targetKemungkinan || ''},${e?.targetDampak || ''},${e?.targetSkala || ''},${e?.aktualKemungkinan || ''},${e?.aktualDampak || ''},${e?.aktualSkala || ''},${deviasi},${escapeCSV(e?.langkahPerbaikan)}\n`;
+            wsData.push([
+              no++,
+              risk.pernyataanRisiko || "",
+              rtp.rencana || "",
+              progress,
+              risk.levelKemungkinan || "",
+              risk.levelDampak || "",
+              risk.besaranRisiko || "",
+              e?.targetKemungkinan || "",
+              e?.targetDampak || "",
+              e?.targetSkala || "",
+              e?.aktualKemungkinan || "",
+              e?.aktualDampak || "",
+              e?.aktualSkala || "",
+              deviasi,
+              e?.langkahPerbaikan || ""
+            ]);
           });
         }
       });
-        } else if (reportType === "konteks") {
-      csvContent += `Sumber Data: ${escapeCSV(konteksData?.sumberData || "-")}\n`;
-      csvContent += `Tujuan KL: ${escapeCSV(konteksData?.tujuanKL || "-")}\n\n`;
-
-      csvContent += `=== Insiden / Temuan Sebelumnya ===\n`;
-      csvContent += `No,Sumber Temuan,Uraian Temuan,Penyebab Temuan\n`;
+    } else if (reportType === "konteks") {
+      wsData.push(["Sumber Data", konteksData?.sumberData || "-"]);
+      wsData.push(["Tujuan KL", konteksData?.tujuanKL || "-"]);
+      wsData.push([]);
+      
+      wsData.push(["=== Insiden / Temuan Sebelumnya ==="]);
+      wsData.push(["No", "Sumber Temuan", "Uraian Temuan", "Penyebab Temuan"]);
       const iList = konteksData?.insidenList || [];
       if (iList.length > 0) {
-        iList.forEach((row: any, idx: number) => {
-          csvContent += `${idx + 1},${escapeCSV(row.sumber)},${escapeCSV(row.uraian)},${escapeCSV(row.penyebab)}\n`;
-        });
-      } else if (konteksData?.sumberTemuan || konteksData?.uraianTemuan || konteksData?.penyebabTemuan) {
-        csvContent += `1,${escapeCSV(konteksData?.sumberTemuan || "-")},${escapeCSV(konteksData?.uraianTemuan || "-")},${escapeCSV(konteksData?.penyebabTemuan || "-")}\n`;
-      }
-      csvContent += `\n`;
-
-      csvContent += `=== Kebijakan dan Daftar Pemangku Kepentingan Terkait ===\n`;
-      csvContent += `No,Sasaran Kinerja,Nama Peraturan,Amanat Peraturan,Pihak Internal,Hubungan Internal,Pihak Eksternal,Hubungan Eksternal\n`;
-      
-      const kList = konteksData?.kebijakanList || [];
-      if (kList.length > 0) {
-        kList.forEach((row: any, idx: number) => {
-          csvContent += `${idx + 1},${escapeCSV(row.sasaran)},${escapeCSV(row.peraturan)},${escapeCSV(row.amanat)},${escapeCSV(row.pihakInternal)},${escapeCSV(row.hubInternal)},${escapeCSV(row.pihakEksternal)},${escapeCSV(row.hubEksternal)}\n`;
+        iList.forEach((i: any, idx: number) => {
+          wsData.push([idx + 1, i.sumber || "", i.uraian || "", i.penyebab || ""]);
         });
       } else {
-        sasaranList.forEach((sasaran: any, idx: number) => {
-          const parent = parentSasaranList.find(p => p.id === (unitData?.level === "eselon_1" ? sasaran.strategisId : sasaran.programId));
-          const parentName = parent ? parent.name : "-";
-          const sasaranName = sasaran.name || "-";
-          const indText = sasaran.indikators && sasaran.indikators.length > 0 
+        wsData.push(["-", "-", "-", "-"]);
+      }
+      wsData.push([]);
+      
+      wsData.push(["=== Identifikasi Pihak Berkepentingan & Aturan ==="]);
+      wsData.push(["No", "Sasaran Terkait", "Peraturan Terkait", "Amanat Peraturan", "Pihak Internal", "Hubungan Internal", "Pihak Eksternal", "Hubungan Eksternal"]);
+      
+      const sList = user?.role === "eselon_1" ? programList : user?.role === "eselon_2" ? kegiatanList : sasaranList;
+      if (sList.length > 0) {
+        sList.forEach((sasaran, idx) => {
+          let parentName = "-";
+          if (user?.role === "eselon_1") {
+            const sp = parentSasaranList.find(x => x.id === sasaran.strategisId);
+            parentName = sp ? sp.name : "-";
+          } else if (user?.role === "eselon_2") {
+            const p = parentSasaranList.find(x => x.id === sasaran.programId);
+            parentName = p ? p.name : "-";
+          }
+          const sasaranName = sasaran.name || "";
+          const indText = sasaran.indikators && sasaran.indikators.length > 0
             ? sasaran.indikators.map((i: any) => `- ${i.name} (Target: ${i.target})`).join(' ; ')
             : `- ${sasaran.ikp || sasaran.ikk || '-'} (Target: ${sasaran.target || '-'})`;
+            
           const sasaranText = `Induk: ${parentName} | Sasaran: ${sasaranName} | Indikator: ${indText}`;
-          const peraturan = konteksData?.peraturan?.[sasaran.id] || "-";
-          const amanat = konteksData?.amanatPeraturan?.[sasaran.id] || "-";
-          const pInt = konteksData?.pihakInternal?.[sasaran.id] || "-";
-          const hInt = konteksData?.hubunganInternal?.[sasaran.id] || "-";
-          const pEks = konteksData?.pihakEksternal?.[sasaran.id] || "-";
-          const hEks = konteksData?.hubunganEksternal?.[sasaran.id] || "-";
           
-          csvContent += `${idx + 1},${escapeCSV(sasaranText)},${escapeCSV(peraturan)},${escapeCSV(amanat)},${escapeCSV(pInt)},${escapeCSV(hInt)},${escapeCSV(pEks)},${escapeCSV(hEks)}\n`;
+          wsData.push([
+            idx + 1,
+            sasaranText,
+            konteksData?.peraturan?.[sasaran.id] || "-",
+            konteksData?.amanatPeraturan?.[sasaran.id] || "-",
+            konteksData?.pihakInternal?.[sasaran.id] || "-",
+            konteksData?.hubunganInternal?.[sasaran.id] || "-",
+            konteksData?.pihakEksternal?.[sasaran.id] || "-",
+            konteksData?.hubunganEksternal?.[sasaran.id] || "-"
+          ]);
         });
       }
     }
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Laporan");
+    XLSX.writeFile(wb, filename);
     
-    logActivity(user, "Unduh", "Laporan", `Mengunduh Laporan ${getReportTitle(reportType)} (Excel/CSV)`);
+    logActivity(user, "Unduh", "Laporan", `Mengunduh Laporan ${getReportTitle(reportType)} (Excel)`);
   };
 
   const getReportTitle = (type: ReportType) => {
@@ -361,7 +414,7 @@ export default function LaporanPage() {
               <div className="flex-none flex gap-2">
                 <Button onClick={handleExportExcel} variant="outline" className="border-emerald-600 text-emerald-700 hover:bg-emerald-50">
                   <Download className="w-4 h-4 mr-2" />
-                  Excel (CSV)
+                  Excel (.xlsx)
                 </Button>
                 <Button onClick={handlePrint} className="bg-emerald-600 hover:bg-emerald-700">
                   <Printer className="w-4 h-4 mr-2" />
