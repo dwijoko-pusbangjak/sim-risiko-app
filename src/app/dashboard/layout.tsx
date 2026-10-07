@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { SearchCheck, Send, Inbox, useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { 
@@ -155,8 +155,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               { name: "Pemantauan RTP", href: "/dashboard/mr-pemantauan" },
               { name: "Pencatatan Keterjadian", href: "/dashboard/mr-keterjadian" },
               { name: "Efektifitas RTP", href: "/dashboard/mr-efektifitas" },
-            ]
-          },
+              ]
+            },
+            {
+              name: "Proses Audit",
+              icon: SearchCheck,
+              children: [
+                { name: "Kirim ke Auditor", href: "/dashboard/proses-audit/kirim" },
+                { name: "Inbox Hasil Auditor", href: "/dashboard/proses-audit/inbox" }
+              ]
+            },
           { name: "Cetak Laporan", href: "/dashboard/laporan", icon: BarChart4 }
         ]
       });
@@ -177,7 +185,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     });
   }
 
-  const getRoleLabel = (role: string | null) => {
+      if (user?.role === "auditor") {
+      menuGroups.push({
+        title: "Auditor",
+        items: [
+          { name: "Audit Risiko", href: "/dashboard/audit", icon: SearchCheck },
+          { name: "Cetak Laporan", href: "/dashboard/laporan", icon: BarChart4 }
+        ]
+      });
+    }
+  
+    const getRoleLabel = (role: string | null) => {
     if (role === "admin") return "Administrator";
     if (role === "eselon_1") return "Unit Kerja Eselon 1";
     if (role === "eselon_2") return "Unit Kerja Eselon 2";
