@@ -1,4 +1,6 @@
-"use client";
+const fs = require('fs');
+
+let c = `"use client";
 
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, setDoc, doc } from "firebase/firestore";
@@ -68,14 +70,14 @@ export default function KirimAuditorPage() {
       // We will allow sending even if 0 if they insist, but warn them
       if (!confirm("Peringatan: Sistem mendeteksi 0 risiko untuk tahun ini. Yakin ingin mengirim dokumen kosong?")) return;
     } else {
-      if (!confirm(`Anda yakin ingin mengirim Peta Risiko Tahun ${safeYear} ke Auditor APIP?`)) return;
+      if (!confirm(\`Anda yakin ingin mengirim Peta Risiko Tahun \${safeYear} ke Auditor APIP?\`)) return;
     }
     
     setIsSending(true);
     const toastId = toast.loading("Mengirim dokumen ke Auditor...");
     
     try {
-      const docId = `${user.unitName.replace(/\s+/g, '_')}_${safeYear}`;
+      const docId = \`\${user.unitName.replace(/\\s+/g, '_')}_\${safeYear}\`;
       const submissionData = {
         unitName: user.unitName,
         tahun: safeYear,
@@ -87,7 +89,7 @@ export default function KirimAuditorPage() {
       await setDoc(doc(db, "audit_submissions", docId), submissionData);
       setSubmissionStatus({ id: docId, ...submissionData });
       
-      logActivity(user, "Kirim", "Proses Audit", `Mengirim peta risiko tahun ${safeYear} ke auditor`);
+      logActivity(user, "Kirim", "Proses Audit", \`Mengirim peta risiko tahun \${safeYear} ke auditor\`);
       toast.success("Berhasil dikirim ke Auditor!", { id: toastId });
     } catch (error) {
       console.error("Send error", error);
@@ -161,3 +163,6 @@ export default function KirimAuditorPage() {
     </div>
   );
 }
+`;
+fs.writeFileSync('src/app/dashboard/proses-audit/kirim/page.tsx', c);
+console.log('Fixed page');
