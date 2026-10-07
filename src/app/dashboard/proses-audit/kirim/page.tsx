@@ -24,6 +24,7 @@ export default function KirimAuditorPage() {
   }, [authLoading, user, activeYear]);
 
   const checkStatus = async () => {
+    const safeYear = activeYear || new Date().getFullYear().toString();
     if (!user) return;
     setIsLoading(true);
     try {
@@ -31,7 +32,7 @@ export default function KirimAuditorPage() {
       const q = query(
         collection(db, "audit_submissions"),
         where("unitName", "==", user.unitName),
-        where("tahun", "==", activeYear)
+        where("tahun", "==", safeYear)
       );
       const snap = await getDocs(q);
       if (!snap.empty) {
@@ -44,7 +45,7 @@ export default function KirimAuditorPage() {
       const rq = query(
         collection(db, "mr_identifikasi"),
         where("unitName", "==", user.unitName),
-        where("tahun", "==", activeYear)
+        where("tahun", "==", safeYear)
       );
       const rSnap = await getDocs(rq);
       setRiskCount(rSnap.size);
@@ -57,22 +58,23 @@ export default function KirimAuditorPage() {
   };
 
   const handleSend = async () => {
+    const safeYear = activeYear || new Date().getFullYear().toString();
     if (!user) return;
     if (riskCount === 0) {
       toast.error("Tidak ada data Peta Risiko untuk tahun ini.");
       return;
     }
     
-    if (!confirm(`Anda yakin ingin mengirim Peta Risiko Tahun ${activeYear} ke Auditor APIP?`)) return;
+    if (!confirm(`Anda yakin ingin mengirim Peta Risiko Tahun ${safeYear} ke Auditor APIP?`)) return;
     
     setIsSending(true);
     const toastId = toast.loading("Mengirim dokumen ke Auditor...");
     
     try {
-      const docId = `${user.unitName.replace(/\\s+/g, '_')}_${activeYear}`;
+      const docId = `${user.unitName.replace(/\\s+/g, '_')}_${safeYear}`;
       const submissionData = {
         unitName: user.unitName,
-        tahun: activeYear,
+        tahun: safeYear,
         status: "submitted",
         submittedAt: new Date().toISOString(),
         submittedBy: user.name || user.email

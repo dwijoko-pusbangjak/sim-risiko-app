@@ -49,6 +49,7 @@ export default function AuditRisikoPage() {
   };
 
   const handleFetchRisks = async () => {
+    const safeYear = activeYear || new Date().getFullYear().toString();
     if (selectedE1 === "all") {
       toast.error("Pilih Unit Kerja Eselon 1 terlebih dahulu");
       return;
@@ -73,7 +74,7 @@ export default function AuditRisikoPage() {
       const q = query(
         collection(db, "mr_identifikasi"), 
         where("unitName", "==", targetUnitName),
-        where("tahun", "==", activeYear)
+        where("tahun", "==", safeYear)
       );
       const snap = await getDocs(q);
       const rData: any[] = [];

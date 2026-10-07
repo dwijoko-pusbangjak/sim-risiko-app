@@ -19,13 +19,14 @@ export default function InboxAuditorPage() {
   }, [authLoading, user, activeYear]);
 
   const fetchInbox = async () => {
+    const safeYear = activeYear || new Date().getFullYear().toString();
     if (!user) return;
     setIsLoading(true);
     try {
       const q = query(
         collection(db, "mr_identifikasi"),
         where("unitName", "==", user.unitName),
-        where("tahun", "==", activeYear)
+        where("tahun", "==", safeYear)
       );
       const snap = await getDocs(q);
       const data: any[] = [];
