@@ -132,7 +132,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   // Group 3: Manajemen Risiko (Khusus non-admin)
-  if (user.role !== "admin") {
+  if (user.role !== "admin" && user.role !== "auditor") {
     if (user.role === "pimpinan") {
       navGroups.push({
         title: "Pemantauan & Laporan",
