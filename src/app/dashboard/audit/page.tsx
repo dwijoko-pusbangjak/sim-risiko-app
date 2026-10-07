@@ -140,7 +140,12 @@ export default function AuditRisikoPage() {
           <div className="space-y-2">
             <Label>Unit Eselon 1</Label>
             <Select value={selectedE1} onValueChange={(v) => { setSelectedE1(v); setSelectedE2("all"); }}>
-              <SelectTrigger><SelectValue placeholder="Pilih Eselon 1" /></SelectTrigger>
+              <SelectTrigger>
+    {selectedE1 !== "all" ? 
+      <span className="truncate">{e1Units.find(u => u.id === selectedE1)?.name || "Unit tidak ditemukan"}</span> : 
+      <span className="text-slate-500">Pilih Eselon 1</span>
+    }
+  </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">-- Pilih Unit Eselon 1 --</SelectItem>
                 {e1Units.map(u => (
@@ -153,7 +158,15 @@ export default function AuditRisikoPage() {
           <div className="space-y-2">
             <Label>Unit Eselon 2 (Opsional)</Label>
             <Select value={selectedE2} onValueChange={setSelectedE2} disabled={selectedE1 === "all"}>
-              <SelectTrigger><SelectValue placeholder="Pilih Unit Terkait" /></SelectTrigger>
+              <SelectTrigger>
+    {selectedE2 !== "all" ? 
+      <span className="truncate">{availableE2.find(u => u.id === selectedE2)?.name || "Unit tidak ditemukan"}</span> : 
+      (selectedE1 !== "all" ? 
+        <span className="truncate">[{e1Units.find(u => u.id === selectedE1)?.name}] (Eselon 1 itu sendiri)</span> : 
+        <span className="text-slate-500">Pilih Unit Terkait</span>
+      )
+    }
+  </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">
                   {selectedE1 !== "all" 
