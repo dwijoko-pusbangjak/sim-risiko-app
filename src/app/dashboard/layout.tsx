@@ -186,7 +186,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
       if (user?.role === "auditor") {
-      menuGroups.push({
+      navGroups.push({
         title: "Auditor",
         items: [
           { name: "Audit Risiko", href: "/dashboard/audit", icon: SearchCheck },
