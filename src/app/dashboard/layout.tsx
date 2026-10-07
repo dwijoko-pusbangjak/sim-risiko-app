@@ -8,7 +8,8 @@ import {
   AlertTriangle, 
   ShieldCheck, 
   FileText, 
-  Settings, 
+  Settings,
+  DatabaseBackup, 
   LogOut,
   Menu,
   User,
@@ -170,7 +171,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         { name: "Manajemen Unit Kerja", href: "/dashboard/units", icon: Building2 },
         { name: "Manajemen Pengguna", href: "/dashboard/users", icon: Users },
         { name: "Log Aktivitas", href: "/dashboard/logs", icon: FileText },
-        { name: "Pengaturan Sistem", href: "/dashboard/settings", icon: Settings }
+        { name: "Pengaturan Sistem", href: "/dashboard/settings", icon: Settings },
+        { name: "Backup & Restore", href: "/dashboard/backup", icon: DatabaseBackup }
       ]
     });
   }
