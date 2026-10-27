@@ -6,9 +6,10 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Loader2, Send, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, Send, CheckCircle2, AlertCircle, Clock, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/logger";
+import Link from "next/link";
 
 export default function KirimAuditorPage() {
   const { user, activeYear, loading: authLoading } = useAuth();
@@ -64,11 +65,15 @@ export default function KirimAuditorPage() {
     if (!user) return;
     const safeYear = activeYear || new Date().getFullYear().toString();
     
+    const isResubmit = submissionStatus?.status === "reviewed";
+    const confirmMessage = isResubmit
+      ? `Anda yakin ingin mengirim ulang Peta Risiko Tahun ${safeYear} ke Auditor setelah melakukan perbaikan?`
+      : `Anda yakin ingin mengirim Peta Risiko Tahun ${safeYear} ke Auditor APIP?`;
+
     if (riskCount === 0) {
-      // We will allow sending even if 0 if they insist, but warn them
       if (!confirm("Peringatan: Sistem mendeteksi 0 risiko untuk tahun ini. Yakin ingin mengirim dokumen kosong?")) return;
     } else {
-      if (!confirm(`Anda yakin ingin mengirim Peta Risiko Tahun ${safeYear} ke Auditor APIP?`)) return;
+      if (!confirm(confirmMessage)) return;
     }
     
     setIsSending(true);
@@ -81,14 +86,15 @@ export default function KirimAuditorPage() {
         tahun: safeYear,
         status: "submitted",
         submittedAt: new Date().toISOString(),
-        submittedBy: user.name || user.email
+        submittedBy: user.name || user.email,
+        isResubmission: isResubmit
       };
       
-      await setDoc(doc(db, "audit_submissions", docId), submissionData);
+      await setDoc(doc(db, "audit_submissions", docId), submissionData, { merge: true });
       setSubmissionStatus({ id: docId, ...submissionData });
       
       logActivity(user, "Kirim", "Proses Audit", `Mengirim peta risiko tahun ${safeYear} ke auditor`);
-      toast.success("Berhasil dikirim ke Auditor!", { id: toastId });
+      toast.success(isResubmit ? "Peta risiko berhasil dikirim ulang ke Auditor!" : "Berhasil dikirim ke Auditor!", { id: toastId });
     } catch (error) {
       console.error("Send error", error);
       toast.error("Gagal mengirim dokumen.", { id: toastId });
@@ -98,6 +104,9 @@ export default function KirimAuditorPage() {
   };
 
   if (authLoading) return <div className="p-8 text-center text-slate-500">Memuat...</div>;
+
+  const isReviewed = submissionStatus?.status === "reviewed";
+  const isSubmitted = submissionStatus?.status === "submitted";
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto mt-8">
@@ -124,10 +133,15 @@ export default function KirimAuditorPage() {
                 
                 <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg border">
                   <span className="font-medium text-slate-700">Status Saat Ini</span>
-                  {submissionStatus ? (
-                    <span className="flex items-center text-emerald-600 font-bold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                  {isReviewed ? (
+                    <span className="flex items-center text-purple-700 font-bold bg-purple-50 px-3 py-1 rounded-full border border-purple-200">
                       <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Sudah Dikirim
+                      Telah Direviu oleh Auditor
+                    </span>
+                  ) : isSubmitted ? (
+                    <span className="flex items-center text-blue-700 font-bold bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+                      <Clock className="w-4 h-4 mr-2" />
+                      Sedang Direviu oleh Auditor
                     </span>
                   ) : (
                     <span className="flex items-center text-amber-600 font-bold bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
@@ -137,9 +151,18 @@ export default function KirimAuditorPage() {
                   )}
                 </div>
 
-                {submissionStatus && (
+                {isReviewed && (
+                  <div className="p-3 bg-purple-50 border border-purple-100 rounded-lg text-sm text-purple-900 flex items-center justify-between">
+                    <span>Hasil riviu dan catatan perbaikan telah tersedia di Inbox.</span>
+                    <Link href="/dashboard/proses-audit/inbox" className="font-semibold underline hover:text-purple-950">
+                      Lihat Catatan di Inbox &rarr;
+                    </Link>
+                  </div>
+                )}
+
+                {submissionStatus?.submittedAt && (
                   <div className="text-sm text-slate-500 text-right">
-                    Dikirim pada: {new Date(submissionStatus.submittedAt).toLocaleString('id-ID')}
+                    Terakhir dikirim pada: {new Date(submissionStatus.submittedAt).toLocaleString('id-ID')}
                   </div>
                 )}
               </div>
@@ -149,12 +172,22 @@ export default function KirimAuditorPage() {
         <CardFooter className="bg-slate-50 border-t justify-end py-4">
           <Button 
             onClick={handleSend} 
-            disabled={isSending || isLoading || !!submissionStatus}
+            disabled={isSending || isLoading || isSubmitted}
             className="bg-indigo-600 hover:bg-indigo-700"
             size="lg"
           >
-            {isSending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-            {submissionStatus ? "Sudah Terkirim" : "Kirim ke Auditor Sekarang"}
+            {isSending ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : isResubmit ? (
+              <RefreshCw className="w-4 h-4 mr-2" />
+            ) : (
+              <Send className="w-4 h-4 mr-2" />
+            )}
+            {isSubmitted 
+              ? "Sedang Direviu oleh Auditor" 
+              : isResubmit 
+              ? "Kirim Ulang ke Auditor (Setelah Perbaikan)" 
+              : "Kirim ke Auditor Sekarang"}
           </Button>
         </CardFooter>
       </Card>
