@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Search, MessageSquarePlus, CheckCircle, Send, CheckCircle2, Clock, AlertCircle, Edit3, Layers, FileCheck } from "lucide-react";
+import { Loader2, Search, MessageSquarePlus, CheckCircle, Send, CheckCircle2, Clock, AlertCircle, Edit3, Layers, FileCheck, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/logger";
 
@@ -47,6 +47,8 @@ export default function AuditRisikoPage() {
   
   const [currentUnitName, setCurrentUnitName] = useState<string>("");
   const [risks, setRisks] = useState<any[]>([]);
+  const [allUnitRisks, setAllUnitRisks] = useState<any[]>([]);
+  const [showArchive, setShowArchive] = useState(false);
   const [submission, setSubmission] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -54,7 +56,6 @@ export default function AuditRisikoPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRisk, setSelectedRisk] = useState<any>(null);
   const [catatanKolom, setCatatanKolom] = useState<CatatanKolomState>(INITIAL_CATATAN_KOLOM);
-  const [activeTab, setActiveTab] = useState<string>("all");
   const [isSaving, setIsSaving] = useState(false);
 
   // Kirim ke Unit Kerja Modal (Batch / Finalisasi)
@@ -100,8 +101,37 @@ export default function AuditRisikoPage() {
 
     setCurrentUnitName(targetUnitName);
     setIsLoading(true);
+    setShowArchive(false);
+
     try {
-      // 1. Fetch mr_identifikasi
+      // 1. Fetch submission status from audit_submissions
+      const cleanDocId = `${targetUnitName.replace(/[^a-zA-Z0-9]/g, '_')}_${safeYear}`;
+      let subData: any = null;
+      const subSnap = await getDoc(doc(db, "audit_submissions", cleanDocId));
+      if (subSnap.exists()) {
+        subData = { id: subSnap.id, ...subSnap.data() };
+      } else {
+        const legacyDocId = `${targetUnitName.replace(/\s+/g, '_')}_${safeYear}`;
+        const legSnap = await getDoc(doc(db, "audit_submissions", legacyDocId));
+        if (legSnap.exists()) {
+          subData = { id: legSnap.id, ...legSnap.data() };
+        } else {
+          const qSub = query(
+            collection(db, "audit_submissions"),
+            where("unitName", "==", targetUnitName),
+            where("tahun", "==", safeYear)
+          );
+          const snapSub = await getDocs(qSub);
+          if (!snapSub.empty) {
+            subData = { id: snapSub.docs[0].id, ...snapSub.docs[0].data() };
+          }
+        }
+      }
+
+      setSubmission(subData);
+      setCatatanUmum(subData?.catatanUmum || "");
+
+      // 2. Fetch mr_identifikasi
       const q = query(
         collection(db, "mr_identifikasi"), 
         where("unitName", "==", targetUnitName),
@@ -112,27 +142,14 @@ export default function AuditRisikoPage() {
       snap.forEach(d => {
         rData.push({ id: d.id, ...d.data() });
       });
-      setRisks(rData);
+      setAllUnitRisks(rData);
 
-      // 2. Fetch submission status from audit_submissions
-      const cleanDocId = `${targetUnitName.replace(/[^a-zA-Z0-9]/g, '_')}_${safeYear}`;
-      const subSnap = await getDoc(doc(db, "audit_submissions", cleanDocId));
-      if (subSnap.exists()) {
-        const subData = subSnap.data();
-        setSubmission({ id: subSnap.id, ...subData });
-        setCatatanUmum(subData.catatanUmum || "");
+      // JIKA SUDAH DIKIRIM KE UNIT KERJA (status === 'reviewed'):
+      // KOSONGKAN DATA KARENA SUDAH SELESAI DIAUDIT & TIDAK ADA LAGI YANG HARUS DIAUDIT!
+      if (subData?.status === "reviewed") {
+        setRisks([]);
       } else {
-        // Fallback by legacy ID
-        const legacyDocId = `${targetUnitName.replace(/\s+/g, '_')}_${safeYear}`;
-        const legSnap = await getDoc(doc(db, "audit_submissions", legacyDocId));
-        if (legSnap.exists()) {
-          const subData = legSnap.data();
-          setSubmission({ id: legSnap.id, ...subData });
-          setCatatanUmum(subData.catatanUmum || "");
-        } else {
-          setSubmission(null);
-          setCatatanUmum("");
-        }
+        setRisks(rData);
       }
     } catch (error) {
       console.error("Fetch risks error", error);
@@ -155,7 +172,6 @@ export default function AuditRisikoPage() {
       rtp: cp.rtp || "",
       kesimpulan: cp.kesimpulan || (!risk.catatanPerKolom && risk.catatanAuditor ? risk.catatanAuditor : "")
     });
-    setActiveTab("all");
     setIsModalOpen(true);
   };
 
@@ -183,13 +199,16 @@ export default function AuditRisikoPage() {
         catatanUpdatedAt: new Date().toISOString()
       });
       
-      // Update local state
-      setRisks(prev => prev.map(r => r.id === selectedRisk.id ? { 
+      // Update local state (both active risks and archive)
+      const updateFn = (prev: any[]) => prev.map(r => r.id === selectedRisk.id ? { 
         ...r, 
-        catatanPerKolom: catatanKolom,
+        catatanPerKolom: catatanKolom, 
         catatanAuditor: combinedCatatan,
         catatanUpdatedAt: new Date().toISOString()
-      } : r));
+      } : r);
+
+      setRisks(updateFn);
+      setAllUnitRisks(updateFn);
       
       logActivity(user, "Audit", "Peta Risiko", `Memberikan catatan riviu detail pada risiko: ${selectedRisk.pernyataanRisiko}`);
       toast.success("Catatan riviu berhasil disimpan!", { id: toastId });
@@ -210,7 +229,8 @@ export default function AuditRisikoPage() {
 
     try {
       const cleanUnit = currentUnitName.trim();
-      const notesCount = risks.filter(r => r.catatanAuditor && r.catatanAuditor.trim() !== "").length;
+      const currentList = allUnitRisks.length > 0 ? allUnitRisks : risks;
+      const notesCount = currentList.filter(r => r.catatanAuditor && r.catatanAuditor.trim() !== "").length;
 
       const submissionData = {
         unitName: cleanUnit,
@@ -235,7 +255,7 @@ export default function AuditRisikoPage() {
       }
 
       // 2. Update flag pada setiap dokumen risiko secara aman
-      for (const r of risks) {
+      for (const r of currentList) {
         try {
           await updateDoc(doc(db, "mr_identifikasi", r.id), {
             catatanPublished: true,
@@ -250,10 +270,14 @@ export default function AuditRisikoPage() {
       }
 
       setSubmission(submissionData);
+      
+      // KOSONGKAN DATA PADA HALAMAN AUDIT KARENA SUDAH TIDAK ADA LAGI YANG HARUS DIAUDIT!
+      setRisks([]);
+      setShowArchive(false);
       setIsSendModalOpen(false);
 
       logActivity(user, "Kirim", "Audit", `Mengirim hasil riviu audit ke unit kerja: ${cleanUnit}`);
-      toast.success("Hasil riviu berhasil dikirim ke unit kerja! Catatan kini otomatis muncul di Inbox unit kerja.", { id: toastId });
+      toast.success("Hasil riviu berhasil dikirim ke unit kerja! Data telah dikosongkan karena sudah tidak ada lagi yang harus diaudit.", { id: toastId });
     } catch (error: any) {
       console.error("Gagal kirim ke unit", error);
       toast.error("Gagal mengirim hasil riviu: " + (error?.message || "Kesalahan tidak diketahui"), { id: toastId });
@@ -268,7 +292,8 @@ export default function AuditRisikoPage() {
 
   // Derived E2 list based on selected E1
   const availableE2 = units.filter(u => u.level === "eselon_2" && u.parentId === selectedE1);
-  const notesCount = risks.filter(r => r.catatanAuditor && r.catatanAuditor.trim() !== "").length;
+  const displayList = allUnitRisks.length > 0 ? allUnitRisks : risks;
+  const notesCount = displayList.filter(r => r.catatanAuditor && r.catatanAuditor.trim() !== "").length;
 
   // Daftar Definisi Kolom untuk Riviu Detail
   const COLUMN_SECTIONS = [
@@ -398,6 +423,8 @@ export default function AuditRisikoPage() {
     }
   ];
 
+  const isReviewed = submission?.status === "reviewed";
+
   return (
     <div className="space-y-6">
       <div>
@@ -469,13 +496,26 @@ export default function AuditRisikoPage() {
               <h3 className="font-bold text-lg text-slate-800">{currentUnitName}</h3>
             </div>
             <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
-              <span>Total Risiko: <strong className="text-slate-800">{risks.length}</strong></span>
-              <span>•</span>
-              <span>Diberi Catatan: <strong className="text-pink-600">{notesCount}</strong></span>
+              {isReviewed && !showArchive ? (
+                <>
+                  <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    Antrean Audit: <strong>Selesai (0 Risiko)</strong>
+                  </span>
+                  <span>•</span>
+                  <span>Total Risiko Unit: <strong className="text-slate-800">{allUnitRisks.length}</strong></span>
+                </>
+              ) : (
+                <>
+                  <span>Risiko Ditampilkan: <strong className="text-slate-800">{risks.length}</strong></span>
+                  <span>•</span>
+                  <span>Diberi Catatan: <strong className="text-pink-600">{notesCount}</strong></span>
+                </>
+              )}
               <span>•</span>
               <span className="flex items-center gap-1">
                 Status Dokumen: 
-                {submission?.status === "reviewed" ? (
+                {isReviewed ? (
                   <span className="inline-flex items-center text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                     <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
                     Telah Dikirim ke Unit
@@ -496,21 +536,98 @@ export default function AuditRisikoPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button 
-              onClick={() => setIsSendModalOpen(true)}
-              disabled={isLoading || risks.length === 0}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm font-medium"
-              size="default"
-            >
-              <Send className="w-4 h-4 mr-2" />
-              Kirim ke Unit Kerja
-            </Button>
+            {isReviewed ? (
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  if (showArchive) {
+                    setShowArchive(false);
+                    setRisks([]);
+                  } else {
+                    setShowArchive(true);
+                    setRisks(allUnitRisks);
+                  }
+                }}
+                className="text-slate-700 border-slate-300 hover:bg-slate-50 text-xs"
+              >
+                {showArchive ? <EyeOff className="w-4 h-4 mr-1.5" /> : <Eye className="w-4 h-4 mr-1.5" />}
+                {showArchive ? "Tutup Riwayat" : "Lihat Riwayat Terkirim"}
+              </Button>
+            ) : (
+              <Button 
+                onClick={() => setIsSendModalOpen(true)}
+                disabled={isLoading || risks.length === 0}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm font-medium"
+                size="default"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                Kirim ke Unit Kerja
+              </Button>
+            )}
           </div>
         </div>
       )}
 
+      {/* KONDISI 1: SUDAH DIKIRIM KE UNIT KERJA & DATA DIKOSONGKAN SESUAI PERMINTAAN */}
+      {currentUnitName && isReviewed && !showArchive && (
+        <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-10 text-center space-y-4 shadow-2xs animate-in fade-in">
+          <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+            <CheckCircle2 className="w-8 h-8" />
+          </div>
+          <div className="max-w-lg mx-auto space-y-2">
+            <h3 className="text-xl font-bold text-emerald-950">
+              Peta Risiko Telah Selesai Diaudit & Dikirim
+            </h3>
+            <p className="text-sm text-emerald-800">
+              Seluruh catatan riviu untuk <strong>{currentUnitName}</strong> Tahun <strong>{activeYear || new Date().getFullYear().toString()}</strong> telah berhasil dikirimkan ke unit kerja.
+            </p>
+            <div className="text-xs text-emerald-700 bg-white/80 py-2.5 px-4 rounded-lg border border-emerald-200/60 inline-block font-medium">
+              Saat ini <strong>tidak ada lagi data yang harus diaudit</strong> pada unit kerja ini. Menunggu proses perbaikan dari unit kerja.
+            </div>
+            {submission?.reviewedAt && (
+              <p className="text-xs text-slate-500 pt-1">
+                Dikirim pada: {new Date(submission.reviewedAt).toLocaleString("id-ID")} oleh {submission.reviewedBy || "Auditor APIP"}
+              </p>
+            )}
+          </div>
+          {allUnitRisks.length > 0 && (
+            <div className="pt-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => { setShowArchive(true); setRisks(allUnitRisks); }}
+                className="text-emerald-800 border-emerald-300 hover:bg-emerald-100/60 text-xs"
+              >
+                <FileCheck className="w-4 h-4 mr-1.5" />
+                Lihat Riwayat Dokumen yang Telah Dikirim ({allUnitRisks.length} Risiko)
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* KONDISI 2: DATA RISIKO DITAMPILKAN (AKTIF AUDIT ATAU MODE ARSIP) */}
       {risks.length > 0 && (
-        <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border shadow-sm overflow-hidden animate-in fade-in">
+          {showArchive && (
+            <div className="bg-amber-50 border-b border-amber-200 p-3 px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-amber-900">
+              <div className="flex items-center gap-2">
+                <span className="font-bold bg-amber-200 text-amber-950 px-2 py-0.5 rounded text-[11px]">
+                  Mode Arsip / Riwayat
+                </span>
+                <span>Dokumen ini telah selesai diaudit dan telah dikirim ke unit kerja.</span>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => { setShowArchive(false); setRisks([]); }}
+                className="text-amber-800 hover:bg-amber-100 text-xs h-7 self-start sm:self-auto"
+              >
+                Tutup Riwayat & Kosongkan Data
+              </Button>
+            </div>
+          )}
+
           <div className="p-4 bg-slate-50 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div>
               <span className="font-semibold text-slate-700 text-sm block">Daftar Risiko & Rencana Tindak Pengendalian (RTP)</span>
@@ -636,6 +753,19 @@ export default function AuditRisikoPage() {
           </div>
         </div>
       )}
+
+      {/* KONDISI 3: BELUM ADA DATA ATAU UNIT KERJA BELUM MENGAJUKAN */}
+      {currentUnitName && !isReviewed && risks.length === 0 && !isLoading && (
+        <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-8 text-center space-y-3">
+          <div className="w-14 h-14 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto">
+            <AlertCircle className="w-7 h-7" />
+          </div>
+          <h3 className="text-lg font-bold text-amber-900">Tidak Ada Antrean Risiko untuk Diaudit</h3>
+          <p className="text-sm text-amber-700 max-w-md mx-auto">
+            Unit kerja ini belum memiliki data risiko teridentifikasi atau belum mengirimkan Peta Risiko untuk Tahun {activeYear || new Date().getFullYear().toString()}.
+          </p>
+        </div>
+      )}
       
       {/* Modal Riviu Catatan Per Kolom Risiko */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -673,7 +803,7 @@ export default function AuditRisikoPage() {
 
           {/* Body Scrollable List of Columns */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-            {COLUMN_SECTIONS.map((sec, idx) => {
+            {COLUMN_SECTIONS.map((sec) => {
               const isFilled = !!sec.value && sec.value.trim() !== "";
 
               return (
@@ -754,7 +884,7 @@ export default function AuditRisikoPage() {
               Kirim Hasil Riviu ke Unit Kerja
             </DialogTitle>
             <DialogDescription>
-              Hasil evaluasi dan seluruh catatan riviu per kolom akan otomatis masuk ke menu <strong>Inbox Hasil Auditor</strong> pada unit kerja terkait.
+              Setelah dikirim, seluruh hasil evaluasi akan masuk ke Inbox unit kerja dan data antrean audit di halaman ini akan otomatis selesai/dikosongkan.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-3">
@@ -769,7 +899,7 @@ export default function AuditRisikoPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-emerald-800 font-medium">Total Risiko Diberi Catatan:</span>
-                <span className="font-bold text-pink-700">{notesCount} dari {risks.length} Risiko</span>
+                <span className="font-bold text-pink-700">{notesCount} dari {displayList.length} Risiko</span>
               </div>
             </div>
 
