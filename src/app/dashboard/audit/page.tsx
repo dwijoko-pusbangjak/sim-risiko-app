@@ -10,9 +10,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Search, MessageSquarePlus, CheckCircle, Send, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { Loader2, Search, MessageSquarePlus, CheckCircle, Send, CheckCircle2, Clock, AlertCircle, Edit3, Layers, FileCheck } from "lucide-react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/logger";
+
+interface CatatanKolomState {
+  sasaran: string;
+  pernyataanRisiko: string;
+  penyebab: string;
+  dampak: string;
+  pengendalian: string;
+  analisis: string;
+  rtp: string;
+  kesimpulan: string;
+}
+
+const INITIAL_CATATAN_KOLOM: CatatanKolomState = {
+  sasaran: "",
+  pernyataanRisiko: "",
+  penyebab: "",
+  dampak: "",
+  pengendalian: "",
+  analisis: "",
+  rtp: "",
+  kesimpulan: ""
+};
 
 export default function AuditRisikoPage() {
   const { user, activeYear, loading: authLoading } = useAuth();
@@ -28,10 +50,11 @@ export default function AuditRisikoPage() {
   const [submission, setSubmission] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Riviu Modal (Per Risiko)
+  // Riviu Modal (Per Risiko Detail per Kolom)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRisk, setSelectedRisk] = useState<any>(null);
-  const [catatan, setCatatan] = useState("");
+  const [catatanKolom, setCatatanKolom] = useState<CatatanKolomState>(INITIAL_CATATAN_KOLOM);
+  const [activeTab, setActiveTab] = useState<string>("all");
   const [isSaving, setIsSaving] = useState(false);
 
   // Kirim ke Unit Kerja Modal (Batch / Finalisasi)
@@ -121,7 +144,18 @@ export default function AuditRisikoPage() {
 
   const openRiviuModal = (risk: any) => {
     setSelectedRisk(risk);
-    setCatatan(risk.catatanAuditor || "");
+    const cp = risk.catatanPerKolom || {};
+    setCatatanKolom({
+      sasaran: cp.sasaran || "",
+      pernyataanRisiko: cp.pernyataanRisiko || "",
+      penyebab: cp.penyebab || "",
+      dampak: cp.dampak || "",
+      pengendalian: cp.pengendalian || "",
+      analisis: cp.analisis || "",
+      rtp: cp.rtp || "",
+      kesimpulan: cp.kesimpulan || (!risk.catatanPerKolom && risk.catatanAuditor ? risk.catatanAuditor : "")
+    });
+    setActiveTab("all");
     setIsModalOpen(true);
   };
 
@@ -130,16 +164,35 @@ export default function AuditRisikoPage() {
     setIsSaving(true);
     const toastId = toast.loading("Menyimpan catatan auditor...");
     try {
+      // 1. Susun catatanAuditor gabungan untuk backward compatibility
+      const summaryNotes: string[] = [];
+      if (catatanKolom.sasaran?.trim()) summaryNotes.push(`• [Sasaran & Indikator]: ${catatanKolom.sasaran.trim()}`);
+      if (catatanKolom.pernyataanRisiko?.trim()) summaryNotes.push(`• [Pernyataan Risiko]: ${catatanKolom.pernyataanRisiko.trim()}`);
+      if (catatanKolom.penyebab?.trim()) summaryNotes.push(`• [Penyebab]: ${catatanKolom.penyebab.trim()}`);
+      if (catatanKolom.dampak?.trim()) summaryNotes.push(`• [Dampak]: ${catatanKolom.dampak.trim()}`);
+      if (catatanKolom.pengendalian?.trim()) summaryNotes.push(`• [Pengendalian]: ${catatanKolom.pengendalian.trim()}`);
+      if (catatanKolom.analisis?.trim()) summaryNotes.push(`• [Analisis]: ${catatanKolom.analisis.trim()}`);
+      if (catatanKolom.rtp?.trim()) summaryNotes.push(`• [RTP]: ${catatanKolom.rtp.trim()}`);
+      if (catatanKolom.kesimpulan?.trim()) summaryNotes.push(`• [Kesimpulan]: ${catatanKolom.kesimpulan.trim()}`);
+
+      const combinedCatatan = summaryNotes.join("\n\n");
+
       await updateDoc(doc(db, "mr_identifikasi", selectedRisk.id), {
-        catatanAuditor: catatan,
+        catatanPerKolom: catatanKolom,
+        catatanAuditor: combinedCatatan,
         catatanUpdatedAt: new Date().toISOString()
       });
       
       // Update local state
-      setRisks(prev => prev.map(r => r.id === selectedRisk.id ? { ...r, catatanAuditor: catatan } : r));
+      setRisks(prev => prev.map(r => r.id === selectedRisk.id ? { 
+        ...r, 
+        catatanPerKolom: catatanKolom,
+        catatanAuditor: combinedCatatan,
+        catatanUpdatedAt: new Date().toISOString()
+      } : r));
       
-      logActivity(user, "Audit", "Peta Risiko", `Memberikan catatan riviu pada risiko: ${selectedRisk.pernyataanRisiko}`);
-      toast.success("Catatan auditor berhasil disimpan!", { id: toastId });
+      logActivity(user, "Audit", "Peta Risiko", `Memberikan catatan riviu detail pada risiko: ${selectedRisk.pernyataanRisiko}`);
+      toast.success("Catatan riviu berhasil disimpan!", { id: toastId });
       setIsModalOpen(false);
     } catch (error) {
       console.error("Save riviu error", error);
@@ -170,7 +223,7 @@ export default function AuditRisikoPage() {
         isPublishedToInbox: true
       };
 
-      // 1. Simpan ke audit_submissions (pakai format cleanDocId dan legacyDocId agar kompatibel 100%)
+      // 1. Simpan ke audit_submissions
       const cleanDocId = `${cleanUnit.replace(/[^a-zA-Z0-9]/g, '_')}_${safeYear}`;
       await setDoc(doc(db, "audit_submissions", cleanDocId), submissionData, { merge: true });
 
@@ -181,7 +234,7 @@ export default function AuditRisikoPage() {
         } catch (e) {}
       }
 
-      // 2. Update flag pada dokumen risiko
+      // 2. Update flag pada setiap dokumen risiko secara aman
       for (const r of risks) {
         try {
           await updateDoc(doc(db, "mr_identifikasi", r.id), {
@@ -217,11 +270,139 @@ export default function AuditRisikoPage() {
   const availableE2 = units.filter(u => u.level === "eselon_2" && u.parentId === selectedE1);
   const notesCount = risks.filter(r => r.catatanAuditor && r.catatanAuditor.trim() !== "").length;
 
+  // Daftar Definisi Kolom untuk Riviu Detail
+  const COLUMN_SECTIONS = [
+    {
+      id: "sasaran",
+      title: "1. Sasaran & Indikator Kinerja",
+      desc: "Kesesuaian sasaran strategis/program/kegiatan dan indikator kinerja",
+      renderValue: () => (
+        <div className="space-y-1">
+          <div><span className="font-semibold text-slate-600">Sasaran Terkait:</span> {selectedRisk?.sasaranTerkait || "-"}</div>
+          <div><span className="font-semibold text-slate-600">Indikator Kinerja:</span> {selectedRisk?.indikatorKinerja || "-"}</div>
+        </div>
+      ),
+      value: catatanKolom.sasaran,
+      setValue: (val: string) => setCatatanKolom(prev => ({ ...prev, sasaran: val })),
+      placeholder: "Tuliskan catatan evaluasi sasaran atau indikator kinerja..."
+    },
+    {
+      id: "pernyataanRisiko",
+      title: "2. Pernyataan Risiko & Kategori",
+      desc: "Ketepatan rumusan pernyataan risiko (peristiwa yang berpotensi menghambat) dan kategorisasinya",
+      renderValue: () => (
+        <div className="space-y-1">
+          <div><span className="font-semibold text-slate-600">Pernyataan Risiko:</span> <strong className="text-slate-900">{selectedRisk?.pernyataanRisiko || "-"}</strong></div>
+          <div><span className="font-semibold text-slate-600">Kategori:</span> {selectedRisk?.kategori || "-"}</div>
+          <div><span className="font-semibold text-slate-600">Permasalahan:</span> {selectedRisk?.permasalahan || "-"}</div>
+        </div>
+      ),
+      value: catatanKolom.pernyataanRisiko,
+      setValue: (val: string) => setCatatanKolom(prev => ({ ...prev, pernyataanRisiko: val })),
+      placeholder: "Tuliskan catatan evaluasi rumusan pernyataan risiko atau kategori..."
+    },
+    {
+      id: "penyebab",
+      title: "3. Penyebab Risiko",
+      desc: "Ketepatan identifikasi akar penyebab, sumber (Internal/Eksternal), dan sifat pengendalian (C/UC)",
+      renderValue: () => (
+        <div className="space-y-1">
+          <div><span className="font-semibold text-slate-600">Uraian Penyebab:</span> {selectedRisk?.uraianPenyebab || "-"}</div>
+          <div className="flex flex-wrap gap-4 text-xs mt-1">
+            <span><span className="font-semibold text-slate-600">Sumber:</span> {selectedRisk?.sumberPenyebab || "-"}</span>
+            <span><span className="font-semibold text-slate-600">Sifat Pengendalian:</span> {selectedRisk?.sifatPenyebab || "-"}</span>
+          </div>
+        </div>
+      ),
+      value: catatanKolom.penyebab,
+      setValue: (val: string) => setCatatanKolom(prev => ({ ...prev, penyebab: val })),
+      placeholder: "Tuliskan catatan evaluasi akar penyebab, sumber, atau sifat pengendalian..."
+    },
+    {
+      id: "dampak",
+      title: "4. Dampak Risiko & Pihak Terdampak",
+      desc: "Ketepatan deskripsi konsekuensi/dampak negatif dan identifikasi pihak terdampak",
+      renderValue: () => (
+        <div className="space-y-1">
+          <div><span className="font-semibold text-slate-600">Uraian Dampak:</span> {selectedRisk?.uraianDampak || "-"}</div>
+          <div><span className="font-semibold text-slate-600">Pihak Terdampak:</span> {selectedRisk?.pihakTerdampak || "-"}</div>
+        </div>
+      ),
+      value: catatanKolom.dampak,
+      setValue: (val: string) => setCatatanKolom(prev => ({ ...prev, dampak: val })),
+      placeholder: "Tuliskan catatan evaluasi uraian dampak atau pihak yang terdampak..."
+    },
+    {
+      id: "pengendalian",
+      title: "5. Pengendalian yang Ada & Sisa Risiko",
+      desc: "Efektivitas sistem pengendalian yang sudah ada, kecukupan penilaian, serta sisa risiko",
+      renderValue: () => (
+        <div className="space-y-1">
+          <div><span className="font-semibold text-slate-600">Pengendalian Saat Ini:</span> {selectedRisk?.pengendalianAda || "-"}</div>
+          <div className="flex flex-wrap gap-4 text-xs mt-1">
+            <span><span className="font-semibold text-slate-600">Penilaian:</span> {selectedRisk?.penilaianPengendalian || "-"}</span>
+            <span><span className="font-semibold text-slate-600">Sisa Risiko:</span> {selectedRisk?.sisaRisiko || "-"}</span>
+          </div>
+        </div>
+      ),
+      value: catatanKolom.pengendalian,
+      setValue: (val: string) => setCatatanKolom(prev => ({ ...prev, pengendalian: val })),
+      placeholder: "Tuliskan catatan evaluasi sistem pengendalian yang ada atau sisa risiko..."
+    },
+    {
+      id: "analisis",
+      title: "6. Analisis Risiko (Kemungkinan & Dampak)",
+      desc: "Validitas penilaian skala kemungkinan (K), dampak (D), besaran skor, dan penetapan level risiko",
+      renderValue: () => (
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="bg-slate-200/70 px-2 py-1 rounded text-xs">Kemungkinan (K): <strong>{selectedRisk?.levelKemungkinan || "-"}</strong></span>
+          <span className="bg-slate-200/70 px-2 py-1 rounded text-xs">Dampak (D): <strong>{selectedRisk?.levelDampak || "-"}</strong></span>
+          <span className="bg-slate-200/70 px-2 py-1 rounded text-xs">Skor Besaran: <strong>{selectedRisk?.besaranRisiko || "-"}</strong></span>
+          <span className="bg-indigo-100 text-indigo-800 font-bold px-2 py-1 rounded text-xs">Level: {selectedRisk?.levelRisiko || "-"}</span>
+        </div>
+      ),
+      value: catatanKolom.analisis,
+      setValue: (val: string) => setCatatanKolom(prev => ({ ...prev, analisis: val })),
+      placeholder: "Tuliskan catatan evaluasi penilaian probabilitas, dampak, atau level risiko..."
+    },
+    {
+      id: "rtp",
+      title: "7. Rencana Tindak Pengendalian (RTP)",
+      desc: "Kelayakan rencana mitigasi, kejelasan penanggung jawab, serta realitas target waktu pelaksanaan",
+      renderValue: () => (
+        selectedRisk?.rtpList && selectedRisk.rtpList.length > 0 ? (
+          <div className="space-y-1.5">
+            {selectedRisk.rtpList.map((x: any, i: number) => (
+              <div key={i} className="text-xs bg-white p-2 rounded border border-slate-200">
+                <div className="font-semibold text-slate-800">• {x.rencana}</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">PJ: <strong>{x.penanggungjawab || "-"}</strong> | Target: <strong>{x.targetWaktu || "-"}</strong></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-xs text-slate-400 italic">Belum ada RTP yang diinput pada risiko ini.</div>
+        )
+      ),
+      value: catatanKolom.rtp,
+      setValue: (val: string) => setCatatanKolom(prev => ({ ...prev, rtp: val })),
+      placeholder: "Tuliskan catatan evaluasi rencana tindak pengendalian (RTP), PJ, atau target waktu..."
+    },
+    {
+      id: "kesimpulan",
+      title: "8. Kesimpulan & Rekomendasi Tambahan",
+      desc: "Kesimpulan umum atau arahan strategis auditor untuk risiko ini",
+      renderValue: () => null,
+      value: catatanKolom.kesimpulan,
+      setValue: (val: string) => setCatatanKolom(prev => ({ ...prev, kesimpulan: val })),
+      placeholder: "Tuliskan arahan umum atau kesimpulan untuk risiko ini..."
+    }
+  ];
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-slate-800">Audit Risiko</h2>
-        <p className="text-slate-500">Riviu dan berikan catatan evaluasi atas Peta Risiko dan RTP unit kerja, lalu kirimkan hasil riviu ke unit kerja.</p>
+        <p className="text-slate-500">Riviu detail setiap kolom pada Peta Risiko dan RTP unit kerja, lalu kirimkan hasil evaluasi ke unit kerja.</p>
       </div>
 
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
@@ -330,9 +511,14 @@ export default function AuditRisikoPage() {
 
       {risks.length > 0 && (
         <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
-          <div className="p-4 bg-slate-50 border-b flex justify-between items-center">
-            <span className="font-semibold text-slate-700 text-sm">Daftar Risiko & Rencana Tindak Pengendalian (RTP)</span>
-            <span className="text-xs text-slate-500">Klik tombol &ldquo;Riviu&rdquo; untuk memberikan catatan pada masing-masing risiko</span>
+          <div className="p-4 bg-slate-50 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <div>
+              <span className="font-semibold text-slate-700 text-sm block">Daftar Risiko & Rencana Tindak Pengendalian (RTP)</span>
+              <span className="text-xs text-slate-500">Klik tombol &ldquo;Riviu Detail&rdquo; untuk memeriksa dan memberi catatan spesifik per kolom</span>
+            </div>
+            <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-100">
+              {risks.length} Risiko Teridentifikasi
+            </span>
           </div>
           <div className="overflow-x-auto">
             <Table>
@@ -341,114 +527,220 @@ export default function AuditRisikoPage() {
                   <TableHead className="w-[18%]">Sasaran / IKU</TableHead>
                   <TableHead className="w-[22%]">Pernyataan Risiko & Sebab</TableHead>
                   <TableHead className="w-[10%] text-center">Level Risiko</TableHead>
-                  <TableHead className="w-[24%]">Rencana Tindak Pengendalian (RTP)</TableHead>
-                  <TableHead className="w-[16%] text-center">Catatan Auditor</TableHead>
+                  <TableHead className="w-[22%]">Rencana Tindak Pengendalian (RTP)</TableHead>
+                  <TableHead className="w-[18%] text-center">Catatan Auditor (Per Kolom)</TableHead>
                   <TableHead className="w-[10%] text-center">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {risks.map((r) => (
-                  <TableRow key={r.id} className="hover:bg-slate-50/70">
-                    <TableCell className="align-top">
-                      <div className="font-semibold text-slate-800 line-clamp-3">{r.sasaranTerkait || "-"}</div>
-                      <div className="text-xs text-slate-500 mt-1 line-clamp-3">{r.indikatorKinerja || "-"}</div>
-                    </TableCell>
-                    <TableCell className="align-top">
-                      <div className="font-medium text-slate-900">{r.pernyataanRisiko}</div>
-                      {r.uraianPenyebab && (
-                        <div className="text-xs text-slate-500 mt-1.5 bg-slate-50 p-1.5 rounded border border-slate-100">
-                          <span className="font-semibold text-slate-600">Penyebab: </span>
-                          {r.uraianPenyebab}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="align-top text-center">
-                      <span className={`px-2 py-1 rounded-md text-xs font-bold inline-block ${
-                        r.levelRisiko === 'Sangat Tinggi' ? 'bg-red-100 text-red-800' :
-                        r.levelRisiko === 'Tinggi' ? 'bg-orange-100 text-orange-800' :
-                        r.levelRisiko === 'Sedang' ? 'bg-yellow-100 text-yellow-800' :
-                        r.levelRisiko === 'Rendah' ? 'bg-green-100 text-green-800' :
-                        'bg-blue-100 text-blue-800'
-                      }`}>
-                        {r.levelRisiko || "-"}
-                      </span>
-                      {r.besaranRisiko ? (
-                        <div className="text-[11px] text-slate-400 mt-1 font-mono">Skor: {r.besaranRisiko}</div>
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="align-top">
-                      {r.rtpList && r.rtpList.length > 0 ? (
-                        <div className="space-y-2">
-                          {r.rtpList.map((rtp: any, idx: number) => (
-                            <div key={idx} className="text-xs bg-slate-50 p-2 rounded border border-slate-100">
-                              <div className="font-medium text-slate-800">• {rtp.rencana}</div>
-                              {(rtp.penanggungjawab || rtp.targetWaktu) && (
-                                <div className="text-[11px] text-slate-500 mt-1 flex flex-wrap gap-2">
-                                  {rtp.penanggungjawab && <span>PJ: <strong>{rtp.penanggungjawab}</strong></span>}
-                                  {rtp.targetWaktu && <span>Target: <strong>{rtp.targetWaktu}</strong></span>}
-                                </div>
-                              )}
+                {risks.map((r) => {
+                  const cp = r.catatanPerKolom;
+                  const activeColsCount = cp ? Object.values(cp).filter((v: any) => v && v.trim() !== "").length : 0;
+
+                  return (
+                    <TableRow key={r.id} className="hover:bg-slate-50/70">
+                      <TableCell className="align-top">
+                        <div className="font-semibold text-slate-800 line-clamp-3">{r.sasaranTerkait || "-"}</div>
+                        <div className="text-xs text-slate-500 mt-1 line-clamp-3">{r.indikatorKinerja || "-"}</div>
+                      </TableCell>
+                      <TableCell className="align-top">
+                        <div className="font-medium text-slate-900">{r.pernyataanRisiko}</div>
+                        {r.uraianPenyebab && (
+                          <div className="text-xs text-slate-500 mt-1.5 bg-slate-50 p-1.5 rounded border border-slate-100">
+                            <span className="font-semibold text-slate-600">Penyebab: </span>
+                            {r.uraianPenyebab}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="align-top text-center">
+                        <span className={`px-2 py-1 rounded-md text-xs font-bold inline-block ${
+                          r.levelRisiko === 'Sangat Tinggi' ? 'bg-red-100 text-red-800' :
+                          r.levelRisiko === 'Tinggi' ? 'bg-orange-100 text-orange-800' :
+                          r.levelRisiko === 'Sedang' ? 'bg-yellow-100 text-yellow-800' :
+                          r.levelRisiko === 'Rendah' ? 'bg-green-100 text-green-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {r.levelRisiko || "-"}
+                        </span>
+                        {r.besaranRisiko ? (
+                          <div className="text-[11px] text-slate-400 mt-1 font-mono">Skor: {r.besaranRisiko}</div>
+                        ) : null}
+                      </TableCell>
+                      <TableCell className="align-top">
+                        {r.rtpList && r.rtpList.length > 0 ? (
+                          <div className="space-y-2">
+                            {r.rtpList.map((rtp: any, idx: number) => (
+                              <div key={idx} className="text-xs bg-slate-50 p-2 rounded border border-slate-100">
+                                <div className="font-medium text-slate-800">• {rtp.rencana}</div>
+                                {(rtp.penanggungjawab || rtp.targetWaktu) && (
+                                  <div className="text-[11px] text-slate-500 mt-1 flex flex-wrap gap-2">
+                                    {rtp.penanggungjawab && <span>PJ: <strong>{rtp.penanggungjawab}</strong></span>}
+                                    {rtp.targetWaktu && <span>Target: <strong>{rtp.targetWaktu}</strong></span>}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic text-xs">Tidak ada RTP</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="align-top text-xs">
+                        {activeColsCount > 0 ? (
+                          <div className="space-y-1.5">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-pink-100 text-pink-800">
+                              {activeColsCount} Kolom Diberi Catatan
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              {cp?.sasaran?.trim() && <span className="bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 rounded">Sasaran</span>}
+                              {cp?.pernyataanRisiko?.trim() && <span className="bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 rounded">Risiko</span>}
+                              {cp?.penyebab?.trim() && <span className="bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 rounded">Penyebab</span>}
+                              {cp?.dampak?.trim() && <span className="bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 rounded">Dampak</span>}
+                              {cp?.pengendalian?.trim() && <span className="bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 rounded">Pengendalian</span>}
+                              {cp?.analisis?.trim() && <span className="bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 rounded">Analisis</span>}
+                              {cp?.rtp?.trim() && <span className="bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 rounded">RTP</span>}
+                              {cp?.kesimpulan?.trim() && <span className="bg-purple-100 text-purple-700 text-[10px] px-1.5 py-0.5 rounded">Kesimpulan</span>}
                             </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 italic text-xs">Tidak ada RTP</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="align-top text-xs">
-                      {r.catatanAuditor ? (
-                        <div className="p-2.5 bg-pink-50 border border-pink-200 rounded-lg text-pink-900 break-words whitespace-pre-wrap shadow-2xs">
-                          {r.catatanAuditor}
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 italic block text-center">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="align-top text-center">
-                      <Button onClick={() => openRiviuModal(r)} variant="outline" size="sm" className="border-pink-200 text-pink-700 hover:bg-pink-50 hover:text-pink-800">
-                        {r.catatanAuditor ? <CheckCircle className="w-3.5 h-3.5 mr-1.5" /> : <MessageSquarePlus className="w-3.5 h-3.5 mr-1.5" />}
-                        Riviu
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                            <div className="p-2 bg-pink-50/70 border border-pink-200 rounded text-pink-900 line-clamp-2 text-[11px]">
+                              {r.catatanAuditor}
+                            </div>
+                          </div>
+                        ) : r.catatanAuditor ? (
+                          <div className="p-2 bg-pink-50 border border-pink-200 rounded text-pink-900 line-clamp-3">
+                            {r.catatanAuditor}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic block text-center">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="align-top text-center">
+                        <Button 
+                          onClick={() => openRiviuModal(r)} 
+                          variant="outline" 
+                          size="sm" 
+                          className="border-pink-200 text-pink-700 hover:bg-pink-50 hover:text-pink-800 whitespace-nowrap"
+                        >
+                          {activeColsCount > 0 || r.catatanAuditor ? (
+                            <CheckCircle className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                          ) : (
+                            <Edit3 className="w-3.5 h-3.5 mr-1" />
+                          )}
+                          Riviu Detail
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
         </div>
       )}
       
-      {/* Modal Riviu Catatan Per Risiko */}
+      {/* Modal Riviu Catatan Per Kolom Risiko */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Berikan Catatan Riviu</DialogTitle>
-            <DialogDescription>
-              Catatan ini akan tersimpan dan nantinya dikirimkan ke unit kerja ketika Anda menekan &ldquo;Kirim ke Unit Kerja&rdquo;.
-            </DialogDescription>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-3 border-b bg-slate-50/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <FileCheck className="w-5 h-5 text-pink-600" />
+                  Riviu Detail per Kolom Risiko
+                </DialogTitle>
+                <DialogDescription className="text-xs text-slate-500 mt-1">
+                  Berikan catatan spesifik pada masing-masing kolom agar perbaikan oleh unit kerja lebih terarah.
+                </DialogDescription>
+              </div>
+            </div>
+            {selectedRisk && (
+              <div className="mt-3 p-2.5 bg-white border border-slate-200 rounded-lg text-xs flex flex-wrap items-center justify-between gap-2 shadow-2xs">
+                <div>
+                  <span className="text-slate-500 font-medium">Risiko: </span>
+                  <span className="font-bold text-slate-800">{selectedRisk.pernyataanRisiko}</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                  selectedRisk.levelRisiko === 'Sangat Tinggi' ? 'bg-red-100 text-red-800' :
+                  selectedRisk.levelRisiko === 'Tinggi' ? 'bg-orange-100 text-orange-800' :
+                  selectedRisk.levelRisiko === 'Sedang' ? 'bg-yellow-100 text-yellow-800' :
+                  selectedRisk.levelRisiko === 'Rendah' ? 'bg-green-100 text-green-800' :
+                  'bg-blue-100 text-blue-800'
+                }`}>
+                  Level: {selectedRisk.levelRisiko || "-"}
+                </span>
+              </div>
+            )}
           </DialogHeader>
-          <div className="space-y-4 py-3">
-            <div className="bg-slate-50 p-3 rounded-lg border text-sm">
-              <span className="font-semibold block text-slate-600 mb-1">Pernyataan Risiko:</span>
-              <span className="text-slate-800">{selectedRisk?.pernyataanRisiko}</span>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="catatan-auditor">Catatan Auditor</Label>
-              <Textarea 
-                id="catatan-auditor"
-                value={catatan}
-                onChange={(e) => setCatatan(e.target.value)}
-                placeholder="Tuliskan catatan perbaikan atau evaluasi di sini..."
-                className="min-h-[140px]"
-              />
-            </div>
+
+          {/* Body Scrollable List of Columns */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+            {COLUMN_SECTIONS.map((sec, idx) => {
+              const isFilled = !!sec.value && sec.value.trim() !== "";
+
+              return (
+                <div 
+                  key={sec.id} 
+                  id={`sec-${sec.id}`}
+                  className={`border rounded-xl p-4 transition-all ${
+                    isFilled 
+                      ? "border-pink-300 bg-pink-50/20 shadow-xs" 
+                      : "border-slate-200 bg-white"
+                  }`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2 pb-2 border-b border-slate-100">
+                    <div>
+                      <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                        {sec.title}
+                        {isFilled && (
+                          <span className="text-[10px] bg-pink-100 text-pink-700 font-bold px-2 py-0.5 rounded-full border border-pink-200">
+                            ✓ Diberi Catatan
+                          </span>
+                        )}
+                      </h4>
+                      <p className="text-xs text-slate-500">{sec.desc}</p>
+                    </div>
+                  </div>
+
+                  {/* Nilai data dari unit kerja */}
+                  {sec.renderValue() && (
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-700 mb-3 space-y-1">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                        Data Isian Unit Kerja:
+                      </span>
+                      {sec.renderValue()}
+                    </div>
+                  )}
+
+                  {/* Input Catatan Auditor untuk Kolom Ini */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`input-${sec.id}`} className="text-xs font-semibold text-slate-700">
+                      Catatan Riviu Auditor untuk Kolom Ini:
+                    </Label>
+                    <Textarea 
+                      id={`input-${sec.id}`}
+                      value={sec.value}
+                      onChange={(e) => sec.setValue(e.target.value)}
+                      placeholder={sec.placeholder}
+                      className="text-xs min-h-[75px] bg-white border-slate-300 focus:border-pink-500"
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>Batal</Button>
-            <Button onClick={handleSaveRiviu} disabled={isSaving} className="bg-pink-600 hover:bg-pink-700">
-              {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-2" />}
-              Simpan Catatan
-            </Button>
+
+          <DialogFooter className="p-4 border-t bg-slate-50/80 flex justify-between items-center">
+            <span className="text-xs text-slate-500">
+              Total kolom diberi catatan: <strong className="text-pink-600">
+                {Object.values(catatanKolom).filter(v => v && v.trim() !== "").length} dari {COLUMN_SECTIONS.length}
+              </strong>
+            </span>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => setIsModalOpen(false)}>Batal</Button>
+              <Button onClick={handleSaveRiviu} disabled={isSaving} className="bg-pink-600 hover:bg-pink-700 text-white">
+                {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+                Simpan Catatan
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -462,7 +754,7 @@ export default function AuditRisikoPage() {
               Kirim Hasil Riviu ke Unit Kerja
             </DialogTitle>
             <DialogDescription>
-              Hasil evaluasi dan seluruh catatan riviu akan otomatis masuk ke menu <strong>Inbox Hasil Auditor</strong> pada unit kerja terkait.
+              Hasil evaluasi dan seluruh catatan riviu per kolom akan otomatis masuk ke menu <strong>Inbox Hasil Auditor</strong> pada unit kerja terkait.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-3">
@@ -487,7 +779,7 @@ export default function AuditRisikoPage() {
                 id="catatan-umum"
                 value={catatanUmum}
                 onChange={(e) => setCatatanUmum(e.target.value)}
-                placeholder="Contoh: Secara umum sudah baik, mohon perbaiki rumusan penyebab risiko nomor 2 dan lengkapi target waktu pada RTP..."
+                placeholder="Contoh: Secara umum rumusan risiko sudah baik, mohon perbaiki rumusan penyebab risiko nomor 2 dan lengkapi target waktu pada RTP..."
                 className="min-h-[100px]"
               />
             </div>

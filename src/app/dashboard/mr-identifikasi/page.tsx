@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Loader2, Save, Plus, Pencil, Trash2, X } from "lucide-react";
+import { Loader2, Save, Plus, Pencil, Trash2, X, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 interface Indikator { name: string; target: string; }
@@ -36,6 +36,8 @@ interface IdentifikasiRisiko {
   pengendalianAda: string;
   penilaianPengendalian: string;
   sisaRisiko: string;
+  catatanAuditor?: string;
+  catatanPerKolom?: any;
 }
 
 // Native Firebase doc id will be used instead of manual uuidv4
@@ -185,6 +187,8 @@ export default function IdentifikasiRisikoPage() {
       pengendalianAda: "",
       penilaianPengendalian: "",
       sisaRisiko: "",
+      catatanAuditor: "",
+      catatanPerKolom: undefined,
     });
     setIsEditMode(false);
   };
@@ -402,6 +406,24 @@ export default function IdentifikasiRisikoPage() {
             </Button>
           </div>
 
+          {formData.catatanAuditor && (
+            <div className="bg-pink-50 border border-pink-200 rounded-xl p-4 mb-6 shadow-2xs">
+              <div className="flex items-center gap-2 font-bold text-pink-900 text-sm mb-1">
+                <AlertCircle className="w-4 h-4 text-pink-600" />
+                Catatan Evaluasi / Riviu dari Auditor APIP
+              </div>
+              <p className="text-xs text-slate-700 mb-2">
+                Auditor APIP telah memberikan catatan evaluasi untuk risiko ini. Perhatikan catatan pada kolom-kolom terkait di bawah untuk melakukan revisi.
+              </p>
+              {formData.catatanPerKolom?.kesimpulan && (
+                <div className="bg-white/80 p-2.5 rounded border border-pink-200/60 text-xs text-pink-950">
+                  <strong className="text-pink-800 block mb-0.5">Catatan Umum / Kesimpulan Auditor:</strong>
+                  {formData.catatanPerKolom.kesimpulan}
+                </div>
+              )}
+            </div>
+          )}
+
           <form onSubmit={handleSave} className="space-y-8">
             
             {/* Bagian 1: Kinerja & Permasalahan */}
@@ -428,6 +450,14 @@ export default function IdentifikasiRisikoPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {formData.catatanPerKolom?.sasaran && (
+                    <div className="p-2 bg-pink-50 border border-pink-200 rounded text-xs text-pink-900 mt-1 flex items-start gap-1.5">
+                      <AlertCircle className="w-4 h-4 text-pink-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong>Catatan Auditor: </strong> {formData.catatanPerKolom.sasaran}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -467,6 +497,14 @@ export default function IdentifikasiRisikoPage() {
                   onChange={(e) => setFormData({...formData, pernyataanRisiko: e.target.value})}
                   required
                 />
+                {formData.catatanPerKolom?.pernyataanRisiko && (
+                  <div className="p-2 bg-pink-50 border border-pink-200 rounded text-xs text-pink-900 mt-1 flex items-start gap-1.5">
+                    <AlertCircle className="w-4 h-4 text-pink-600 shrink-0 mt-0.5" />
+                    <div>
+                      <strong>Catatan Auditor: </strong> {formData.catatanPerKolom.pernyataanRisiko}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -517,6 +555,14 @@ export default function IdentifikasiRisikoPage() {
                     onChange={(e) => setFormData({...formData, uraianPenyebab: e.target.value})}
                     required
                   />
+                  {formData.catatanPerKolom?.penyebab && (
+                    <div className="p-2 bg-pink-50 border border-pink-200 rounded text-xs text-pink-900 mt-1 flex items-start gap-1.5">
+                      <AlertCircle className="w-4 h-4 text-pink-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong>Catatan Auditor: </strong> {formData.catatanPerKolom.penyebab}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -558,6 +604,14 @@ export default function IdentifikasiRisikoPage() {
                     onChange={(e) => setFormData({...formData, uraianDampak: e.target.value})}
                     required
                   />
+                  {formData.catatanPerKolom?.dampak && (
+                    <div className="p-2 bg-pink-50 border border-pink-200 rounded text-xs text-pink-900 mt-1 flex items-start gap-1.5">
+                      <AlertCircle className="w-4 h-4 text-pink-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong>Catatan Auditor: </strong> {formData.catatanPerKolom.dampak}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -586,6 +640,14 @@ export default function IdentifikasiRisikoPage() {
                   onChange={(e) => setFormData({...formData, pengendalianAda: e.target.value})}
                   required
                 />
+                {formData.catatanPerKolom?.pengendalian && (
+                  <div className="p-2 bg-pink-50 border border-pink-200 rounded text-xs text-pink-900 mt-1 flex items-start gap-1.5">
+                    <AlertCircle className="w-4 h-4 text-pink-600 shrink-0 mt-0.5" />
+                    <div>
+                      <strong>Catatan Auditor: </strong> {formData.catatanPerKolom.pengendalian}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

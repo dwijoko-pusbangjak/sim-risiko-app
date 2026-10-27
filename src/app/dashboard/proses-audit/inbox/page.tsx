@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, MessageSquareWarning, AlertCircle, CheckCircle2, Clock, Send, ArrowRight, ShieldCheck, RefreshCw } from "lucide-react";
+import { Loader2, MessageSquareWarning, AlertCircle, CheckCircle2, Clock, Send, ArrowRight, ShieldCheck, RefreshCw, FileText, Check } from "lucide-react";
 import Link from "next/link";
 
 export default function InboxAuditorPage() {
@@ -30,7 +30,7 @@ export default function InboxAuditorPage() {
       const unitName = user.unitName;
       const cleanUnit = unitName.trim();
 
-      // 1. Ambil data submission status (coba query collection dulu, lalu docId)
+      // 1. Ambil data submission status
       let sub: any = null;
       try {
         const subQ = query(
@@ -79,12 +79,14 @@ export default function InboxAuditorPage() {
         const snap = await getDocs(q);
         snap.forEach(d => {
           const r = { id: d.id, ...d.data() };
-          if (r.catatanAuditor && r.catatanAuditor.trim() !== "") {
+          const hasColNotes = r.catatanPerKolom && Object.values(r.catatanPerKolom).some((v: any) => v && v.trim() !== "");
+          const hasLegacyNotes = r.catatanAuditor && r.catatanAuditor.trim() !== "";
+          if (hasColNotes || hasLegacyNotes) {
             foundRisks.push(r);
           }
         });
 
-        // Jika 0 hasil dan nama unit punya spasi di awal/akhir, coba query dengan cleanUnit
+        // Fallback query jika cleanUnit berbeda
         if (foundRisks.length === 0 && cleanUnit !== unitName) {
           const q2 = query(
             collection(db, "mr_identifikasi"),
@@ -94,7 +96,9 @@ export default function InboxAuditorPage() {
           const snap2 = await getDocs(q2);
           snap2.forEach(d => {
             const r = { id: d.id, ...d.data() };
-            if (r.catatanAuditor && r.catatanAuditor.trim() !== "") {
+            const hasColNotes = r.catatanPerKolom && Object.values(r.catatanPerKolom).some((v: any) => v && v.trim() !== "");
+            const hasLegacyNotes = r.catatanAuditor && r.catatanAuditor.trim() !== "";
+            if (hasColNotes || hasLegacyNotes) {
               foundRisks.push(r);
             }
           });
@@ -121,10 +125,6 @@ export default function InboxAuditorPage() {
   if (authLoading) return <div className="p-8 text-center text-slate-500">Memuat...</div>;
 
   const safeYear = activeYear || new Date().getFullYear().toString();
-  
-  // Tentukan apakah ada catatan riviu yang siap ditampilkan:
-  // JIKA ADA RISIKO DENGAN CATATAN AUDITOR, LANGSUNG TAMPILKAN!
-  // Atau jika submission status adalah 'reviewed'
   const hasNotes = risksWithNotes.length > 0;
   const isReviewed = hasNotes || (submissionData && submissionData.status === "reviewed");
 
@@ -133,7 +133,7 @@ export default function InboxAuditorPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-800">Inbox Hasil Auditor</h2>
-          <p className="text-slate-500">Daftar catatan dan hasil evaluasi dari Auditor APIP terkait Peta Risiko unit kerja Anda tahun {safeYear}.</p>
+          <p className="text-slate-500">Daftar catatan dan hasil evaluasi per kolom dari Auditor APIP terkait Peta Risiko unit kerja Anda tahun {safeYear}.</p>
         </div>
         <Button 
           variant="outline" 
@@ -212,7 +212,7 @@ export default function InboxAuditorPage() {
               </div>
 
               <div className="text-right">
-                <span className="text-xs text-slate-500 block">Total Catatan Perbaikan:</span>
+                <span className="text-xs text-slate-500 block">Total Risiko Perlu Revisi:</span>
                 <span className="text-2xl font-black text-pink-700">{risksWithNotes.length} Risiko</span>
               </div>
             </div>
@@ -239,7 +239,7 @@ export default function InboxAuditorPage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-semibold text-slate-700">Daftar Risiko yang Perlu Ditindaklanjuti ({risksWithNotes.length})</span>
                 <Link href="/dashboard/mr-identifikasi">
@@ -249,85 +249,203 @@ export default function InboxAuditorPage() {
                 </Link>
               </div>
 
-              <div className="grid gap-4">
-                {risksWithNotes.map((risk) => (
-                  <Card key={risk.id} className="border-pink-200 shadow-xs overflow-hidden">
-                    <div className="bg-pink-600 h-1.5 w-full"></div>
-                    <CardHeader className="pb-3 bg-pink-50/40">
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="space-y-1">
-                          <CardDescription className="text-pink-700 font-semibold text-xs flex items-center">
-                            <MessageSquareWarning className="w-3.5 h-3.5 mr-1.5" />
-                            Catatan Masuk dari Auditor
-                          </CardDescription>
-                          <CardTitle className="text-base text-slate-900 leading-snug">{risk.pernyataanRisiko}</CardTitle>
+              <div className="grid gap-6">
+                {risksWithNotes.map((risk) => {
+                  const cp = risk.catatanPerKolom;
+                  const hasDetailColumns = cp && Object.values(cp).some((v: any) => v && v.trim() !== "");
+
+                  return (
+                    <Card key={risk.id} className="border-pink-200 shadow-xs overflow-hidden">
+                      <div className="bg-pink-600 h-1.5 w-full"></div>
+                      <CardHeader className="pb-3 bg-pink-50/40">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                          <div className="space-y-1">
+                            <CardDescription className="text-pink-700 font-semibold text-xs flex items-center">
+                              <MessageSquareWarning className="w-3.5 h-3.5 mr-1.5" />
+                              Catatan Masuk dari Auditor
+                            </CardDescription>
+                            <CardTitle className="text-base text-slate-900 leading-snug">{risk.pernyataanRisiko}</CardTitle>
+                          </div>
+                          <span className={`px-2.5 py-1 rounded-md text-xs font-bold whitespace-nowrap self-start ${
+                            risk.levelRisiko === 'Sangat Tinggi' ? 'bg-red-100 text-red-800' :
+                            risk.levelRisiko === 'Tinggi' ? 'bg-orange-100 text-orange-800' :
+                            risk.levelRisiko === 'Sedang' ? 'bg-yellow-100 text-yellow-800' :
+                            risk.levelRisiko === 'Rendah' ? 'bg-green-100 text-green-800' :
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            {risk.levelRisiko || "Risiko"}
+                          </span>
                         </div>
-                        <span className={`px-2.5 py-1 rounded-md text-xs font-bold whitespace-nowrap ${
-                          risk.levelRisiko === 'Sangat Tinggi' ? 'bg-red-100 text-red-800' :
-                          risk.levelRisiko === 'Tinggi' ? 'bg-orange-100 text-orange-800' :
-                          risk.levelRisiko === 'Sedang' ? 'bg-yellow-100 text-yellow-800' :
-                          risk.levelRisiko === 'Rendah' ? 'bg-green-100 text-green-800' :
-                          'bg-blue-100 text-blue-800'
-                        }`}>
-                          {risk.levelRisiko || "Risiko"}
-                        </span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-4 space-y-4">
-                      {/* Box Catatan Auditor */}
-                      <div className="bg-pink-50/70 border border-pink-200 p-4 rounded-lg">
-                        <div className="text-xs text-pink-900 mb-1 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                          <span>Catatan Perbaikan:</span>
-                        </div>
-                        <div className="text-slate-900 text-sm whitespace-pre-wrap leading-relaxed font-medium">
-                          {risk.catatanAuditor}
-                        </div>
-                      </div>
-                      
-                      {/* Detail Pendukung */}
-                      <div className="text-xs bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
-                        {risk.sasaranTerkait && (
-                          <div>
-                            <span className="text-slate-500 font-semibold block">Sasaran Terkait:</span>
-                            <span className="text-slate-700">{risk.sasaranTerkait}</span>
+                      </CardHeader>
+                      <CardContent className="pt-4 space-y-4">
+                        {/* RIVIU DETAIL PER KOLOM (Jika Ada) */}
+                        {hasDetailColumns ? (
+                          <div className="space-y-3">
+                            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
+                              Catatan Riviu per Kolom:
+                            </span>
+
+                            {/* 1. Sasaran & Indikator */}
+                            {cp?.sasaran?.trim() && (
+                              <div className="bg-pink-50/40 border border-pink-200 rounded-lg p-3.5">
+                                <span className="inline-block bg-pink-100 text-pink-800 text-[11px] font-bold px-2 py-0.5 rounded mb-1.5">
+                                  Kolom: Sasaran & Indikator Kinerja
+                                </span>
+                                <div className="text-xs text-slate-600 bg-white p-2 rounded border border-slate-100 mb-2">
+                                  <span className="font-semibold text-slate-500">Data Unit: </span>
+                                  {risk.sasaranTerkait || "-"} • {risk.indikatorKinerja || "-"}
+                                </div>
+                                <div className="text-xs text-pink-950 whitespace-pre-wrap font-medium">
+                                  <strong className="text-pink-800 block mb-0.5">Catatan Auditor:</strong>
+                                  {cp.sasaran}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 2. Pernyataan Risiko & Kategori */}
+                            {cp?.pernyataanRisiko?.trim() && (
+                              <div className="bg-pink-50/40 border border-pink-200 rounded-lg p-3.5">
+                                <span className="inline-block bg-pink-100 text-pink-800 text-[11px] font-bold px-2 py-0.5 rounded mb-1.5">
+                                  Kolom: Pernyataan Risiko & Kategori
+                                </span>
+                                <div className="text-xs text-slate-600 bg-white p-2 rounded border border-slate-100 mb-2">
+                                  <span className="font-semibold text-slate-500">Data Unit: </span>
+                                  {risk.pernyataanRisiko} (Kategori: {risk.kategori || "-"})
+                                </div>
+                                <div className="text-xs text-pink-950 whitespace-pre-wrap font-medium">
+                                  <strong className="text-pink-800 block mb-0.5">Catatan Auditor:</strong>
+                                  {cp.pernyataanRisiko}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 3. Penyebab Risiko */}
+                            {cp?.penyebab?.trim() && (
+                              <div className="bg-pink-50/40 border border-pink-200 rounded-lg p-3.5">
+                                <span className="inline-block bg-pink-100 text-pink-800 text-[11px] font-bold px-2 py-0.5 rounded mb-1.5">
+                                  Kolom: Penyebab Risiko
+                                </span>
+                                <div className="text-xs text-slate-600 bg-white p-2 rounded border border-slate-100 mb-2">
+                                  <span className="font-semibold text-slate-500">Data Unit: </span>
+                                  {risk.uraianPenyebab || "-"} (Sumber: {risk.sumberPenyebab || "-"}, Sifat: {risk.sifatPenyebab || "-"})
+                                </div>
+                                <div className="text-xs text-pink-950 whitespace-pre-wrap font-medium">
+                                  <strong className="text-pink-800 block mb-0.5">Catatan Auditor:</strong>
+                                  {cp.penyebab}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 4. Dampak Risiko */}
+                            {cp?.dampak?.trim() && (
+                              <div className="bg-pink-50/40 border border-pink-200 rounded-lg p-3.5">
+                                <span className="inline-block bg-pink-100 text-pink-800 text-[11px] font-bold px-2 py-0.5 rounded mb-1.5">
+                                  Kolom: Dampak Risiko & Pihak Terdampak
+                                </span>
+                                <div className="text-xs text-slate-600 bg-white p-2 rounded border border-slate-100 mb-2">
+                                  <span className="font-semibold text-slate-500">Data Unit: </span>
+                                  {risk.uraianDampak || "-"} (Pihak Terdampak: {risk.pihakTerdampak || "-"})
+                                </div>
+                                <div className="text-xs text-pink-950 whitespace-pre-wrap font-medium">
+                                  <strong className="text-pink-800 block mb-0.5">Catatan Auditor:</strong>
+                                  {cp.dampak}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 5. Pengendalian yang Ada & Sisa Risiko */}
+                            {cp?.pengendalian?.trim() && (
+                              <div className="bg-pink-50/40 border border-pink-200 rounded-lg p-3.5">
+                                <span className="inline-block bg-pink-100 text-pink-800 text-[11px] font-bold px-2 py-0.5 rounded mb-1.5">
+                                  Kolom: Pengendalian yang Ada & Sisa Risiko
+                                </span>
+                                <div className="text-xs text-slate-600 bg-white p-2 rounded border border-slate-100 mb-2">
+                                  <span className="font-semibold text-slate-500">Data Unit: </span>
+                                  Pengendalian: {risk.pengendalianAda || "-"} | Penilaian: {risk.penilaianPengendalian || "-"} | Sisa: {risk.sisaRisiko || "-"}
+                                </div>
+                                <div className="text-xs text-pink-950 whitespace-pre-wrap font-medium">
+                                  <strong className="text-pink-800 block mb-0.5">Catatan Auditor:</strong>
+                                  {cp.pengendalian}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 6. Analisis Risiko */}
+                            {cp?.analisis?.trim() && (
+                              <div className="bg-pink-50/40 border border-pink-200 rounded-lg p-3.5">
+                                <span className="inline-block bg-pink-100 text-pink-800 text-[11px] font-bold px-2 py-0.5 rounded mb-1.5">
+                                  Kolom: Analisis Risiko (K, D, Level)
+                                </span>
+                                <div className="text-xs text-slate-600 bg-white p-2 rounded border border-slate-100 mb-2">
+                                  <span className="font-semibold text-slate-500">Data Unit: </span>
+                                  K: {risk.levelKemungkinan || "-"}, D: {risk.levelDampak || "-"}, Skor: {risk.besaranRisiko || "-"}, Level: {risk.levelRisiko || "-"}
+                                </div>
+                                <div className="text-xs text-pink-950 whitespace-pre-wrap font-medium">
+                                  <strong className="text-pink-800 block mb-0.5">Catatan Auditor:</strong>
+                                  {cp.analisis}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 7. RTP */}
+                            {cp?.rtp?.trim() && (
+                              <div className="bg-pink-50/40 border border-pink-200 rounded-lg p-3.5">
+                                <span className="inline-block bg-pink-100 text-pink-800 text-[11px] font-bold px-2 py-0.5 rounded mb-1.5">
+                                  Kolom: Rencana Tindak Pengendalian (RTP)
+                                </span>
+                                <div className="text-xs text-slate-600 bg-white p-2 rounded border border-slate-100 mb-2">
+                                  <span className="font-semibold text-slate-500">Data Unit: </span>
+                                  {risk.rtpList && risk.rtpList.length > 0 ? (
+                                    <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                                      {risk.rtpList.map((x: any, i: number) => (
+                                        <li key={i}>{x.rencana} (PJ: {x.penanggungjawab || "-"}, Target: {x.targetWaktu || "-"})</li>
+                                      ))}
+                                    </ul>
+                                  ) : "Belum ada RTP"}
+                                </div>
+                                <div className="text-xs text-pink-950 whitespace-pre-wrap font-medium">
+                                  <strong className="text-pink-800 block mb-0.5">Catatan Auditor:</strong>
+                                  {cp.rtp}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 8. Kesimpulan */}
+                            {cp?.kesimpulan?.trim() && (
+                              <div className="bg-purple-50/50 border border-purple-200 rounded-lg p-3.5">
+                                <span className="inline-block bg-purple-100 text-purple-800 text-[11px] font-bold px-2 py-0.5 rounded mb-1.5">
+                                  Kesimpulan & Arahan Tambahan
+                                </span>
+                                <div className="text-xs text-purple-950 whitespace-pre-wrap font-medium">
+                                  {cp.kesimpulan}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          // Fallback Catatan Format Lama
+                          <div className="bg-pink-50/70 border border-pink-200 p-4 rounded-lg">
+                            <div className="text-xs text-pink-900 mb-1 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                              <span>Catatan Perbaikan:</span>
+                            </div>
+                            <div className="text-slate-900 text-sm whitespace-pre-wrap leading-relaxed font-medium">
+                              {risk.catatanAuditor}
+                            </div>
                           </div>
                         )}
-                        {risk.uraianPenyebab && (
-                          <div>
-                            <span className="text-slate-500 font-semibold block">Penyebab:</span>
-                            <span className="text-slate-700">{risk.uraianPenyebab}</span>
-                          </div>
-                        )}
-                        <div>
-                          <span className="text-slate-500 font-semibold block">Rencana Tindak Pengendalian (RTP):</span>
-                          {risk.rtpList && risk.rtpList.length > 0 ? (
-                            <ul className="list-disc pl-4 text-slate-700 mt-0.5 space-y-0.5">
-                              {risk.rtpList.map((rtp: any, idx: number) => (
-                                <li key={idx}>
-                                  <span className="font-medium">{rtp.rencana}</span>
-                                  {(rtp.penanggungjawab || rtp.targetWaktu) && (
-                                    <span className="text-slate-500"> (PJ: {rtp.penanggungjawab || "-"}, Target: {rtp.targetWaktu || "-"})</span>
-                                  )}
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <span className="text-slate-400 italic">Belum ada RTP</span>
-                          )}
+                        
+                        <div className="flex justify-end pt-2 border-t border-slate-100">
+                          <Link 
+                            href="/dashboard/mr-identifikasi" 
+                            className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold inline-flex items-center gap-1"
+                          >
+                            Perbaiki Risiko Ini di Menu Identifikasi Risiko &rarr;
+                          </Link>
                         </div>
-                      </div>
-                      
-                      <div className="flex justify-end pt-1">
-                        <Link 
-                          href="/dashboard/mr-identifikasi" 
-                          className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold inline-flex items-center gap-1"
-                        >
-                          Perbaiki Risiko Ini di Menu Identifikasi Risiko &rarr;
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
 
               {/* Alert Pengiriman Ulang */}
