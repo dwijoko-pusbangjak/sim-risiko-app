@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Search, MessageSquarePlus, CheckCircle, Send, CheckCircle2, Clock, AlertCircle, Edit3, Layers, FileCheck, Eye, EyeOff } from "lucide-react";
+import { Loader2, Search, MessageSquarePlus, CheckCircle, Send, CheckCircle2, Clock, AlertCircle, Edit3, Layers, FileCheck, Eye, EyeOff, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/logger";
 
@@ -109,7 +109,7 @@ export default function AuditRisikoPage() {
       let subData: any = null;
       const subSnap = await getDoc(doc(db, "audit_submissions", cleanDocId));
       if (subSnap.exists()) {
-        subData = { id: subSnap.id, ...subSnap.data() };
+        subData = { id: subSnap.id, ...subData, ...subSnap.data() };
       } else {
         const legacyDocId = `${targetUnitName.replace(/\s+/g, '_')}_${safeYear}`;
         const legSnap = await getDoc(doc(db, "audit_submissions", legacyDocId));
@@ -159,6 +159,8 @@ export default function AuditRisikoPage() {
     }
   };
 
+  const isReadOnlyMode = showArchive || (submission?.status === "reviewed");
+
   const openRiviuModal = (risk: any) => {
     setSelectedRisk(risk);
     const cp = risk.catatanPerKolom || {};
@@ -177,6 +179,11 @@ export default function AuditRisikoPage() {
 
   const handleSaveRiviu = async () => {
     if (!selectedRisk) return;
+    if (isReadOnlyMode) {
+      toast.error("Mode hanya baca: data riwayat yang sudah dikirim ke unit kerja tidak dapat diubah lagi.");
+      return;
+    }
+
     setIsSaving(true);
     const toastId = toast.loading("Menyimpan catatan auditor...");
     try {
@@ -612,16 +619,17 @@ export default function AuditRisikoPage() {
           {showArchive && (
             <div className="bg-amber-50 border-b border-amber-200 p-3 px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-amber-900">
               <div className="flex items-center gap-2">
-                <span className="font-bold bg-amber-200 text-amber-950 px-2 py-0.5 rounded text-[11px]">
-                  Mode Arsip / Riwayat
+                <span className="font-bold bg-amber-200 text-amber-950 px-2 py-0.5 rounded text-[11px] flex items-center gap-1">
+                  <Lock className="w-3 h-3" />
+                  Mode Arsip / Riwayat (Hanya Baca)
                 </span>
-                <span>Dokumen ini telah selesai diaudit dan telah dikirim ke unit kerja.</span>
+                <span>Dokumen ini telah selesai diaudit dan dikirim ke unit kerja. Data hanya dapat dilihat dan tidak dapat diedit lagi.</span>
               </div>
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={() => { setShowArchive(false); setRisks([]); }}
-                className="text-amber-800 hover:bg-amber-100 text-xs h-7 self-start sm:self-auto"
+                className="text-amber-800 hover:bg-amber-100 text-xs h-7 self-start sm:self-auto font-medium"
               >
                 Tutup Riwayat & Kosongkan Data
               </Button>
@@ -631,7 +639,12 @@ export default function AuditRisikoPage() {
           <div className="p-4 bg-slate-50 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div>
               <span className="font-semibold text-slate-700 text-sm block">Daftar Risiko & Rencana Tindak Pengendalian (RTP)</span>
-              <span className="text-xs text-slate-500">Klik tombol &ldquo;Riviu Detail&rdquo; untuk memeriksa dan memberi catatan spesifik per kolom</span>
+              <span className="text-xs text-slate-500">
+                {isReadOnlyMode 
+                  ? "Mode Riwayat: Klik 'Lihat Detail' untuk melihat catatan yang telah dikirim ke unit kerja"
+                  : "Klik tombol 'Riviu Detail' untuk memeriksa dan memberi catatan spesifik per kolom"
+                }
+              </span>
             </div>
             <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-100">
               {risks.length} Risiko Teridentifikasi
@@ -735,14 +748,27 @@ export default function AuditRisikoPage() {
                           onClick={() => openRiviuModal(r)} 
                           variant="outline" 
                           size="sm" 
-                          className="border-pink-200 text-pink-700 hover:bg-pink-50 hover:text-pink-800 whitespace-nowrap"
+                          className={isReadOnlyMode 
+                            ? "border-slate-300 text-slate-700 hover:bg-slate-100 whitespace-nowrap"
+                            : "border-pink-200 text-pink-700 hover:bg-pink-50 hover:text-pink-800 whitespace-nowrap"
+                          }
                         >
-                          {activeColsCount > 0 || r.catatanAuditor ? (
-                            <CheckCircle className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                          {isReadOnlyMode ? (
+                            <>
+                              <Eye className="w-3.5 h-3.5 mr-1 text-slate-600" />
+                              Lihat Detail
+                            </>
+                          ) : activeColsCount > 0 || r.catatanAuditor ? (
+                            <>
+                              <CheckCircle className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                              Riviu Detail
+                            </>
                           ) : (
-                            <Edit3 className="w-3.5 h-3.5 mr-1" />
+                            <>
+                              <Edit3 className="w-3.5 h-3.5 mr-1" />
+                              Riviu Detail
+                            </>
                           )}
-                          Riviu Detail
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -767,18 +793,30 @@ export default function AuditRisikoPage() {
         </div>
       )}
       
-      {/* Modal Riviu Catatan Per Kolom Risiko */}
+      {/* Modal Riviu Catatan Per Kolom Risiko (Dua Mode: Edit Aktif atau Hanya Baca / Riwayat) */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
           <DialogHeader className="p-6 pb-3 border-b bg-slate-50/50">
             <div className="flex items-center justify-between">
               <div>
                 <DialogTitle className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                  <FileCheck className="w-5 h-5 text-pink-600" />
-                  Riviu Detail per Kolom Risiko
+                  {isReadOnlyMode ? (
+                    <>
+                      <Lock className="w-5 h-5 text-amber-600" />
+                      Detail Riviu Risiko (Mode Hanya Baca / Riwayat)
+                    </>
+                  ) : (
+                    <>
+                      <FileCheck className="w-5 h-5 text-pink-600" />
+                      Riviu Detail per Kolom Risiko
+                    </>
+                  )}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-slate-500 mt-1">
-                  Berikan catatan spesifik pada masing-masing kolom agar perbaikan oleh unit kerja lebih terarah.
+                  {isReadOnlyMode 
+                    ? "Dokumen ini telah selesai diaudit dan terkirim ke unit kerja. Data hanya dapat dilihat dan tidak dapat diubah lagi."
+                    : "Berikan catatan spesifik pada masing-masing kolom agar perbaikan oleh unit kerja lebih terarah."
+                  }
                 </DialogDescription>
               </div>
             </div>
@@ -840,18 +878,32 @@ export default function AuditRisikoPage() {
                     </div>
                   )}
 
-                  {/* Input Catatan Auditor untuk Kolom Ini */}
+                  {/* Input Catatan Auditor ATAU Tampilan Hanya Baca */}
                   <div className="space-y-1.5">
                     <Label htmlFor={`input-${sec.id}`} className="text-xs font-semibold text-slate-700">
                       Catatan Riviu Auditor untuk Kolom Ini:
                     </Label>
-                    <Textarea 
-                      id={`input-${sec.id}`}
-                      value={sec.value}
-                      onChange={(e) => sec.setValue(e.target.value)}
-                      placeholder={sec.placeholder}
-                      className="text-xs min-h-[75px] bg-white border-slate-300 focus:border-pink-500"
-                    />
+                    {isReadOnlyMode ? (
+                      // MODE HANYA BACA (RIWAYAT TERKIRIM) - TIDAK BISA DIEDIT LAGI
+                      isFilled ? (
+                        <div className="p-3 bg-pink-50/70 border border-pink-200 rounded-lg text-xs text-pink-950 font-medium whitespace-pre-wrap leading-relaxed">
+                          {sec.value}
+                        </div>
+                      ) : (
+                        <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-400 italic">
+                          Tidak ada catatan untuk kolom ini.
+                        </div>
+                      )
+                    ) : (
+                      // MODE EDIT AKTIF (SEBELUM DIKIRIM)
+                      <Textarea 
+                        id={`input-${sec.id}`}
+                        value={sec.value}
+                        onChange={(e) => sec.setValue(e.target.value)}
+                        placeholder={sec.placeholder}
+                        className="text-xs min-h-[75px] bg-white border-slate-300 focus:border-pink-500"
+                      />
+                    )}
                   </div>
                 </div>
               );
@@ -860,16 +912,29 @@ export default function AuditRisikoPage() {
 
           <DialogFooter className="p-4 border-t bg-slate-50/80 flex justify-between items-center">
             <span className="text-xs text-slate-500">
-              Total kolom diberi catatan: <strong className="text-pink-600">
-                {Object.values(catatanKolom).filter(v => v && v.trim() !== "").length} dari {COLUMN_SECTIONS.length}
-              </strong>
+              {isReadOnlyMode ? (
+                <span className="text-amber-800 font-medium flex items-center gap-1">
+                  <Lock className="w-3.5 h-3.5" />
+                  Mode Hanya Baca (Tidak Dapat Diedit)
+                </span>
+              ) : (
+                <>
+                  Total kolom diberi catatan: <strong className="text-pink-600">
+                    {Object.values(catatanKolom).filter(v => v && v.trim() !== "").length} dari {COLUMN_SECTIONS.length}
+                  </strong>
+                </>
+              )}
             </span>
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => setIsModalOpen(false)}>Batal</Button>
-              <Button onClick={handleSaveRiviu} disabled={isSaving} className="bg-pink-600 hover:bg-pink-700 text-white">
-                {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-2" />}
-                Simpan Catatan
+              <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+                Tutup
               </Button>
+              {!isReadOnlyMode && (
+                <Button onClick={handleSaveRiviu} disabled={isSaving} className="bg-pink-600 hover:bg-pink-700 text-white">
+                  {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+                  Simpan Catatan
+                </Button>
+              )}
             </div>
           </DialogFooter>
         </DialogContent>
