@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Search, MessageSquarePlus, CheckCircle, Send, CheckCircle2, Clock, AlertCircle, FileText } from "lucide-react";
+import { Loader2, Search, MessageSquarePlus, CheckCircle, Send, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/logger";
 
@@ -92,15 +92,24 @@ export default function AuditRisikoPage() {
       setRisks(rData);
 
       // 2. Fetch submission status from audit_submissions
-      const subDocId = `${targetUnitName.replace(/\s+/g, '_')}_${safeYear}`;
-      const subSnap = await getDoc(doc(db, "audit_submissions", subDocId));
+      const cleanDocId = `${targetUnitName.replace(/[^a-zA-Z0-9]/g, '_')}_${safeYear}`;
+      const subSnap = await getDoc(doc(db, "audit_submissions", cleanDocId));
       if (subSnap.exists()) {
         const subData = subSnap.data();
         setSubmission({ id: subSnap.id, ...subData });
         setCatatanUmum(subData.catatanUmum || "");
       } else {
-        setSubmission(null);
-        setCatatanUmum("");
+        // Fallback by legacy ID
+        const legacyDocId = `${targetUnitName.replace(/\s+/g, '_')}_${safeYear}`;
+        const legSnap = await getDoc(doc(db, "audit_submissions", legacyDocId));
+        if (legSnap.exists()) {
+          const subData = legSnap.data();
+          setSubmission({ id: legSnap.id, ...subData });
+          setCatatanUmum(subData.catatanUmum || "");
+        } else {
+          setSubmission(null);
+          setCatatanUmum("");
+        }
       }
     } catch (error) {
       console.error("Fetch risks error", error);
@@ -147,11 +156,11 @@ export default function AuditRisikoPage() {
     const toastId = toast.loading("Mengirim hasil riviu ke unit kerja...");
 
     try {
-      const subDocId = `${currentUnitName.replace(/\s+/g, '_')}_${safeYear}`;
+      const cleanUnit = currentUnitName.trim();
       const notesCount = risks.filter(r => r.catatanAuditor && r.catatanAuditor.trim() !== "").length;
 
       const submissionData = {
-        unitName: currentUnitName,
+        unitName: cleanUnit,
         tahun: safeYear,
         status: "reviewed",
         reviewedAt: new Date().toISOString(),
@@ -161,21 +170,36 @@ export default function AuditRisikoPage() {
         isPublishedToInbox: true
       };
 
-      await setDoc(doc(db, "audit_submissions", subDocId), submissionData, { merge: true });
+      // 1. Simpan ke audit_submissions (pakai format cleanDocId dan legacyDocId agar kompatibel 100%)
+      const cleanDocId = `${cleanUnit.replace(/[^a-zA-Z0-9]/g, '_')}_${safeYear}`;
+      await setDoc(doc(db, "audit_submissions", cleanDocId), submissionData, { merge: true });
 
-      // Update flag catatanPublished on all risks in current unit
-      const updatePromises = risks.map(r => {
-        return updateDoc(doc(db, "mr_identifikasi", r.id), {
-          catatanPublished: true,
-          auditStatus: "reviewed"
-        });
-      });
-      await Promise.all(updatePromises);
+      const legacyDocId = `${cleanUnit.replace(/\s+/g, '_')}_${safeYear}`;
+      if (legacyDocId !== cleanDocId) {
+        try {
+          await setDoc(doc(db, "audit_submissions", legacyDocId), submissionData, { merge: true });
+        } catch (e) {}
+      }
+
+      // 2. Update flag pada dokumen risiko
+      for (const r of risks) {
+        try {
+          await updateDoc(doc(db, "mr_identifikasi", r.id), {
+            catatanPublished: true,
+            auditStatus: "reviewed",
+            catatanUmum: catatanUmum.trim(),
+            auditorName: user?.name || user?.email || "Auditor APIP",
+            publishedAt: new Date().toISOString()
+          });
+        } catch (err) {
+          console.warn("Update risk doc failed for", r.id, err);
+        }
+      }
 
       setSubmission(submissionData);
       setIsSendModalOpen(false);
 
-      logActivity(user, "Kirim", "Audit", `Mengirim hasil riviu audit ke unit kerja: ${currentUnitName}`);
+      logActivity(user, "Kirim", "Audit", `Mengirim hasil riviu audit ke unit kerja: ${cleanUnit}`);
       toast.success("Hasil riviu berhasil dikirim ke unit kerja! Catatan kini otomatis muncul di Inbox unit kerja.", { id: toastId });
     } catch (error: any) {
       console.error("Gagal kirim ke unit", error);

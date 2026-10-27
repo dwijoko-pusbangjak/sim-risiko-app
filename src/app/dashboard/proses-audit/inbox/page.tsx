@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, MessageSquareWarning, AlertCircle, CheckCircle2, Clock, Send, ArrowRight, ShieldCheck } from "lucide-react";
+import { Loader2, MessageSquareWarning, AlertCircle, CheckCircle2, Clock, Send, ArrowRight, ShieldCheck, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
 export default function InboxAuditorPage() {
@@ -25,40 +25,92 @@ export default function InboxAuditorPage() {
     const safeYear = activeYear || new Date().getFullYear().toString();
     if (!user?.unitName) return;
     setIsLoading(true);
+
     try {
-      // 1. Fetch submission data from audit_submissions
-      const subDocId = `${user.unitName.replace(/\s+/g, '_')}_${safeYear}`;
-      const subSnap = await getDoc(doc(db, "audit_submissions", subDocId));
+      const unitName = user.unitName;
+      const cleanUnit = unitName.trim();
+
+      // 1. Ambil data submission status (coba query collection dulu, lalu docId)
       let sub: any = null;
-      if (subSnap.exists()) {
-        sub = subSnap.data();
+      try {
+        const subQ = query(
+          collection(db, "audit_submissions"),
+          where("unitName", "==", unitName),
+          where("tahun", "==", safeYear)
+        );
+        const subSnap = await getDocs(subQ);
+        if (!subSnap.empty) {
+          sub = subSnap.docs[0].data();
+        } else if (cleanUnit !== unitName) {
+          const subQ2 = query(
+            collection(db, "audit_submissions"),
+            where("unitName", "==", cleanUnit),
+            where("tahun", "==", safeYear)
+          );
+          const subSnap2 = await getDocs(subQ2);
+          if (!subSnap2.empty) sub = subSnap2.docs[0].data();
+        }
+
+        // Fallback docId
+        if (!sub) {
+          const cleanDocId = `${cleanUnit.replace(/[^a-zA-Z0-9]/g, '_')}_${safeYear}`;
+          const dSnap = await getDoc(doc(db, "audit_submissions", cleanDocId));
+          if (dSnap.exists()) {
+            sub = dSnap.data();
+          } else {
+            const legacyDocId = `${cleanUnit.replace(/\s+/g, '_')}_${safeYear}`;
+            const legSnap = await getDoc(doc(db, "audit_submissions", legacyDocId));
+            if (legSnap.exists()) sub = legSnap.data();
+          }
+        }
+      } catch (e) {
+        console.warn("Gagal fetch submission status", e);
       }
       setSubmissionData(sub);
 
-      // 2. Fetch risks if submission has been reviewed by auditor
-      const q = query(
-        collection(db, "mr_identifikasi"),
-        where("unitName", "==", user.unitName),
-        where("tahun", "==", safeYear)
-      );
-      const snap = await getDocs(q);
-      const data: any[] = [];
-      snap.forEach(d => {
-        const r = { id: d.id, ...d.data() };
-        // Only include if has catatanAuditor
-        if (r.catatanAuditor && r.catatanAuditor.trim() !== "") {
-          data.push(r);
+      // 2. Ambil data risiko yang memiliki catatan auditor
+      let foundRisks: any[] = [];
+      try {
+        const q = query(
+          collection(db, "mr_identifikasi"),
+          where("unitName", "==", unitName),
+          where("tahun", "==", safeYear)
+        );
+        const snap = await getDocs(q);
+        snap.forEach(d => {
+          const r = { id: d.id, ...d.data() };
+          if (r.catatanAuditor && r.catatanAuditor.trim() !== "") {
+            foundRisks.push(r);
+          }
+        });
+
+        // Jika 0 hasil dan nama unit punya spasi di awal/akhir, coba query dengan cleanUnit
+        if (foundRisks.length === 0 && cleanUnit !== unitName) {
+          const q2 = query(
+            collection(db, "mr_identifikasi"),
+            where("unitName", "==", cleanUnit),
+            where("tahun", "==", safeYear)
+          );
+          const snap2 = await getDocs(q2);
+          snap2.forEach(d => {
+            const r = { id: d.id, ...d.data() };
+            if (r.catatanAuditor && r.catatanAuditor.trim() !== "") {
+              foundRisks.push(r);
+            }
+          });
         }
-      });
-      
-      // Sort by catatanUpdatedAt if available
-      data.sort((a, b) => {
+      } catch (e) {
+        console.error("Gagal fetch risiko di inbox", e);
+      }
+
+      // Sortir berdasarkan tanggal catatan terbaru
+      foundRisks.sort((a, b) => {
         if (!a.catatanUpdatedAt) return 1;
         if (!b.catatanUpdatedAt) return -1;
         return new Date(b.catatanUpdatedAt).getTime() - new Date(a.catatanUpdatedAt).getTime();
       });
-      
-      setRisksWithNotes(data);
+
+      setRisksWithNotes(foundRisks);
     } catch (error) {
       console.error("Fetch inbox error", error);
     } finally {
@@ -69,19 +121,36 @@ export default function InboxAuditorPage() {
   if (authLoading) return <div className="p-8 text-center text-slate-500">Memuat...</div>;
 
   const safeYear = activeYear || new Date().getFullYear().toString();
-  const isReviewed = submissionData && submissionData.status === "reviewed";
+  
+  // Tentukan apakah ada catatan riviu yang siap ditampilkan:
+  // JIKA ADA RISIKO DENGAN CATATAN AUDITOR, LANGSUNG TAMPILKAN!
+  // Atau jika submission status adalah 'reviewed'
+  const hasNotes = risksWithNotes.length > 0;
+  const isReviewed = hasNotes || (submissionData && submissionData.status === "reviewed");
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto mt-4">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-800">Inbox Hasil Auditor</h2>
-        <p className="text-slate-500">Daftar catatan dan hasil evaluasi dari Auditor APIP terkait Peta Risiko unit kerja Anda tahun {safeYear}.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-800">Inbox Hasil Auditor</h2>
+          <p className="text-slate-500">Daftar catatan dan hasil evaluasi dari Auditor APIP terkait Peta Risiko unit kerja Anda tahun {safeYear}.</p>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={fetchInbox} 
+          disabled={isLoading}
+          className="self-start sm:self-auto text-slate-600 hover:text-slate-900 border-slate-200"
+        >
+          <RefreshCw className={`w-4 h-4 mr-1.5 ${isLoading ? "animate-spin" : ""}`} />
+          Segarkan Data
+        </Button>
       </div>
 
       {isLoading ? (
         <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-indigo-500" /></div>
       ) : !isReviewed ? (
-        // Kasus: Belum Dikirim atau Masih dalam Proses Riviu oleh Auditor
+        // Kasus: Belum Dikirim atau Masih dalam Proses Riviu oleh Auditor (dan belum ada catatan)
         submissionData?.status === "submitted" ? (
           <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-8 text-center space-y-4">
             <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto">
@@ -123,7 +192,7 @@ export default function InboxAuditorPage() {
           </div>
         )
       ) : (
-        // Kasus: SUDAH DIKIRIM OLEH AUDITOR (status: 'reviewed')
+        // Kasus: ADA CATATAN RIVIU DARI AUDITOR
         <div className="space-y-6">
           {/* Header Banner Hasil Riviu */}
           <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-indigo-50 border border-emerald-200 rounded-xl p-6 shadow-xs">
@@ -135,8 +204,8 @@ export default function InboxAuditorPage() {
                 </div>
                 <h3 className="text-lg font-bold text-slate-800">Evaluasi Peta Risiko Tahun {safeYear}</h3>
                 <p className="text-xs text-slate-600">
-                  Direviu oleh: <span className="font-semibold text-slate-800">{submissionData.reviewedBy || "Auditor APIP"}</span>
-                  {submissionData.reviewedAt && (
+                  Direviu oleh: <span className="font-semibold text-slate-800">{submissionData?.reviewedBy || "Auditor APIP"}</span>
+                  {submissionData?.reviewedAt && (
                     <> • Tanggal: <span className="font-semibold text-slate-800">{new Date(submissionData.reviewedAt).toLocaleString("id-ID")}</span></>
                   )}
                 </p>
@@ -148,7 +217,7 @@ export default function InboxAuditorPage() {
               </div>
             </div>
 
-            {submissionData.catatanUmum && (
+            {submissionData?.catatanUmum && (
               <div className="mt-4 pt-4 border-t border-emerald-200/60 bg-white/70 p-3.5 rounded-lg">
                 <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
                   Catatan / Rekomendasi Umum Auditor:
