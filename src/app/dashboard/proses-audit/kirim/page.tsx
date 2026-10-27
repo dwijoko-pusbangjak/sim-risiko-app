@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, query, where, getDocs, setDoc, doc } from "firebase/firestore";
+import { collection, query, where, getDocs, setDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -80,7 +80,8 @@ export default function KirimAuditorPage() {
     const toastId = toast.loading("Mengirim dokumen ke Auditor...");
     
     try {
-      const docId = `${user.unitName.replace(/\s+/g, '_')}_${safeYear}`;
+      const cleanDocId = `${user.unitName.replace(/[^a-zA-Z0-9]/g, '_')}_${safeYear}`;
+      const legacyDocId = `${user.unitName.replace(/\s+/g, '_')}_${safeYear}`;
       const submissionData = {
         unitName: user.unitName,
         tahun: safeYear,
@@ -90,8 +91,34 @@ export default function KirimAuditorPage() {
         isResubmission: isResubmit
       };
       
-      await setDoc(doc(db, "audit_submissions", docId), submissionData, { merge: true });
-      setSubmissionStatus({ id: docId, ...submissionData });
+      await setDoc(doc(db, "audit_submissions", cleanDocId), submissionData, { merge: true });
+      if (legacyDocId !== cleanDocId) {
+        try {
+          await setDoc(doc(db, "audit_submissions", legacyDocId), submissionData, { merge: true });
+        } catch (e) {}
+      }
+
+      // Update auditStatus pada setiap risiko mr_identifikasi
+      try {
+        const rq = query(
+          collection(db, "mr_identifikasi"),
+          where("unitName", "==", user.unitName),
+          where("tahun", "==", safeYear)
+        );
+        const rSnap = await getDocs(rq);
+        for (const d of rSnap.docs) {
+          try {
+            await updateDoc(doc(db, "mr_identifikasi", d.id), {
+              auditStatus: "submitted",
+              submittedAt: new Date().toISOString()
+            });
+          } catch (err) {}
+        }
+      } catch (err) {
+        console.warn("Update risk docs status failed", err);
+      }
+
+      setSubmissionStatus({ id: cleanDocId, ...submissionData });
       
       logActivity(user, "Kirim", "Proses Audit", `Mengirim peta risiko tahun ${safeYear} ke auditor`);
       toast.success(isResubmit ? "Peta risiko berhasil dikirim ulang ke Auditor!" : "Berhasil dikirim ke Auditor!", { id: toastId });

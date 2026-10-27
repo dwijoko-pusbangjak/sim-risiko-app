@@ -116,10 +116,12 @@ export default function AuditRisikoPage() {
       );
       const snapSub = await getDocs(qSub);
       const subMap = new Map<string, any>();
+      const normalizeKey = (str: string) => (str || "").trim().toLowerCase().replace(/\s+/g, ' ');
+
       snapSub.forEach(d => {
         const data = d.data();
         if (data.unitName) {
-          subMap.set(data.unitName.trim().toLowerCase(), { id: d.id, ...data });
+          subMap.set(normalizeKey(data.unitName), { id: d.id, ...data });
         }
       });
 
@@ -135,53 +137,63 @@ export default function AuditRisikoPage() {
         const rData = { id: d.id, ...d.data() };
         const uName = (rData.unitName || "").trim();
         if (!uName) return;
-        const key = uName.toLowerCase();
+        const key = normalizeKey(uName);
         if (!risksByUnit.has(key)) {
           risksByUnit.set(key, { unitName: uName, risks: [] });
         }
         risksByUnit.get(key)!.risks.push(rData);
       });
 
-      // Pastikan unit di audit_submissions tetap tercatat
-      subMap.forEach((sub, key) => {
-        if (!risksByUnit.has(key) && sub.unitName) {
-          risksByUnit.set(key, { unitName: sub.unitName, risks: [] });
-        }
-      });
-
-      // 3. Pisahkan ke dalam Antrean Aktif (Harus Diaudit) dan Riwayat Selesai
+      // 3. Pisahkan ke dalam Antrean Aktif (HANYA YANG SUDAH DIKIRIM OLEH UNIT KERJA) dan Riwayat Selesai
       const pending: QueueItem[] = [];
       const reviewed: QueueItem[] = [];
 
-      risksByUnit.forEach(({ unitName, risks: unitRisks }) => {
-        const key = unitName.toLowerCase();
-        const sub = subMap.get(key) || null;
-        const isReviewed = sub?.status === "reviewed";
+      // HANYA ambil unit yang terdaftar di audit_submissions dengan status "submitted" atau "reviewed"
+      subMap.forEach((sub, key) => {
+        const unitRisksData = risksByUnit.get(key);
+        const resolvedUnitName = sub.unitName || unitRisksData?.unitName || key;
+        const allRisks = unitRisksData?.risks || [];
 
         const item: QueueItem = {
-          unitName,
-          risksCount: unitRisks.length,
+          unitName: resolvedUnitName,
+          risksCount: allRisks.length,
           subData: sub,
-          submittedAt: sub?.submittedAt || null,
-          submittedBy: sub?.submittedBy || null,
-          reviewedAt: sub?.reviewedAt || null,
-          reviewedBy: sub?.reviewedBy || null,
-          risks: unitRisks
+          submittedAt: sub.submittedAt || null,
+          submittedBy: sub.submittedBy || null,
+          reviewedAt: sub.reviewedAt || null,
+          reviewedBy: sub.reviewedBy || null,
+          risks: allRisks
         };
 
-        if (isReviewed) {
-          reviewed.push(item);
-        } else {
-          // Masuk antrean yang harus diaudit
+        // FILTER KETAT: HANYA TAMPILKAN JIKA SUDAH DIKIRIM OLEH UNIT KERJA!
+        if (sub.status === "submitted") {
           pending.push(item);
+        } else if (sub.status === "reviewed") {
+          reviewed.push(item);
         }
       });
 
-      // Sort pending: Dokumen yang sudah disubmit prioritas di atas
+      // Fallback: periksa jika ada unit yang risikonya di-flag auditStatus === "submitted"
+      risksByUnit.forEach(({ unitName, risks: unitRisks }, key) => {
+        if (!subMap.has(key)) {
+          const submittedRisks = unitRisks.filter(r => r.auditStatus === "submitted");
+          if (submittedRisks.length > 0) {
+            pending.push({
+              unitName,
+              risksCount: unitRisks.length,
+              subData: { status: "submitted", unitName, tahun: safeYear },
+              submittedAt: submittedRisks[0]?.submittedAt || null,
+              submittedBy: submittedRisks[0]?.submittedBy || null,
+              reviewedAt: null,
+              reviewedBy: null,
+              risks: unitRisks
+            });
+          }
+        }
+      });
+
+      // Sort pending: Dokumen yang terbaru diajukan di atas
       pending.sort((a, b) => {
-        const aIsSub = a.subData?.status === "submitted" ? 1 : 0;
-        const bIsSub = b.subData?.status === "submitted" ? 1 : 0;
-        if (aIsSub !== bIsSub) return bIsSub - aIsSub;
         const aTime = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
         const bTime = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
         return bTime - aTime;
@@ -709,16 +721,22 @@ export default function AuditRisikoPage() {
         <>
           {pendingQueue.length === 0 ? (
             /* Antrean Kosong Sesuai Permintaan: Datanya kosong jika sudah dikirim ke unit kerja */
-            <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-10 text-center space-y-4 shadow-2xs">
-              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                <CheckCircle2 className="w-8 h-8" />
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-10 text-center space-y-4 shadow-2xs">
+              <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                {reviewedQueue.length > 0 ? <CheckCircle2 className="w-8 h-8 text-emerald-600" /> : <Inbox className="w-8 h-8 text-indigo-600" />}
               </div>
               <div className="max-w-md mx-auto space-y-2">
-                <h3 className="text-xl font-bold text-emerald-950">
-                  Semua Dokumen Telah Selesai Diaudit
+                <h3 className="text-xl font-bold text-slate-900">
+                  {reviewedQueue.length > 0 
+                    ? "Semua Dokumen Telah Selesai Diaudit" 
+                    : "Belum Ada Dokumen yang Masuk untuk Diaudit"
+                  }
                 </h3>
-                <p className="text-sm text-emerald-800">
-                  Saat ini tidak ada antrean dokumen yang harus diaudit pada Tahun {safeYear}. Seluruh hasil riviu telah berhasil dikirimkan ke unit kerja.
+                <p className="text-sm text-slate-600">
+                  {reviewedQueue.length > 0 
+                    ? `Saat ini tidak ada antrean dokumen yang harus diaudit pada Tahun ${safeYear}. Seluruh hasil riviu telah berhasil dikirimkan ke unit kerja.`
+                    : `Saat ini belum ada unit kerja yang mengirimkan dokumen Peta Risiko untuk diaudit pada Tahun ${safeYear}. Halaman ini hanya akan menampilkan risiko yang statusnya telah resmi dikirim oleh unit kerja.`
+                  }
                 </p>
                 {reviewedQueue.length > 0 && (
                   <div className="pt-3">
