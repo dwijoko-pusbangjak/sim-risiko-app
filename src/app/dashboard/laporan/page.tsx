@@ -308,7 +308,13 @@ export default function LaporanPage() {
                     }}
                   >
                     <SelectTrigger className="bg-white">
-                      <SelectValue placeholder="-- Pilih Unit Eselon 1 --" />
+                      {selectedE1 && selectedE1 !== "all" ? (
+                        <span className="truncate font-medium text-slate-800">
+                          {e1Units.find(u => u.id === selectedE1)?.name || "Pilih Eselon 1"}
+                        </span>
+                      ) : (
+                        <span className="text-slate-500">-- Pilih Unit Eselon 1 --</span>
+                      )}
                     </SelectTrigger>
                     <SelectContent>
                       {e1Units.map((u) => (
@@ -330,7 +336,19 @@ export default function LaporanPage() {
                     disabled={!selectedE1 || selectedE1 === "all"}
                   >
                     <SelectTrigger className="bg-white">
-                      <SelectValue placeholder={!selectedE1 || selectedE1 === "all" ? "Pilih Eselon 1 terlebih dahulu" : "-- Pilih Unit Terkait --"} />
+                      {!selectedE1 || selectedE1 === "all" ? (
+                        <span className="text-slate-400 italic">Pilih Eselon 1 terlebih dahulu</span>
+                      ) : selectedE2 === "e1_self" ? (
+                        <span className="truncate font-medium text-slate-800">
+                          [{e1Units.find(u => u.id === selectedE1)?.name}] (Eselon 1 itu sendiri)
+                        </span>
+                      ) : selectedE2 && selectedE2 !== "all" ? (
+                        <span className="truncate font-medium text-slate-800">
+                          {availableE2.find(u => u.id === selectedE2)?.name || "Unit tidak ditemukan"}
+                        </span>
+                      ) : (
+                        <span className="text-slate-500">-- Pilih Unit Terkait --</span>
+                      )}
                     </SelectTrigger>
                     <SelectContent>
                       {selectedE1 && selectedE1 !== "all" && (
@@ -353,15 +371,15 @@ export default function LaporanPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2 lg:col-span-2">
               <Label>Jenis Laporan</Label>
-              <Select value={reportType} onValueChange={(val: ReportType) => setReportType(val)}>
+              <Select value={reportType} onValueChange={(val: ReportType) => { setReportType(val); setShowPreview(false); }}>
                 <SelectTrigger className="bg-slate-50">
-                  <SelectValue placeholder="Pilih Jenis Laporan...">
+                  <span className="truncate font-medium text-slate-800">
                     {reportType === "peta_risiko" && "Laporan Matriks Peta Risiko"}
                     {reportType === "pemantauan_rtp" && "Laporan Pemantauan Rencana Tindak Pengendalian"}
                     {reportType === "keterjadian" && "Laporan Keterjadian Risiko"}
                     {reportType === "efektifitas" && "Laporan Efektifitas Rencana Tindak Pengendalian"}
                     {reportType === "konteks" && "Laporan Penetapan Konteks"}
-                  </SelectValue>
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="konteks">Laporan Penetapan Konteks</SelectItem>
