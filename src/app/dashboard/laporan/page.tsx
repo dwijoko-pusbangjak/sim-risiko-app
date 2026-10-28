@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Printer, FileText, Download } from "lucide-react";
+import { Loader2, Printer, FileText, Download, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { exportReportExcel } from "@/lib/exportExcel";
 import { logActivity } from "@/lib/logger";
@@ -29,6 +29,13 @@ export default function LaporanPage() {
   const [kegiatanList, setKegiatanList] = useState<any[]>([]);
   const [parentSasaranList, setParentSasaranList] = useState<any[]>([]);
   
+  // States untuk pemilihan unit kerja (khusus APIP / Admin)
+  const [units, setUnits] = useState<any[]>([]);
+  const [e1Units, setE1Units] = useState<any[]>([]);
+  const [selectedE1, setSelectedE1] = useState<string>("");
+  const [selectedE2, setSelectedE2] = useState<string>("e1_self");
+  const [selectedUnitName, setSelectedUnitName] = useState<string>("");
+
   const [unitData, setUnitData] = useState<any>(null);
   const [eselon1Name, setEselon1Name] = useState<string>("");
   
@@ -38,47 +45,111 @@ export default function LaporanPage() {
   const [namaPimpinan, setNamaPimpinan] = useState("Nama Pimpinan");
   const [nipPimpinan, setNipPimpinan] = useState("NIP. .........................");
 
+  const isApipOrAdmin = user?.role === "auditor" || user?.role === "admin";
+
+  useEffect(() => {
+    if (authLoading) return;
+    fetchUnits();
+  }, [authLoading]);
+
+  const fetchUnits = async () => {
+    try {
+      const snap = await getDocs(collection(db, "units"));
+      const list: any[] = [];
+      snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+      setUnits(list);
+      setE1Units(list.filter(u => u.level === "eselon_1"));
+    } catch (e) {
+      console.error("Gagal mengambil data unit", e);
+    }
+  };
+
+  const availableE2 = units.filter(u => u.level === "eselon_2" && (u.parentId === selectedE1 || u.eselon1Id === selectedE1));
+
   const handleGenerate = async () => {
-    if (!user?.unitName || !activeYear) return;
+    let targetUnitName = "";
+    let targetUnitObj: any = null;
+    let targetE1Name = "";
+
+    if (isApipOrAdmin) {
+      if (!selectedE1 || selectedE1 === "all") {
+        toast.error("Silakan pilih Unit Kerja Eselon 1 terlebih dahulu");
+        return;
+      }
+
+      const e1Obj = units.find(u => u.id === selectedE1);
+      targetE1Name = e1Obj?.name || "";
+
+      if (!selectedE2 || selectedE2 === "e1_self" || selectedE2 === "all") {
+        targetUnitObj = e1Obj;
+        targetUnitName = e1Obj?.name || "";
+      } else {
+        const e2Obj = units.find(u => u.id === selectedE2);
+        targetUnitObj = e2Obj;
+        targetUnitName = e2Obj?.name || "";
+      }
+    } else {
+      targetUnitName = user?.unitName || "";
+    }
+
+    if (!targetUnitName || !activeYear) {
+      toast.error("Unit kerja atau tahun aktif tidak terdeteksi");
+      return;
+    }
+
+    setSelectedUnitName(targetUnitName);
     setIsGenerating(true);
     setShowPreview(false);
     
     try {
-      // 1. Ambil data Unit saat ini
-      const unitQ = query(collection(db, "units"), where("name", "==", user.unitName));
-      const unitSnap = await getDocs(unitQ);
-      let eselon1Str = "";
+      // 1. Ambil data Unit jika belum lengkap
+      if (!targetUnitObj) {
+        const unitQ = query(collection(db, "units"), where("name", "==", targetUnitName));
+        const unitSnap = await getDocs(unitQ);
+        if (!unitSnap.empty) {
+          targetUnitObj = { id: unitSnap.docs[0].id, ...unitSnap.docs[0].data() };
+        }
+      }
+
+      let uDataLevel = targetUnitObj?.level || "";
+      if (!uDataLevel) {
+        uDataLevel = targetE1Name && targetUnitName !== targetE1Name ? "eselon_2" : "eselon_1";
+      }
+
+      setUnitData(targetUnitObj || { name: targetUnitName, level: uDataLevel });
       
-      let uDataLevel = "";
-      if (!unitSnap.empty) {
-        const uData = unitSnap.docs[0].data();
-        uDataLevel = uData.level;
-        setUnitData(uData);
-        
-        // Auto-fill form pimpinan
-        if (uData.name) {
-          setJabatanPimpinan(`Kepala ${uData.name}`);
+      // Auto-fill form pimpinan
+      if (targetUnitObj?.name) {
+        setJabatanPimpinan(`Kepala ${targetUnitObj.name}`);
+      } else {
+        setJabatanPimpinan(`Kepala ${targetUnitName}`);
+      }
+      if (targetUnitObj?.headName) {
+        setNamaPimpinan(targetUnitObj.headName);
+      } else {
+        setNamaPimpinan("Nama Pimpinan");
+      }
+      if (targetUnitObj?.headNip) {
+        setNipPimpinan(`NIP. ${targetUnitObj.headNip}`);
+      } else {
+        setNipPimpinan("NIP. .........................");
+      }
+      
+      // Tentukan eselon 1 name untuk header
+      if (uDataLevel === "eselon_2") {
+        if (targetE1Name) {
+          setEselon1Name(targetE1Name);
+        } else if (targetUnitObj?.parentId || targetUnitObj?.eselon1Id) {
+          const parentId = targetUnitObj.parentId || targetUnitObj.eselon1Id;
+          const parentUnit = units.find(u => u.id === parentId);
+          setEselon1Name(parentUnit?.name || "");
         }
-        if (uData.headName) {
-          setNamaPimpinan(uData.headName);
-        }
-        if (uData.headNip) {
-          setNipPimpinan(`NIP. ${uData.headNip}`);
-        }
-        
-        // Coba cari nama eselon 1 jika user adalah eselon 2
-        if (uData.level === "eselon_2" && uData.eselon1Id) {
-          const e1Q = query(collection(db, "units"), where("__name__", "==", uData.eselon1Id));
-          const e1Snap = await getDocs(e1Q);
-          if (!e1Snap.empty) {
-            eselon1Str = e1Snap.docs[0].data().name;
-            setEselon1Name(eselon1Str);
-          }
-        }
+      } else {
+        setEselon1Name("");
       }
       
       if (reportType === "konteks") {
-        const kQ = query(collection(db, "mr_konteks"), where("unitName", "==", user.unitName), where("tahun", "==", activeYear));
+        const kQ = query(collection(db, "mr_konteks"), where("unitName", "==", targetUnitName), where("tahun", "==", activeYear));
         const kSnap = await getDocs(kQ);
         if (!kSnap.empty) {
           setKonteksData({ id: kSnap.docs[0].id, ...kSnap.docs[0].data() });
@@ -91,7 +162,7 @@ export default function LaporanPage() {
         const allStrategis = stSnap.docs.map(d => ({ ...d.data(), id: d.id }));
         
         if (uDataLevel === "eselon_1") {
-          const progQ = query(collection(db, "sasaran_program"), where("unitName", "==", user.unitName));
+          const progQ = query(collection(db, "sasaran_program"), where("unitName", "==", targetUnitName));
           const progSnap = await getDocs(progQ);
           const programs = progSnap.docs.map(d => ({ ...d.data(), id: d.id }));
           
@@ -104,7 +175,7 @@ export default function LaporanPage() {
           setParentSasaranList(filteredStrategis);
           setKegiatanList([]);
         } else if (uDataLevel === "eselon_2") {
-          const kegQ = query(collection(db, "sasaran_kegiatan"), where("unitName", "==", user.unitName));
+          const kegQ = query(collection(db, "sasaran_kegiatan"), where("unitName", "==", targetUnitName));
           const kegSnap = await getDocs(kegQ);
           const kegiatans = kegSnap.docs.map(d => ({ ...d.data(), id: d.id }));
           
@@ -127,7 +198,7 @@ export default function LaporanPage() {
         // 2. Ambil data Risiko
         const riskQ = query(
           collection(db, "mr_identifikasi"), 
-          where("unitName", "==", user.unitName),
+          where("unitName", "==", targetUnitName),
           where("tahun", "==", activeYear)
         );
         const riskSnap = await getDocs(riskQ);
@@ -141,7 +212,7 @@ export default function LaporanPage() {
       
       setShowPreview(true);
       
-      logActivity(user, "Lihat", "Laporan", `Melihat Pratinjau Laporan ${getReportTitle(reportType)}`);
+      logActivity(user, "Lihat", "Laporan", `Melihat Pratinjau Laporan ${getReportTitle(reportType)} untuk ${targetUnitName}`);
       
     } catch (error) {
       console.error("Gagal memuat laporan:", error);
@@ -217,6 +288,68 @@ export default function LaporanPage() {
         </div>
 
         <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-6">
+          {/* OPSI PILIHAN UNIT KERJA UNTUK USER APIP / ADMIN */}
+          {isApipOrAdmin && (
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                <Building2 className="w-4 h-4 text-indigo-600" />
+                Pilih Unit Kerja yang Akan Dicetak Laporannya
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* 1. Dropdown Eselon 1 */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-700">Unit Eselon 1</Label>
+                  <Select 
+                    value={selectedE1} 
+                    onValueChange={(val) => { 
+                      setSelectedE1(val); 
+                      setSelectedE2("e1_self"); 
+                      setShowPreview(false); 
+                    }}
+                  >
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder="-- Pilih Unit Eselon 1 --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {e1Units.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* 2. Dropdown Eselon 2 yang sesuai dengan Eselon 1 yang sudah dipilih termasuk laporan Eselon 1 nya */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-700">Unit Eselon 2 / Terkait</Label>
+                  <Select 
+                    value={selectedE2} 
+                    onValueChange={(val) => { 
+                      setSelectedE2(val); 
+                      setShowPreview(false); 
+                    }} 
+                    disabled={!selectedE1 || selectedE1 === "all"}
+                  >
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder={!selectedE1 || selectedE1 === "all" ? "Pilih Eselon 1 terlebih dahulu" : "-- Pilih Unit Terkait --"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectedE1 && selectedE1 !== "all" && (
+                        <>
+                          <SelectItem value="e1_self" className="font-semibold text-indigo-700">
+                            [{e1Units.find(u => u.id === selectedE1)?.name}] (Eselon 1 itu sendiri)
+                          </SelectItem>
+                          {availableE2.map((u) => (
+                            <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                          ))}
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2 lg:col-span-2">
               <Label>Jenis Laporan</Label>
@@ -307,14 +440,14 @@ export default function LaporanPage() {
             
             {/* Hierarki Unit */}
             {unitData?.level === "eselon_1" ? (
-              <h4 className="text-base font-bold uppercase">{user?.unitName}</h4>
+              <h4 className="text-base font-bold uppercase">{selectedUnitName || unitData?.name || user?.unitName}</h4>
             ) : unitData?.level === "eselon_2" ? (
               <>
                 {eselon1Name && <h4 className="text-base font-bold uppercase">{eselon1Name}</h4>}
-                <h4 className="text-base font-bold uppercase">{user?.unitName}</h4>
+                <h4 className="text-base font-bold uppercase">{selectedUnitName || unitData?.name || user?.unitName}</h4>
               </>
             ) : (
-              <h4 className="text-base font-bold uppercase">{user?.unitName}</h4>
+              <h4 className="text-base font-bold uppercase">{selectedUnitName || unitData?.name || user?.unitName}</h4>
             )}
             
             <div className="py-4">
