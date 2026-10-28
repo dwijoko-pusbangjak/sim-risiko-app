@@ -62,10 +62,9 @@ export default function KirimAuditorPage() {
   };
 
   const handleSend = async () => {
-    if (!user) return;
+    if (!user || !user.unitName) return;
     const safeYear = activeYear || new Date().getFullYear().toString();
     
-    const isResubmit = submissionStatus?.status === "reviewed";
     const confirmMessage = isResubmit
       ? `Anda yakin ingin mengirim ulang Peta Risiko Tahun ${safeYear} ke Auditor setelah melakukan perbaikan?`
       : `Anda yakin ingin mengirim Peta Risiko Tahun ${safeYear} ke Auditor APIP?`;
@@ -87,7 +86,7 @@ export default function KirimAuditorPage() {
         tahun: safeYear,
         status: "submitted",
         submittedAt: new Date().toISOString(),
-        submittedBy: user.name || user.email,
+        submittedBy: (user as any).name || user.email,
         isResubmission: isResubmit
       };
       
@@ -131,9 +130,17 @@ export default function KirimAuditorPage() {
   };
 
   if (authLoading) return <div className="p-8 text-center text-slate-500">Memuat...</div>;
+  if (!user || !user.unitName) {
+    return (
+      <div className="p-8 text-center text-slate-500">
+        Unit kerja tidak ditemukan atau akun Anda belum dihubungkan dengan unit kerja.
+      </div>
+    );
+  }
 
   const isReviewed = submissionStatus?.status === "reviewed";
   const isSubmitted = submissionStatus?.status === "submitted";
+  const isResubmit = isReviewed;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto mt-8">
