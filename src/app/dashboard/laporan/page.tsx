@@ -490,7 +490,7 @@ export default function LaporanPage() {
                   <tr className="bg-slate-50">
                     <th className="border border-black p-2 text-center w-12">No</th>
                     <th className="border border-black p-2 text-center">
-                      {unitData?.level === "eselon_1" ? "Sasaran Program" : "Sasaran Kegiatan"}
+                      {unitData?.level === "kementerian" ? "Sasaran Strategis" : unitData?.level === "eselon_1" ? "Sasaran Program" : "Sasaran Kegiatan"}
                     </th>
                     <th className="border border-black p-2 text-center">Indikator Kinerja Utama</th>
                     <th className="border border-black p-2 text-center">Risiko</th>

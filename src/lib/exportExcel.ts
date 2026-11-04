@@ -49,7 +49,7 @@ export const exportReportExcel = async (
   let startRow = 5;
 
   if (reportType === "peta_risiko") {
-    const sasaranTitle = unitData?.level === "eselon_1" ? "Sasaran Program" : "Sasaran Kegiatan";
+    const sasaranTitle = unitData?.level === "kementerian" ? "Sasaran Strategis" : unitData?.level === "eselon_1" ? "Sasaran Program" : "Sasaran Kegiatan";
     const headers = ["No", sasaranTitle, "Indikator Kinerja Utama", "Risiko", "Sumber Risiko", "Kategori Risiko", "Penyebab", "Dampak", "Pengendalian yang ada", "Sisa Risiko", "Pemilik Risiko", "K", "D", "Skala", "Level Risiko"];
     
     sheet.columns = [

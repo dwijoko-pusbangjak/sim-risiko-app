@@ -38,7 +38,7 @@ import { useRouter } from "next/navigation";
 interface UnitData {
   id: string;
   name: string;
-  level: "eselon_1" | "eselon_2";
+  level: "kementerian" | "eselon_1" | "eselon_2";
   parentId: string | null;
   headName?: string;
   headNip?: string;
@@ -91,8 +91,9 @@ export default function UnitsManagementPage() {
       snapshot.forEach((doc) => {
         fetched.push({ ...doc.data(), id: doc.id } as UnitData);
       });
-      // Sort Eselon 1 first, then Eselon 2
-      fetched.sort((a, b) => a.level.localeCompare(b.level));
+      // Sort: Kementerian first, then Eselon 1, then Eselon 2
+      const levelOrder: Record<string, number> = { kementerian: 1, eselon_1: 2, eselon_2: 3 };
+      fetched.sort((a, b) => (levelOrder[a.level] || 99) - (levelOrder[b.level] || 99));
       setUnits(fetched);
     } catch (error) {
       console.error("Gagal mengambil data unit:", error);
@@ -193,7 +194,7 @@ export default function UnitsManagementPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-800">Manajemen Unit Kerja</h2>
-          <p className="text-slate-500">Atur hierarki Eselon 1 dan Eselon 2 di lingkungan Kementerian.</p>
+          <p className="text-slate-500">Atur hierarki unit kerja Tingkat Kementerian, Eselon 1, dan Eselon 2.</p>
         </div>
         
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -205,7 +206,7 @@ export default function UnitsManagementPage() {
               <DialogHeader>
                 <DialogTitle>{isEditMode ? "Edit Unit Kerja" : "Tambah Unit Kerja Baru"}</DialogTitle>
                 <DialogDescription>
-                  Masukkan nama unit dan pilih level Eselon.
+                  Masukkan nama unit kerja dan pilih tingkatannya.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -214,23 +215,25 @@ export default function UnitsManagementPage() {
                   <Input 
                     id="name" 
                     required
-                    placeholder="Contoh: Ditjen Pembangunan Desa" 
+                    placeholder="Contoh: Kementerian Desa dan PDT / Ditjen Pembangunan Desa" 
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="level">Tingkat Eselon *</Label>
+                  <Label htmlFor="level">Tingkat Unit Kerja *</Label>
                   <Select 
                     value={formData.level} 
                     onValueChange={(val: any) => setFormData({...formData, level: val})}
                   >
                     <SelectTrigger>
-                      {formData.level === "eselon_1" ? "Eselon 1 (Induk)" : 
+                      {formData.level === "kementerian" ? "Tingkat Kementerian" :
+                       formData.level === "eselon_1" ? "Eselon 1 (Induk)" : 
                        formData.level === "eselon_2" ? "Eselon 2 (Sub-Unit)" : 
-                       <span className="text-slate-500">Pilih Eselon</span>}
+                       <span className="text-slate-500">Pilih Tingkat Unit</span>}
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="kementerian">Tingkat Kementerian</SelectItem>
                       <SelectItem value="eselon_1">Eselon 1 (Induk)</SelectItem>
                       <SelectItem value="eselon_2">Eselon 2 (Sub-Unit)</SelectItem>
                     </SelectContent>
@@ -306,7 +309,7 @@ export default function UnitsManagementPage() {
             <TableRow className="bg-slate-50">
               <TableHead className="w-[300px]">Nama Unit Kerja</TableHead>
               <TableHead>Pimpinan Unit</TableHead>
-              <TableHead>Tingkat Eselon</TableHead>
+              <TableHead>Tingkat Unit</TableHead>
               <TableHead>Induk (Eselon 1)</TableHead>
               <TableHead className="text-center">Aksi</TableHead>
             </TableRow>
@@ -320,7 +323,7 @@ export default function UnitsManagementPage() {
               </TableRow>
             ) : units.length > 0 ? (
               (() => {
-                const rows: JSX.Element[] = [];
+                const rows: React.ReactNode[] = [];
                 // Jika sedang mencari, tampilkan flat list. Jika tidak, tampilkan Tree hierarki.
                 if (searchTerm) {
                   if (filteredUnits.length === 0) {
@@ -337,7 +340,7 @@ export default function UnitsManagementPage() {
                       <TableRow key={u.id}>
                         <TableCell className="font-medium">
 <div className="flex items-start gap-2">
-<Building2 className={`w-4 h-4 mt-0.5 shrink-0 ${u.level === 'eselon_1' ? 'text-emerald-600' : 'text-slate-400'}`} />
+<Building2 className={`w-4 h-4 mt-0.5 shrink-0 ${u.level === 'kementerian' ? 'text-indigo-600' : u.level === 'eselon_1' ? 'text-emerald-600' : 'text-slate-400'}`} />
 <span className="whitespace-normal break-words max-w-[400px]">{u.name}</span>
 </div>
 </TableCell>
@@ -352,8 +355,8 @@ export default function UnitsManagementPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-md text-xs font-semibold ${u.level === 'eselon_1' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
-                            {u.level === 'eselon_1' ? 'Eselon 1' : 'Eselon 2'}
+                          <span className={`px-2 py-1 rounded-md text-xs font-semibold ${u.level === 'kementerian' ? 'bg-indigo-100 text-indigo-800 font-bold' : u.level === 'eselon_1' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
+                            {u.level === 'kementerian' ? 'Kementerian' : u.level === 'eselon_1' ? 'Eselon 1' : 'Eselon 2'}
                           </span>
                         </TableCell>
                         <TableCell className="text-slate-500 text-sm">{getParentName(u.parentId)}</TableCell>
@@ -372,6 +375,48 @@ export default function UnitsManagementPage() {
                   });
                 } else {
                   // Mode Tree Hierarki
+                  // 1. Tampilkan Unit Tingkat Kementerian di posisi teratas
+                  const kementerianUnits = units.filter(u => u.level === 'kementerian');
+                  kementerianUnits.forEach(k => {
+                    rows.push(
+                      <TableRow key={k.id} className="bg-indigo-50/50 hover:bg-indigo-50/80 border-b-2">
+                        <TableCell className="font-bold text-slate-900">
+                          <div className="flex items-start gap-2">
+                            <Building2 className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                            <span className="whitespace-normal break-words max-w-[400px]">{k.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {k.headName ? (
+                            <div className="flex flex-col">
+                              <span className="text-sm font-semibold text-slate-800">{k.headName}</span>
+                              <span className="text-xs text-slate-500">{k.headNip || '-'}</span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic text-xs">Belum diatur</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="px-2 py-1 rounded-md text-xs font-bold bg-indigo-100 text-indigo-800">
+                            Kementerian
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-slate-400 text-sm">-</TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(k)} title="Edit Unit">
+                              <Pencil className="h-4 w-4 text-blue-600" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDelete(k.id, k.name)} title="Hapus Unit">
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  });
+
+                  // 2. Tampilkan Unit Eselon 1 dan anak Eselon 2
                   const eselon1List = units.filter(u => u.level === 'eselon_1');
                   eselon1List.forEach(e1 => {
                     // Push Eselon 1 Row

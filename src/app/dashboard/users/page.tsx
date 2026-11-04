@@ -212,13 +212,14 @@ export default function UsersManagementPage() {
 
   // Handler saat Role diubah (Reset Unit Kerja agar tidak bentrok)
   const handleRoleChange = (newRole: any) => {
+    const kementerianUnit = unitsList.find(u => u.level === "kementerian");
     setFormData({
       ...formData,
       role: newRole,
       unitName: newRole === "admin" 
         ? "Kementerian Pusat" 
         : newRole === "kementerian" 
-        ? "Kementerian Desa dan PDT" 
+        ? (kementerianUnit ? kementerianUnit.name : "Kementerian Desa dan PDT") 
         : newRole === "auditor" 
         ? "Inspektorat Jenderal" 
         : ""
@@ -284,14 +285,12 @@ export default function UsersManagementPage() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="unitName">Nama Unit Kerja *</Label>
-                  {(formData.role === "admin" || formData.role === "auditor" || formData.role === "kementerian") ? (
+                  {(formData.role === "admin" || formData.role === "auditor") ? (
                     <Input 
                       id="unitName" 
                       required 
                       placeholder={
-                        formData.role === "kementerian" 
-                          ? "Contoh: Kementerian Desa dan PDT" 
-                          : formData.role === "auditor" 
+                        formData.role === "auditor" 
                           ? "Contoh: Inspektorat Jenderal" 
                           : "Contoh: Pusat"
                       } 
@@ -300,12 +299,15 @@ export default function UsersManagementPage() {
                     />
                   ) : (
                     <Select required value={formData.unitName} onValueChange={(val: any) => setFormData({...formData, unitName: val})}>
-                      <SelectTrigger><SelectValue placeholder={`Pilih Unit ${formData.role === "pimpinan" ? "Kerja (Semua Level)" : formData.role === "eselon_1" ? "Eselon 1" : "Eselon 2"}`} /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={`Pilih Unit ${formData.role === "pimpinan" ? "Kerja (Semua Level)" : formData.role === "kementerian" ? "Tingkat Kementerian" : formData.role === "eselon_1" ? "Eselon 1" : "Eselon 2"}`} /></SelectTrigger>
                       <SelectContent>
                         {unitsList.filter(u => formData.role === "pimpinan" ? true : u.level === formData.role).map((unit) => (
                           <SelectItem key={unit.id} value={unit.name}>{unit.name}</SelectItem>
                         ))}
-                        {unitsList.filter(u => formData.role === "pimpinan" ? true : u.level === formData.role).length === 0 && (
+                        {formData.role === "kementerian" && !unitsList.some(u => u.level === "kementerian") && (
+                          <SelectItem value="Kementerian Desa dan PDT">Kementerian Desa dan PDT (Bawaan)</SelectItem>
+                        )}
+                        {unitsList.filter(u => formData.role === "pimpinan" ? true : u.level === formData.role).length === 0 && formData.role !== "kementerian" && (
                           <SelectItem value="kosong" disabled>Belum ada data unit kerja terdaftar.</SelectItem>
                         )}
                       </SelectContent>
@@ -348,15 +350,18 @@ export default function UsersManagementPage() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="unitName_edit">Ubah Unit Kerja *</Label>
-                  {(formData.role === "admin" || formData.role === "auditor" || formData.role === "kementerian") ? (
+                  {(formData.role === "admin" || formData.role === "auditor") ? (
                     <Input id="unitName_edit" required value={formData.unitName} onChange={(e) => setFormData({...formData, unitName: e.target.value})} />
                   ) : (
                     <Select required value={formData.unitName} onValueChange={(val: any) => setFormData({...formData, unitName: val})}>
-                      <SelectTrigger><SelectValue placeholder={`Pilih Unit ${formData.role === "pimpinan" ? "Kerja (Semua Level)" : formData.role === "eselon_1" ? "Eselon 1" : "Eselon 2"}`} /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={`Pilih Unit ${formData.role === "pimpinan" ? "Kerja (Semua Level)" : formData.role === "kementerian" ? "Tingkat Kementerian" : formData.role === "eselon_1" ? "Eselon 1" : "Eselon 2"}`} /></SelectTrigger>
                       <SelectContent>
                         {unitsList.filter(u => formData.role === "pimpinan" ? true : u.level === formData.role).map((unit) => (
                           <SelectItem key={unit.id} value={unit.name}>{unit.name}</SelectItem>
                         ))}
+                        {formData.role === "kementerian" && !unitsList.some(u => u.level === "kementerian") && (
+                          <SelectItem value={formData.unitName || "Kementerian Desa dan PDT"}>{formData.unitName || "Kementerian Desa dan PDT"}</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   )}
