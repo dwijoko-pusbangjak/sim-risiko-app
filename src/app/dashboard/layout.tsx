@@ -118,7 +118,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Group 2: Cascading Kinerja
   const sasaranItems: NavItem[] = [];
-  if (user.role === "admin") {
+  if (user.role === "admin" || user.role === "kementerian") {
     sasaranItems.push({ name: "Sasaran Strategis", href: "/dashboard/sasaran-strategis", icon: Target });
     sasaranItems.push({ name: "Sasaran Program", href: "/dashboard/sasaran-program", icon: Target });
     sasaranItems.push({ name: "Sasaran Kegiatan", href: "/dashboard/sasaran-kegiatan", icon: Target });
@@ -197,6 +197,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
     const getRoleLabel = (role: string | null) => {
     if (role === "admin") return "Administrator";
+    if (role === "kementerian") return "Pengelola Risiko Kementerian";
+    if (role === "auditor") return "Auditor APIP";
     if (role === "eselon_1") return "Unit Kerja Eselon 1";
     if (role === "eselon_2") return "Unit Kerja Eselon 2";
     if (role === "pimpinan") return "Pimpinan Unit Kerja";

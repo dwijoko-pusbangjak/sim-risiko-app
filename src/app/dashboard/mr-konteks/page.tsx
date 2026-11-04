@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, doc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
@@ -15,7 +15,7 @@ import { Loader2, Save, Plus, Pencil, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface Indikator { name: string; target: string; }
-interface SasaranStrategis { id: string; name: string; }
+interface SasaranStrategis { id: string; name: string; iku?: string; target?: string; indikators?: Indikator[]; }
 interface SasaranProgram { id: string; strategisId: string; unitName: string; name: string; ikp?: string; target?: string; indikators?: Indikator[]; }
 interface SasaranKegiatan { id: string; programId: string; unitName: string; name: string; ikk?: string; target?: string; indikators?: Indikator[]; }
 
@@ -152,7 +152,18 @@ export default function PenetapanKonteksPage() {
     resetForm();
     
     const initialKebijakan: KebijakanRow[] = [];
-    if (user?.role === "eselon_1") {
+    if (user?.role === "kementerian") {
+      strategisList.forEach(strat => {
+        const indText = strat.indikators && strat.indikators.length > 0 
+          ? strat.indikators.map(i => `- ${i.name} (Target: ${i.target})`).join('\n')
+          : `- ${strat.iku || '-'} (Target: ${strat.target || '-'})`;
+        initialKebijakan.push({
+          id: generateId(),
+          sasaran: `Sasaran: ${strat.name}\nIndikator:\n${indText}`,
+          peraturan: "", amanat: "", pihakInternal: "", hubInternal: "", pihakEksternal: "", hubEksternal: ""
+        });
+      });
+    } else if (user?.role === "eselon_1") {
       programList.forEach(prog => {
         const strat = strategisList.find(s => s.id === prog.strategisId);
         const parentName = strat ? strat.name : "-";
@@ -205,10 +216,12 @@ export default function PenetapanKonteksPage() {
 
     let parsedKebijakan = item.kebijakanList || [];
     if (parsedKebijakan.length === 0 && item.peraturan && Object.keys(item.peraturan).length > 0) {
-      const list = user?.role === "eselon_1" ? programList : kegiatanList;
+      const list = user?.role === "kementerian" ? strategisList : user?.role === "eselon_1" ? programList : kegiatanList;
       parsedKebijakan = list.map(sas => {
         let parentName = "-";
-        if (user?.role === "eselon_1") {
+        if (user?.role === "kementerian") {
+          parentName = "Kementerian";
+        } else if (user?.role === "eselon_1") {
           const s = sas as SasaranProgram;
           parentName = strategisList.find(x => x.id === s.strategisId)?.name || "-";
         } else {
@@ -218,11 +231,11 @@ export default function PenetapanKonteksPage() {
         
         const indText = sas.indikators && sas.indikators.length > 0 
           ? sas.indikators.map((i: any) => `- ${i.name} (Target: ${i.target})`).join('\n')
-          : `- ${'ikp' in sas ? sas.ikp : 'ikk' in sas ? sas.ikk : ''} (Target: ${sas.target || '-'})`;
+          : `- ${'iku' in sas ? (sas as any).iku : 'ikp' in sas ? sas.ikp : 'ikk' in sas ? sas.ikk : ''} (Target: ${sas.target || '-'})`;
         
         return {
           id: generateId(),
-          sasaran: `Induk: ${parentName}\nSasaran: ${sas.name}\nIndikator:\n${indText}`,
+          sasaran: user?.role === "kementerian" ? `Sasaran: ${sas.name}\nIndikator:\n${indText}` : `Induk: ${parentName}\nSasaran: ${sas.name}\nIndikator:\n${indText}`,
           peraturan: item.peraturan?.[sas.id] || "",
           amanat: item.amanatPeraturan?.[sas.id] || "",
           pihakInternal: item.pihakInternal?.[sas.id] || "",

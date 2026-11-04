@@ -75,7 +75,7 @@ export default function SasaranStrategisPage() {
 
   useEffect(() => {
     if (!authLoading) {
-      if (user?.role !== "admin") {
+      if (user?.role !== "admin" && user?.role !== "kementerian") {
         router.push("/dashboard");
       } else {
         fetchData();
@@ -165,7 +165,7 @@ export default function SasaranStrategisPage() {
     item.iku?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (authLoading || user?.role !== "admin") return null;
+  if (authLoading || (user?.role !== "admin" && user?.role !== "kementerian")) return null;
 
   return (
     <div className="space-y-4">

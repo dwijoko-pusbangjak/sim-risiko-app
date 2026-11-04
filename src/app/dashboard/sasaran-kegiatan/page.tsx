@@ -94,7 +94,7 @@ export default function SasaranKegiatanPage() {
 
   useEffect(() => {
     if (!authLoading) {
-      if (!user || (user.role !== "admin" && user.role !== "eselon_2")) {
+      if (!user || (user.role !== "admin" && user.role !== "eselon_2" && user.role !== "kementerian")) {
         router.push("/dashboard");
       } else {
         fetchData();
@@ -135,7 +135,7 @@ export default function SasaranKegiatanPage() {
       const fetchedProg: SasaranProgram[] = [];
       progSnap.forEach((doc) => {
         const data = doc.data();
-        if (user?.role === "admin" || (user?.role === "eselon_2" && data.unitName === parentEselon1Name)) {
+        if (user?.role === "admin" || user?.role === "kementerian" || (user?.role === "eselon_2" && data.unitName === parentEselon1Name)) {
           fetchedProg.push({ id: doc.id, name: data.name, unitName: data.unitName });
         }
       });
@@ -147,7 +147,7 @@ export default function SasaranKegiatanPage() {
       const fetchedKegiatan: SasaranKegiatan[] = [];
       snapshot.forEach((doc) => {
         const data = doc.data();
-        if (user?.role === "admin" || data.unitName === user?.unitName) {
+        if (user?.role === "admin" || user?.role === "kementerian" || data.unitName === user?.unitName) {
           fetchedKegiatan.push({ ...data, id: doc.id } as SasaranKegiatan);
         }
       });
@@ -239,10 +239,10 @@ export default function SasaranKegiatanPage() {
   const filteredData = dataList.filter(item => 
     item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.ikk?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (user?.role === "admin" && item.unitName?.toLowerCase().includes(searchTerm.toLowerCase()))
+    ((user?.role === "admin" || user?.role === "kementerian") && item.unitName?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  if (authLoading || !user || (user.role !== "admin" && user.role !== "eselon_2")) return null;
+  if (authLoading || !user || (user.role !== "admin" && user.role !== "eselon_2" && user.role !== "kementerian")) return null;
 
   return (
     <div className="space-y-4">
@@ -268,7 +268,7 @@ export default function SasaranKegiatanPage() {
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-800">Sasaran Kegiatan (Eselon 2)</h2>
           <p className="text-slate-500">
-            {user.role === "admin" 
+            {user.role === "admin" || user.role === "kementerian"
               ? "Pantau seluruh Sasaran Kegiatan Eselon 2."
               : `Kelola Sasaran Kegiatan untuk ${user.unitName}`}
           </p>
@@ -427,7 +427,7 @@ export default function SasaranKegiatanPage() {
             <TableRow className="bg-slate-50">
               <TableHead className="w-[250px]">Sasaran Kegiatan</TableHead>
               <TableHead>Cascading (Induk Program)</TableHead>
-              {user.role === "admin" && <TableHead>Unit Eselon 2</TableHead>}
+              {(user.role === "admin" || user.role === "kementerian") && <TableHead>Unit Eselon 2</TableHead>}
               <TableHead>Indikator Sasaran (IKK)</TableHead>
               <TableHead>Target</TableHead>
               {user.role === "eselon_2" && <TableHead className="text-center w-[120px]">Aksi</TableHead>}
@@ -462,7 +462,7 @@ export default function SasaranKegiatanPage() {
                       {getProgramName(item.programId)}
                     </div>
                   </TableCell>
-                  {user.role === "admin" && (
+                  {(user.role === "admin" || user.role === "kementerian") && (
                       <TableCell rowSpan={group.length} className="align-top">
                       <span className="px-2 py-1 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-800">
                         {item.unitName}

@@ -58,7 +58,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const init = async () => {
       if (!authLoading && user) {
-        if (user.role === "admin") {
+        if (user.role === "admin" || user.role === "kementerian") {
           setViewMode("admin");
           fetchAdminData("admin", "");
         } else {
@@ -171,7 +171,11 @@ export default function DashboardPage() {
       setAdminTotals({ totalRisiko: tRisiko, risikoPrioritas: tPrioritas, totalRtp: tRtp });
       
       if (mode === "admin") {
-        const unmappedRisks = allRisks.filter(r => !mappedRiskIds.has(r.id));
+        const unmappedRisks = allRisks.filter(r => 
+          !mappedRiskIds.has(r.id) && 
+          (r as any).role !== "kementerian" && 
+          !r.unitName?.toLowerCase().includes("kementerian")
+        );
         if (unmappedRisks.length > 0) {
           Promise.all(unmappedRisks.map(r => deleteDoc(doc(db, "mr_identifikasi", r.id))))
             .catch(e => console.error(e));
@@ -182,8 +186,8 @@ export default function DashboardPage() {
       hierarchy.forEach(h => initialExpand[h.id] = true);
       setExpandedE1(initialExpand);
       
-      // Save only risks that belong to this hierarchy
-      const visibleRisks = allRisks.filter(r => mappedRiskIds.has(r.id));
+      // Save risks that belong to this hierarchy or ministry level
+      const visibleRisks = allRisks.filter(r => mappedRiskIds.has(r.id) || (r as any).role === "kementerian" || r.unitName?.toLowerCase().includes("kementerian"));
       setAllRisks(visibleRisks);
       
       setAdminHierarchy(hierarchy);

@@ -15,6 +15,7 @@ import { Loader2, Save, Plus, Pencil, Trash2, X, AlertCircle } from "lucide-reac
 import { toast } from "sonner";
 
 interface Indikator { name: string; target: string; }
+interface SasaranStrategis { id: string; name: string; iku?: string; indikators?: Indikator[]; }
 interface SasaranProgram { id: string; name: string; ikp?: string; indikators?: Indikator[]; }
 interface SasaranKegiatan { id: string; name: string; ikk?: string; indikators?: Indikator[]; }
 
@@ -100,7 +101,19 @@ export default function IdentifikasiRisikoPage() {
       
       let list: { id: string; indikator: string; sasaran: string }[] = [];
       
-      if (user.role === "eselon_1") {
+      if (user.role === "kementerian") {
+        const snap = await getDocs(collection(db, "sasaran_strategis"));
+        snap.docs.forEach(d => {
+          const data = d.data() as SasaranStrategis;
+          if (data.indikators && data.indikators.length > 0) {
+            data.indikators.forEach((ind, i) => {
+              list.push({ id: d.id + "_" + i, indikator: ind.name, sasaran: data.name });
+            });
+          } else if (data.iku) {
+            list.push({ id: d.id, indikator: data.iku, sasaran: data.name });
+          }
+        });
+      } else if (user.role === "eselon_1") {
         const q = query(collection(db, "sasaran_program"), where("unitName", "==", user.unitName));
         const snap = await getDocs(q);
         snap.docs.forEach(d => {

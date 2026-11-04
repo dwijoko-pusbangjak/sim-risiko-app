@@ -43,12 +43,14 @@ interface UserProfile {
   email: string;
   role: string;
   unitName: string;
+  unitId?: string;
 }
 
 interface UnitData {
   id: string;
   name: string;
   level: string;
+  parentId?: string;
 }
 
 export default function UsersManagementPage() {
@@ -213,7 +215,13 @@ export default function UsersManagementPage() {
     setFormData({
       ...formData,
       role: newRole,
-      unitName: newRole === "admin" ? "Kementerian Pusat" : ""
+      unitName: newRole === "admin" 
+        ? "Kementerian Pusat" 
+        : newRole === "kementerian" 
+        ? "Kementerian Desa dan PDT" 
+        : newRole === "auditor" 
+        ? "Inspektorat Jenderal" 
+        : ""
     });
   };
 
@@ -225,10 +233,11 @@ export default function UsersManagementPage() {
   const getRoleBadge = (role: string) => {
     switch(role) {
       case "admin": return <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-md text-xs font-bold">Admin</span>;
+      case "kementerian": return <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-md text-xs font-bold">Kementerian</span>;
       case "auditor": return <span className="bg-pink-100 text-pink-800 px-2 py-1 rounded-md text-xs font-bold">Auditor</span>;
       case "eselon_1": return <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-semibold">Eselon 1</span>;
       case "eselon_2": return <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md text-xs font-semibold">Eselon 2</span>;
-        case "pimpinan": return <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-md text-xs font-semibold">Pimpinan</span>;
+      case "pimpinan": return <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-md text-xs font-semibold">Pimpinan</span>;
       default: return <span className="bg-slate-100 text-slate-800 px-2 py-1 rounded-md text-xs">Unknown</span>;
     }
   };
@@ -265,8 +274,9 @@ export default function UsersManagementPage() {
                     <SelectTrigger><SelectValue placeholder="Pilih Role" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">Administrator (Pusat)</SelectItem>
+                      <SelectItem value="kementerian">Pengelola Risiko Kementerian</SelectItem>
                       <SelectItem value="auditor">Auditor (APIP)</SelectItem>
-<SelectItem value="pimpinan">Pimpinan Unit Kerja</SelectItem>
+                      <SelectItem value="pimpinan">Pimpinan Unit Kerja</SelectItem>
                       <SelectItem value="eselon_1">Unit Kerja Eselon 1</SelectItem>
                       <SelectItem value="eselon_2">Unit Kerja Eselon 2</SelectItem>
                     </SelectContent>
@@ -274,8 +284,20 @@ export default function UsersManagementPage() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="unitName">Nama Unit Kerja *</Label>
-                  {(formData.role === "admin" || formData.role === "auditor") ? (
-                    <Input id="unitName" required placeholder="Contoh: Pusat" value={formData.unitName} onChange={(e) => setFormData({...formData, unitName: e.target.value})} />
+                  {(formData.role === "admin" || formData.role === "auditor" || formData.role === "kementerian") ? (
+                    <Input 
+                      id="unitName" 
+                      required 
+                      placeholder={
+                        formData.role === "kementerian" 
+                          ? "Contoh: Kementerian Desa dan PDT" 
+                          : formData.role === "auditor" 
+                          ? "Contoh: Inspektorat Jenderal" 
+                          : "Contoh: Pusat"
+                      } 
+                      value={formData.unitName} 
+                      onChange={(e) => setFormData({...formData, unitName: e.target.value})} 
+                    />
                   ) : (
                     <Select required value={formData.unitName} onValueChange={(val: any) => setFormData({...formData, unitName: val})}>
                       <SelectTrigger><SelectValue placeholder={`Pilih Unit ${formData.role === "pimpinan" ? "Kerja (Semua Level)" : formData.role === "eselon_1" ? "Eselon 1" : "Eselon 2"}`} /></SelectTrigger>
@@ -316,8 +338,9 @@ export default function UsersManagementPage() {
                     <SelectTrigger><SelectValue placeholder="Pilih Role" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">Administrator (Pusat)</SelectItem>
+                      <SelectItem value="kementerian">Pengelola Risiko Kementerian</SelectItem>
                       <SelectItem value="auditor">Auditor (APIP)</SelectItem>
-<SelectItem value="pimpinan">Pimpinan Unit Kerja</SelectItem>
+                      <SelectItem value="pimpinan">Pimpinan Unit Kerja</SelectItem>
                       <SelectItem value="eselon_1">Unit Kerja Eselon 1</SelectItem>
                       <SelectItem value="eselon_2">Unit Kerja Eselon 2</SelectItem>
                     </SelectContent>
@@ -325,7 +348,7 @@ export default function UsersManagementPage() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="unitName_edit">Ubah Unit Kerja *</Label>
-                  {(formData.role === "admin" || formData.role === "auditor") ? (
+                  {(formData.role === "admin" || formData.role === "auditor" || formData.role === "kementerian") ? (
                     <Input id="unitName_edit" required value={formData.unitName} onChange={(e) => setFormData({...formData, unitName: e.target.value})} />
                   ) : (
                     <Select required value={formData.unitName} onValueChange={(val: any) => setFormData({...formData, unitName: val})}>
@@ -389,7 +412,13 @@ export default function UsersManagementPage() {
                   <TableRow key={u.id} className={indentClass.includes('bg-') ? indentClass.split(' ').find(cls => cls.startsWith('bg-')) : ''}>
                     <TableCell className={`font-medium ${indentClass.replace(/bg-[^\s]+/g, '')}`}>
                       <div className="flex items-start gap-2 mt-0.5">
-                        {u.role === "admin" ? <ShieldCheck className="w-4 h-4 text-purple-600 shrink-0" /> : <KeyRound className="w-4 h-4 text-slate-400 shrink-0" />}
+                        {u.role === "admin" ? (
+                          <ShieldCheck className="w-4 h-4 text-purple-600 shrink-0" />
+                        ) : u.role === "kementerian" ? (
+                          <Building2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                        ) : (
+                          <KeyRound className="w-4 h-4 text-slate-400 shrink-0" />
+                        )}
                         <span className="whitespace-normal break-words max-w-[300px]">{u.email}</span>
                       </div>
                     </TableCell>
@@ -414,16 +443,16 @@ export default function UsersManagementPage() {
                 if (searchTerm) {
                   filteredUsers.forEach(u => rows.push(renderUserRow(u, "")));
                 } else {
-                  // Admin / Kementerian (No Eselon 1 Parent)
-                  const admins = filteredUsers.filter(u => u.role === "admin" || u.role === "kementerian" || !u.unitId || u.unitId === "none");
+                  // Admin / Kementerian / Auditor (Pusat / Lintas Unit)
+                  const admins = filteredUsers.filter(u => u.role === "admin" || u.role === "kementerian" || u.role === "auditor" || (!u.unitId && !unitsList.some(un => un.name === u.unitName)));
                   admins.forEach(u => rows.push(renderUserRow(u, "")));
                   
                   const eselon1Units = unitsList.filter(u => u.level === 'eselon_1');
                   eselon1Units.forEach(e1 => {
                     // Check if there are any users in this E1 or its E2 children
-                    const e1Users = filteredUsers.filter(u => u.unitId === e1.id);
+                    const e1Users = filteredUsers.filter(u => (u.unitId === e1.id || u.unitName === e1.name) && u.role !== "admin" && u.role !== "kementerian" && u.role !== "auditor");
                     const e2Units = unitsList.filter(u => u.level === 'eselon_2' && u.parentId === e1.id);
-                    const e2UserCount = filteredUsers.filter(u => e2Units.some(e2 => e2.id === u.unitId)).length;
+                    const e2UserCount = filteredUsers.filter(u => e2Units.some(e2 => (e2.id === u.unitId || e2.name === u.unitName) && u.role !== "admin" && u.role !== "kementerian" && u.role !== "auditor")).length;
                     
                     if (e1Users.length > 0 || e2UserCount > 0) {
                       rows.push(
@@ -442,7 +471,7 @@ export default function UsersManagementPage() {
                         e1Users.forEach(u => rows.push(renderUserRow(u, "pl-8 bg-slate-50/30")));
                         
                         e2Units.forEach(e2 => {
-                          const e2Users = filteredUsers.filter(u => u.unitId === e2.id);
+                          const e2Users = filteredUsers.filter(u => (u.unitId === e2.id || u.unitName === e2.name) && u.role !== "admin" && u.role !== "kementerian" && u.role !== "auditor");
                           if (e2Users.length > 0) {
                             rows.push(
                               <TableRow key={e2.id} className="bg-slate-50 hover:bg-slate-100 cursor-pointer border-t border-slate-100" onClick={(e) => toggleExpand(e2.id, e)}>
@@ -468,8 +497,8 @@ export default function UsersManagementPage() {
                   // Users that belong to units that are not E1 or E2, or unknown
                   const matchedUserIds = new Set([
                     ...admins.map(u => u.id),
-                    ...eselon1Units.flatMap(e1 => filteredUsers.filter(u => u.unitId === e1.id).map(u => u.id)),
-                    ...unitsList.filter(u => u.level === 'eselon_2').flatMap(e2 => filteredUsers.filter(u => u.unitId === e2.id).map(u => u.id))
+                    ...eselon1Units.flatMap(e1 => filteredUsers.filter(u => (u.unitId === e1.id || u.unitName === e1.name) && u.role !== "admin" && u.role !== "kementerian" && u.role !== "auditor").map(u => u.id)),
+                    ...unitsList.filter(u => u.level === 'eselon_2').flatMap(e2 => filteredUsers.filter(u => (u.unitId === e2.id || u.unitName === e2.name) && u.role !== "admin" && u.role !== "kementerian" && u.role !== "auditor").map(u => u.id))
                   ]);
                   
                   const orphanedUsers = filteredUsers.filter(u => !matchedUserIds.has(u.id));

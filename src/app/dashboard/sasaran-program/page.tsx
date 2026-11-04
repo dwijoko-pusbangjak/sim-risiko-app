@@ -93,7 +93,7 @@ export default function SasaranProgramPage() {
 
   useEffect(() => {
     if (!authLoading) {
-      if (!user || (user.role !== "admin" && user.role !== "eselon_1")) {
+      if (!user || (user.role !== "admin" && user.role !== "eselon_1" && user.role !== "kementerian")) {
         router.push("/dashboard");
       } else {
         fetchData();
@@ -119,7 +119,7 @@ export default function SasaranProgramPage() {
       const fetchedProg: SasaranProgram[] = [];
       snapshot.forEach((doc) => {
         const data = doc.data();
-        if (user?.role === "admin" || data.unitName === user?.unitName) {
+        if (user?.role === "admin" || user?.role === "kementerian" || data.unitName === user?.unitName) {
           fetchedProg.push({ ...data, id: doc.id } as SasaranProgram);
         }
       });
@@ -210,10 +210,10 @@ export default function SasaranProgramPage() {
   const filteredData = dataList.filter(item => 
     item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.ikp?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (user?.role === "admin" && item.unitName?.toLowerCase().includes(searchTerm.toLowerCase()))
+    ((user?.role === "admin" || user?.role === "kementerian") && item.unitName?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  if (authLoading || !user || (user.role !== "admin" && user.role !== "eselon_1")) return null;
+  if (authLoading || !user || (user.role !== "admin" && user.role !== "eselon_1" && user.role !== "kementerian")) return null;
 
   return (
     <div className="space-y-4">
@@ -239,7 +239,7 @@ export default function SasaranProgramPage() {
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-800">Sasaran Program (Eselon 1)</h2>
           <p className="text-slate-500">
-            {user.role === "admin" 
+            {user.role === "admin" || user.role === "kementerian"
               ? "Pantau seluruh Sasaran Program Eselon 1."
               : `Kelola Sasaran Program untuk ${user.unitName}`}
           </p>
@@ -398,7 +398,7 @@ export default function SasaranProgramPage() {
             <TableRow className="bg-slate-50">
               <TableHead className="w-[250px]">Sasaran Program</TableHead>
               <TableHead>Cascading (Induk Strategis)</TableHead>
-              {user.role === "admin" && <TableHead>Unit Eselon 1</TableHead>}
+              {(user.role === "admin" || user.role === "kementerian") && <TableHead>Unit Eselon 1</TableHead>}
               <TableHead>Indikator Sasaran (IKP)</TableHead>
               <TableHead>Target</TableHead>
               {user.role === "eselon_1" && <TableHead className="text-center w-[120px]">Aksi</TableHead>}
@@ -433,7 +433,7 @@ export default function SasaranProgramPage() {
                       {getStrategisName(item.strategisId)}
                     </div>
                   </TableCell>
-                  {user.role === "admin" && (
+                  {(user.role === "admin" || user.role === "kementerian") && (
                       <TableCell rowSpan={group.length} className="align-top">
                       <span className="px-2 py-1 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-800">
                         {item.unitName}

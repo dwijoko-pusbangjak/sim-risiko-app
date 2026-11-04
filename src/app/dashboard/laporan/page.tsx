@@ -161,7 +161,13 @@ export default function LaporanPage() {
         const stSnap = await getDocs(stQ);
         const allStrategis = stSnap.docs.map(d => ({ ...d.data(), id: d.id }));
         
-        if (uDataLevel === "eselon_1") {
+        if (uDataLevel === "kementerian" || user?.role === "kementerian") {
+          setStrategisList(allStrategis);
+          setSasaranList(allStrategis);
+          setParentSasaranList([]);
+          setProgramList([]);
+          setKegiatanList([]);
+        } else if (uDataLevel === "eselon_1") {
           const progQ = query(collection(db, "sasaran_program"), where("unitName", "==", targetUnitName));
           const progSnap = await getDocs(progQ);
           const programs = progSnap.docs.map(d => ({ ...d.data(), id: d.id }));

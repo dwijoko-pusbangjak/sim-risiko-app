@@ -6,7 +6,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { toast } from "sonner";
 
-export type Role = "admin" | "eselon_1" | "eselon_2" | null;
+export type Role = "admin" | "kementerian" | "auditor" | "pimpinan" | "eselon_1" | "eselon_2" | null;
 
 interface UserProfile {
   uid: string;
