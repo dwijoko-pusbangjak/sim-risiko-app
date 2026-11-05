@@ -19,6 +19,8 @@ interface IdentifikasiRisiko {
   penilaianPengendalian: string;
   besaranRisiko?: number;
   levelRisiko?: string;
+  levelKemungkinan?: number;
+  levelDampak?: number;
   rtpList?: any[];
   updatedAt?: string;
 }
