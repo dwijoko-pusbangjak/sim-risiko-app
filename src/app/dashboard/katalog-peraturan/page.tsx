@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import {
   collection,
   getDocs,
@@ -13,7 +13,6 @@ import {
   serverTimestamp,
   writeBatch
 } from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { logActivity } from "@/lib/logger";
 import { toast } from "sonner";
 import {
@@ -38,7 +37,8 @@ import {
   X,
   AlertTriangle,
   Info,
-  Loader2
+  Loader2,
+  Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -252,7 +252,7 @@ export default function KatalogPeraturanPage() {
     }
   }, [authLoading, user]);
 
-  // Seed default data if empty using high-speed writeBatch
+  // Seed default data if empty using writeBatch
   const handleSeedDefaults = async () => {
     if (!canManage) return;
     setIsLoading(true);
@@ -320,7 +320,7 @@ export default function KatalogPeraturanPage() {
     setSelectedFile(null);
     setUploadProgress(null);
     setUploadStats(null);
-    setUploadMode(item.fileUrl && !item.storagePath ? "url" : "file");
+    setUploadMode(item.fileUrl && !item.fileUrl.startsWith("/uploads/") ? "url" : "file");
     setFormData({
       id: item.id,
       nomor: item.nomor,
@@ -370,7 +370,51 @@ export default function KatalogPeraturanPage() {
     );
   };
 
-  // Handle Form Submit (Create / Edit) with Resumable Upload
+  // Upload file to local server via XMLHttpRequest with progress
+  const uploadFileToServer = (
+    file: File,
+    onProgress: (percent: number, transferred: number, total: number) => void
+  ): Promise<{ fileUrl: string; fileName: string; fileSize: number }> => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const formDataObj = new FormData();
+      formDataObj.append("file", file);
+
+      xhr.open("POST", "/api/upload-dokumen");
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          onProgress(percent, event.loaded, event.total);
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const res = JSON.parse(xhr.responseText);
+            if (res.success && res.fileUrl) {
+              resolve(res);
+            } else {
+              reject(new Error(res.error || "Gagal mengunggah berkas ke server"));
+            }
+          } catch (e) {
+            reject(new Error("Format respon server tidak valid"));
+          }
+        } else {
+          reject(new Error(`Server error (${xhr.status}): Gagal mengunggah berkas`));
+        }
+      };
+
+      xhr.onerror = () => {
+        reject(new Error("Koneksi ke server terputus saat mengunggah berkas"));
+      };
+
+      xhr.send(formDataObj);
+    });
+  };
+
+  // Handle Form Submit (Create / Edit)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nomor.trim() || !formData.nama.trim()) {
@@ -388,45 +432,24 @@ export default function KatalogPeraturanPage() {
       let finalFileSize = formData.fileSize || 0;
       let finalStoragePath = formData.storagePath || "";
 
-      // 1. Upload file if selected using uploadBytesResumable with real-time progress
+      // 1. Upload file if selected using direct server endpoint (ultra fast & reliable)
       if (selectedFile) {
-        toast.info("Mengunggah berkas ke penyimpanan...", { id: toastId });
-        const cleanName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-        const path = `katalog_peraturan/${Date.now()}_${cleanName}`;
-        const storageRef = ref(storage, path);
+        toast.info("Mengunggah berkas ke penyimpanan server...", { id: toastId });
+        setUploadProgress(10);
 
-        const uploadTask = uploadBytesResumable(storageRef, selectedFile);
-
-        const uploadedUrl = await new Promise<string>((resolve, reject) => {
-          uploadTask.on(
-            "state_changed",
-            (snapshot) => {
-              const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-              setUploadProgress(pct);
-              setUploadStats({
-                transferred: snapshot.bytesTransferred,
-                total: snapshot.totalBytes
-              });
-            },
-            (error) => {
-              console.error("Upload error:", error);
-              reject(error);
-            },
-            async () => {
-              try {
-                const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-                resolve(downloadUrl);
-              } catch (err) {
-                reject(err);
-              }
-            }
-          );
+        const uploadResult = await uploadFileToServer(selectedFile, (pct, loaded, total) => {
+          setUploadProgress(pct);
+          setUploadStats({
+            transferred: loaded,
+            total: total
+          });
         });
 
-        finalFileUrl = uploadedUrl;
-        finalFileName = selectedFile.name;
-        finalFileSize = selectedFile.size;
-        finalStoragePath = path;
+        finalFileUrl = uploadResult.fileUrl;
+        finalFileName = uploadResult.fileName;
+        finalFileSize = uploadResult.fileSize;
+        finalStoragePath = "";
+        setUploadProgress(100);
       }
 
       // 2. Save / Update Firestore Document
@@ -528,9 +551,13 @@ export default function KatalogPeraturanPage() {
       // Delete Firestore doc
       await deleteDoc(doc(db, "katalog_peraturan", deleteTarget.id));
 
-      // Clean up file in background if exists
-      if (deleteTarget.storagePath) {
-        deleteObject(ref(storage, deleteTarget.storagePath)).catch(e => console.warn(e));
+      // Clean up server file if local upload
+      if (deleteTarget.fileUrl && deleteTarget.fileUrl.startsWith("/uploads/peraturan/")) {
+        fetch("/api/upload-dokumen", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileUrl: deleteTarget.fileUrl })
+        }).catch(e => console.warn(e));
       }
 
       logActivity(
@@ -1037,13 +1064,13 @@ export default function KatalogPeraturanPage() {
                   <div className="flex items-center justify-between text-xs font-semibold text-emerald-900">
                     <span className="flex items-center gap-1.5">
                       <Loader2 className="w-4 h-4 text-emerald-600 animate-spin" />
-                      Mengunggah Berkas ke Penyimpanan Cloud...
+                      Menyimpan Berkas ke Server...
                     </span>
-                    <span className="font-mono text-emerald-700">{uploadProgress}%</span>
+                    <span className="font-mono text-emerald-700 font-bold">{uploadProgress}%</span>
                   </div>
                   <div className="w-full bg-emerald-200 rounded-full h-2.5 overflow-hidden">
                     <div
-                      className="bg-emerald-600 h-2.5 rounded-full transition-all duration-200"
+                      className="bg-emerald-600 h-2.5 rounded-full transition-all duration-150"
                       style={{ width: `${uploadProgress}%` }}
                     />
                   </div>
@@ -1063,7 +1090,7 @@ export default function KatalogPeraturanPage() {
                 <Input
                   id="nomor"
                   required
-                  placeholder="Contoh: Permenpan RB No. 5 Tahun 2020 / PP No. 60 Tahun 2008"
+                  placeholder="Contoh: Permendesa No 9 Tahun 2020 / PP No. 60 Tahun 2008"
                   value={formData.nomor}
                   onChange={(e) => setFormData({ ...formData, nomor: e.target.value })}
                   className="bg-slate-50 focus:bg-white"
@@ -1080,7 +1107,7 @@ export default function KatalogPeraturanPage() {
                   id="nama"
                   required
                   rows={2}
-                  placeholder="Contoh: Petunjuk Pelaksanaan Manajemen Risiko di Lingkungan Instansi Pemerintah"
+                  placeholder="Contoh: Manajemen Risiko di Lingkungan Kementerian Desa PDTT"
                   value={formData.nama}
                   onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                   className="bg-slate-50 focus:bg-white resize-none"
@@ -1232,8 +1259,8 @@ export default function KatalogPeraturanPage() {
                       onChange={(e) => {
                         if (e.target.files && e.target.files[0]) {
                           const f = e.target.files[0];
-                          if (f.size > 25 * 1024 * 1024) {
-                            toast.error("Ukuran berkas melebihi batas 25 MB. Gunakan berkas lebih kecil atau opsi Tautan Eksternal.");
+                          if (f.size > 30 * 1024 * 1024) {
+                            toast.error("Ukuran berkas melebihi batas 30 MB. Gunakan berkas lebih kecil atau opsi Tautan Eksternal.");
                             return;
                           }
                           setSelectedFile(f);
@@ -1243,7 +1270,7 @@ export default function KatalogPeraturanPage() {
                       className="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
                     />
                     <p className="text-[11px] text-slate-500">
-                      Mendukung format PDF, Word, atau Excel (Maks. 25 MB).
+                      Mendukung format PDF, Word, atau Excel (Maks. 30 MB). Berkas disimpan secara mandiri dan aman di server.
                     </p>
 
                     {selectedFile && (
@@ -1334,7 +1361,7 @@ export default function KatalogPeraturanPage() {
                 {isSubmitting ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                    {uploadProgress !== null ? `Mengunggah (${uploadProgress}%)...` : "Menyimpan..."}
+                    {uploadProgress !== null ? `Menyimpan (${uploadProgress}%)...` : "Menyimpan..."}
                   </>
                 ) : (
                   "Simpan Peraturan"
