@@ -23,7 +23,8 @@ import {
   ShieldAlert,
   BarChart4,
   BookOpen,
-  BookMarked
+  BookMarked,
+  Sparkles
 } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -144,6 +145,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       navGroups.push({
         title: "Pemantauan & Laporan",
         items: [
+          { name: "Analisis RTP", href: "/dashboard/mr-analisis-rtp", icon: Sparkles },
           { name: "Cetak Laporan", href: "/dashboard/laporan", icon: BarChart4 }
         ]
       });
@@ -162,6 +164,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               { name: "Pemantauan RTP", href: "/dashboard/mr-pemantauan" },
               { name: "Pencatatan Keterjadian", href: "/dashboard/mr-keterjadian" },
               { name: "Efektifitas RTP", href: "/dashboard/mr-efektifitas" },
+              { name: "Analisis RTP", href: "/dashboard/mr-analisis-rtp" },
               ]
             },
             {
@@ -185,6 +188,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       items: [
         { name: "Manajemen Unit Kerja", href: "/dashboard/units", icon: Building2 },
         { name: "Manajemen Pengguna", href: "/dashboard/users", icon: Users },
+        { name: "Analisis RTP", href: "/dashboard/mr-analisis-rtp", icon: Sparkles },
         { name: "Log Aktivitas", href: "/dashboard/logs", icon: FileText },
         { name: "Pengaturan Sistem", href: "/dashboard/settings", icon: Settings },
         { name: "Backup & Restore", href: "/dashboard/backup", icon: DatabaseBackup }
@@ -192,15 +196,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     });
   }
 
-      if (user?.role === "auditor") {
-      navGroups.push({
-        title: "Auditor",
-        items: [
-          { name: "Audit Risiko", href: "/dashboard/audit", icon: SearchCheck },
-          { name: "Cetak Laporan", href: "/dashboard/laporan", icon: BarChart4 }
-        ]
-      });
-    }
+  if (user?.role === "auditor") {
+    navGroups.push({
+      title: "Auditor",
+      items: [
+        { name: "Audit Risiko", href: "/dashboard/audit", icon: SearchCheck },
+        { name: "Analisis RTP", href: "/dashboard/mr-analisis-rtp", icon: Sparkles },
+        { name: "Cetak Laporan", href: "/dashboard/laporan", icon: BarChart4 }
+      ]
+    });
+  }
   
     const getRoleLabel = (role: string | null) => {
     if (role === "admin") return "Administrator";

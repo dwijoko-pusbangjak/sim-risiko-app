@@ -340,9 +340,14 @@ export default function ModulPanduanPage() {
           no: "6.4",
           nama: "Evaluasi Pengendalian Lanjutan",
           detail: "Jika risiko residual masih berada di level tinggi, susun pengendalian tambahan agar target tidak gagal."
+        },
+        {
+          no: "6.5",
+          nama: "Analisis Otomatis RTP & Pengambilan Keputusan",
+          detail: "Buka menu 'Analisis RTP' untuk melihat seluruh RTP yang telah terlaksana (100% Selesai), klik tombol Analisis untuk telaah otomatis dan penetapan arahan keputusan pimpinan (SOP Baku / Mitigasi Lanjutan)."
         }
       ],
-      output: "Laporan Pemantauan Triwulanan, Rekapitulasi Insiden Riil, dan Tingkat Penurunan Risiko Residual.",
+      output: "Laporan Pemantauan Triwulanan, Lembar Analisis Pengambilan Keputusan, dan Tingkat Penurunan Risiko Residual.",
       doAndDont: {
         do: "Laporkan status kemajuan mitigasi secara faktual dan tepat waktu sebelum pergantian triwulan.",
         dont: "Jangan menyembunyikan kejadian risiko riil, karena data keterjadian penting untuk mitigasi tahun depan."
