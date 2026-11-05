@@ -289,6 +289,25 @@ Di menu **Cetak Laporan**, Anda dapat mencetak pratinjau resmi dan mengunduh for
 *Tips: Gunakan tombol **"Unduh Excel"** untuk kebutuhan dokumentasi laporan dinas atau tombol **"Cetak / Simpan PDF"** untuk pratinjau cetak bersih.*`;
   }
 
+  // 9. Katalog Peraturan & Regulasi
+  if (lastUserMsg.includes("peraturan") || lastUserMsg.includes("regulasi") || lastUserMsg.includes("hukum") || lastUserMsg.includes("katalog")) {
+    return `### 📚 Katalog Peraturan & Regulasi Manajemen Risiko Kemendesa PDT
+
+Menu **Katalog Peraturan** adalah pusat repositori regulasi resmi:
+
+1. **Akses & Pengelolaan:**
+   - **Admin & Pengelola Risiko Kementerian:** Dapat menginput nomor peraturan, nama peraturan, mengunggah dokumen PDF, serta menetapkan status **Berlaku** atau **Tidak Berlaku**.
+   - **Seluruh Pengguna (Eselon 1, 2, Auditor, Pimpinan):** Dapat mencari, membaca, dan mengunduh seluruh peraturan yang berstatus **Berlaku**.
+
+2. **Regulasi Pokok Terkait Manajemen Risiko:**
+   - **Permenpan RB No. 5 Tahun 2020:** Petunjuk Pelaksanaan Manajemen Risiko Instansi Pemerintah.
+   - **PP No. 60 Tahun 2008:** Penyelenggaraan Sistem Pengendalian Intern Pemerintah (SPIP).
+   - **UU No. 6 Tahun 2014 jo UU No. 3 Tahun 2024:** Undang-Undang Tentang Desa.
+   - **Permendesa PDTT No. 15 Tahun 2023:** Penerapan Tata Kelola Manajemen Risiko di Lingkungan Kemendesa PDT.
+
+*Buka menu **Referensi & Regulasi $\\rightarrow$ Katalog Peraturan** untuk mengunduh dokumen lengkap.*`;
+  }
+
   // Default Fallback: Konsultasi Terbuka
   return `Halo! Saya **Si-MaRi AI**, asisten kecerdasan buatan untuk Manajemen Risiko di **Kementerian Desa, Pembangunan Daerah Tertinggal, dan Transmigrasi**.
 

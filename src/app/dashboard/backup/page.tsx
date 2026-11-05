@@ -18,6 +18,7 @@ const COLLECTIONS = [
   "sasaran_kegiatan",
   "mr_konteks",
   "mr_identifikasi",
+  "katalog_peraturan",
   "activity_logs",
   "settings"
 ];

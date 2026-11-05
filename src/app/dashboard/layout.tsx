@@ -21,7 +21,8 @@ import {
   FolderTree,
   ClipboardList,
   ShieldAlert,
-  BarChart4
+  BarChart4,
+  BookOpen
 } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -195,6 +196,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         ]
       });
     }
+
+  // Group: Referensi & Regulasi (Tersedia untuk Semua Pengguna)
+  navGroups.push({
+    title: "Referensi & Regulasi",
+    items: [
+      { name: "Katalog Peraturan", href: "/dashboard/katalog-peraturan", icon: BookOpen }
+    ]
+  });
   
     const getRoleLabel = (role: string | null) => {
     if (role === "admin") return "Administrator";
