@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
+import AIChatBox from "@/components/AIChatBox";
 import { KeyRound } from "lucide-react";
 
 type NavItem = {
@@ -425,6 +426,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {renderNavGroups(navGroups, true)}
         </nav>
       </aside>
+
+      {/* Floating AI Chatbox Assistant (Bawah Kanan) */}
+      <AIChatBox />
     </div>
   );
 }
