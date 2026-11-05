@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { collection, query, where, getDocs, doc, setDoc } from "firebase/firestore";
+import { useRouter } from "next/navigation";
+import { collection, query, where, getDocs, doc, setDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -57,7 +58,13 @@ import {
   UserCheck,
   Maximize2,
   Minimize2,
-  X
+  X,
+  EyeOff,
+  Lock,
+  Unlock,
+  ShieldAlert,
+  Power,
+  Settings
 } from "lucide-react";
 import { cn } from "cn";
 import { toast } from "sonner";
@@ -144,7 +151,16 @@ interface CompletedRTP {
 }
 
 export default function AnalisisRTPPage() {
+  const router = useRouter();
   const { user, activeYear, loading: authLoading } = useAuth();
+
+  // Settings State untuk Kontrol Akses Menu Analisis RTP oleh Admin
+  const [isAnalisisRtpEnabled, setIsAnalisisRtpEnabled] = useState<boolean>(true);
+  const [analisisRtpUpdatedAt, setAnalisisRtpUpdatedAt] = useState<string | null>(null);
+  const [analisisRtpUpdatedBy, setAnalisisRtpUpdatedBy] = useState<string | null>(null);
+  const [isSettingsLoading, setIsSettingsLoading] = useState<boolean>(true);
+  const [isSavingSetting, setIsSavingSetting] = useState<boolean>(false);
+  const [showAdminPreview, setShowAdminPreview] = useState<boolean>(false);
 
   const [completedRtps, setCompletedRtps] = useState<CompletedRTP[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -168,12 +184,79 @@ export default function AnalisisRTPPage() {
   const [leaderName, setLeaderName] = useState<string>("");
   const [leaderTitle, setLeaderTitle] = useState<string>("");
 
+  // Subscribe to real-time general settings for Analisis RTP
+  useEffect(() => {
+    const unsub = onSnapshot(
+      doc(db, "settings", "general"),
+      (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          if (typeof data.isAnalisisRtpEnabled === "boolean") {
+            setIsAnalisisRtpEnabled(data.isAnalisisRtpEnabled);
+          } else {
+            setIsAnalisisRtpEnabled(true);
+          }
+          setAnalisisRtpUpdatedAt(data.analisisRtpUpdatedAt || data.updatedAt || null);
+          setAnalisisRtpUpdatedBy(data.analisisRtpUpdatedBy || data.updatedBy || null);
+        }
+        setIsSettingsLoading(false);
+      },
+      (err) => {
+        console.error("Gagal memuat status pengaturan Analisis RTP:", err);
+        setIsSettingsLoading(false);
+      }
+    );
+
+    return () => unsub();
+  }, []);
+
   useEffect(() => {
     if (!authLoading && user && activeYear) {
-      loadUnitsAndData();
+      if (user.role !== "admin" || showAdminPreview) {
+        loadUnitsAndData();
+      } else {
+        setIsLoading(false);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, user, activeYear, selectedUnit]);
+  }, [authLoading, user, activeYear, selectedUnit, showAdminPreview]);
+
+  // Handle Admin Toggle Activation/Deactivation
+  const handleToggleActivation = async (newStatus: boolean) => {
+    setIsSavingSetting(true);
+    try {
+      const docRef = doc(db, "settings", "general");
+      const nowIso = new Date().toISOString();
+      await setDoc(
+        docRef,
+        {
+          isAnalisisRtpEnabled: newStatus,
+          analisisRtpUpdatedAt: nowIso,
+          analisisRtpUpdatedBy: user?.email || (user as any)?.name || "Administrator",
+        },
+        { merge: true }
+      );
+
+      await logActivity({
+        action: newStatus ? "ENABLE_ANALISIS_RTP" : "DISABLE_ANALISIS_RTP",
+        details: `Administrator ${user?.email} ${newStatus ? "mengaktifkan" : "menonaktifkan"} visibilitas menu Analisis RTP untuk seluruh pengguna lain.`,
+        userId: user?.uid || "admin",
+        userEmail: user?.email || "admin",
+        userName: (user as any)?.name || "Administrator",
+      });
+
+      toast.success(
+        newStatus
+          ? "Menu Analisis RTP berhasil DIAKTIFKAN untuk seluruh pengguna!"
+          : "Menu Analisis RTP berhasil DINONAKTIFKAN dari pengguna lain!"
+      );
+    } catch (err: any) {
+      console.error("Gagal mengubah status Analisis RTP:", err);
+      toast.error("Gagal menyimpan perubahan status: " + (err?.message || ""));
+    } finally {
+      setIsSavingSetting(false);
+    }
+  };
 
   // Load Units List (for admin, kementerian, pimpinan, auditor)
   const isPrivilegedUser = user?.role === "admin" || user?.role === "kementerian" || user?.role === "pimpinan" || user?.role === "auditor";
@@ -561,8 +644,44 @@ export default function AnalisisRTPPage() {
 
   const currentAnalysis = selectedItem ? generateAutomaticAnalysis(selectedItem) : null;
 
-  return (
-    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300 pb-20 font-sans">
+  // 1. Loading State
+  if (authLoading || isSettingsLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-slate-500 space-y-3 font-sans">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+        <p className="text-xs font-medium">Memeriksa hak akses dan status Analisis RTP...</p>
+      </div>
+    );
+  }
+
+  // 2. Akses Terbatas untuk Pengguna Non-Admin saat Menu Dinonaktifkan
+  if (user?.role !== "admin" && !isAnalisisRtpEnabled) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4 font-sans animate-in fade-in duration-300">
+        <div className="w-16 h-16 rounded-3xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200 shadow-sm">
+          <ShieldAlert className="w-8 h-8" />
+        </div>
+        <div className="space-y-1.5 max-w-md">
+          <h2 className="text-xl font-bold text-slate-900">
+            Menu Analisis RTP Sedang Dinonaktifkan
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+            Fitur Analisis RTP saat ini sedang dinonaktifkan oleh Administrator Sistem untuk seluruh pengguna lain. Silakan hubungi Administrator jika unit kerja Anda memerlukan akses ke menu ini.
+          </p>
+        </div>
+        <Button
+          onClick={() => router.push("/dashboard")}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-5 py-2.5 rounded-xl shadow-xs cursor-pointer"
+        >
+          Kembali ke Dashboard
+        </Button>
+      </div>
+    );
+  }
+
+  // Konten Utama Analisis RTP (Dapat dilihat oleh Pengguna atau melalui Pratinjau Admin)
+  const renderUserContent = () => (
+    <div className="space-y-6">
       {/* ====================================================================== */}
       {/* 1. HEADER SECTION                                                      */}
       {/* ====================================================================== */}
@@ -980,6 +1099,229 @@ export default function AnalisisRTPPage() {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300 pb-20 font-sans">
+      {user?.role === "admin" ? (
+        <div className="space-y-6">
+          {/* ====================================================================== */}
+          {/* ADMIN HEADER BANNER                                                    */}
+          {/* ====================================================================== */}
+          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl border border-indigo-900/50 relative overflow-hidden">
+            <div className="absolute -top-24 -right-24 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-teal-500/20 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="space-y-2 max-w-2xl">
+                <div className="flex items-center gap-2">
+                  <span className="p-2 bg-indigo-500/20 border border-indigo-400/30 rounded-xl">
+                    <Settings className="w-6 h-6 text-indigo-400" />
+                  </span>
+                  <span className="text-xs bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full border border-indigo-500/30 font-bold uppercase tracking-wider">
+                    Administrator Control Panel
+                  </span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
+                  Kontrol Akses Menu Analisis RTP
+                </h1>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  Halaman ini digunakan khusus oleh <strong>Administrator</strong> untuk mengaktifkan atau menonaktifkan visibilitas menu <strong>Analisis RTP</strong> bagi seluruh pengguna lain (Pengelola Risiko Kementerian, Pimpinan Unit Kerja, Unit Kerja Eselon 1 &amp; 2, serta Auditor APIP).
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* ====================================================================== */}
+          {/* MAIN ACTIVATION STATUS & TOGGLE CARD                                  */}
+          {/* ====================================================================== */}
+          <Card className="border-2 shadow-md overflow-hidden border-slate-200">
+            <CardHeader className="bg-slate-50/80 border-b border-slate-200 p-5 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <CardTitle className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-indigo-600" />
+                    Status Ketersediaan Menu untuk Pengguna Lain
+                  </CardTitle>
+                  <CardDescription className="text-xs text-slate-500">
+                    Pilih status aktif atau non-aktif untuk mengatur apakah pengguna lain dapat mengakses menu Analisis RTP.
+                  </CardDescription>
+                </div>
+
+                {/* Status Badge */}
+                <div
+                  className={cn(
+                    "px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-2 border shadow-xs shrink-0 self-start sm:self-auto",
+                    isAnalisisRtpEnabled
+                      ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                      : "bg-rose-100 text-rose-800 border-rose-300"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "w-2.5 h-2.5 rounded-full",
+                      isAnalisisRtpEnabled ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
+                    )}
+                  />
+                  <span>
+                    {isAnalisisRtpEnabled
+                      ? "STATUS: AKTIF (Terlihat oleh Pengguna Lain)"
+                      : "STATUS: NON-AKTIF (Disembunyikan)"}
+                  </span>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-6 sm:p-8 space-y-6">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 p-6 rounded-2xl border bg-slate-50/70">
+                <div className="space-y-2 max-w-xl">
+                  <div className="flex items-center gap-3">
+                    {isAnalisisRtpEnabled ? (
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-200 shadow-xs">
+                        <CheckCircle2 className="w-7 h-7" />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 border border-rose-200 shadow-xs">
+                        <EyeOff className="w-7 h-7" />
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                        {isAnalisisRtpEnabled
+                          ? "Menu Analisis RTP Sedang AKTIF"
+                          : "Menu Analisis RTP Sedang NON-AKTIF"}
+                      </h3>
+                      <p className="text-xs text-slate-500 leading-relaxed">
+                        {isAnalisisRtpEnabled
+                          ? "Seluruh pengguna lain dapat melihat menu ini di sidebar navigasi, membuka telaah otomatis, dan pimpinan dapat menetapkan keputusan manajemen risiko."
+                          : "Menu ini disembunyikan sepenuhnya dari sidebar navigasi seluruh pengguna selain Administrator. Akses langsung melalui URL juga diblokir."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Toggle Button */}
+                <div className="shrink-0 w-full sm:w-auto">
+                  {isAnalisisRtpEnabled ? (
+                    <Button
+                      onClick={() => handleToggleActivation(false)}
+                      disabled={isSavingSetting}
+                      className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm px-6 py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer"
+                    >
+                      {isSavingSetting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <EyeOff className="w-4 h-4" />
+                      )}
+                      <span>Nonaktifkan Menu untuk Pengguna Lain</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => handleToggleActivation(true)}
+                      disabled={isSavingSetting}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm px-6 py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer"
+                    >
+                      {isSavingSetting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="w-4 h-4" />
+                      )}
+                      <span>Aktifkan Menu untuk Pengguna Lain</span>
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Impact & Audit Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div className="p-5 rounded-2xl border border-slate-200 bg-white space-y-3 shadow-xs">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                    Dampak Pengaturan Sistem
+                  </h4>
+                  <ul className="text-xs text-slate-600 space-y-2 leading-relaxed">
+                    <li className="flex items-start gap-2">
+                      <span className="font-bold text-rose-600 shrink-0">•</span>
+                      <span><strong>Jika Dinonaktifkan:</strong> Menu Analisis RTP tidak akan kelihatan di sidebar navigasi seluruh pengguna selain Admin (Pengelola Risiko Kementerian, Pimpinan Unit Kerja, Eselon 1 &amp; 2, serta Auditor).</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="font-bold text-emerald-600 shrink-0">•</span>
+                      <span><strong>Jika Diaktifkan:</strong> Menu Analisis RTP akan langsung muncul kembali di sidebar navigasi seluruh pengguna terkait secara real-time.</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="p-5 rounded-2xl border border-slate-200 bg-white space-y-3 shadow-xs">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-indigo-600" />
+                    Riwayat Pembaruan Terakhir
+                  </h4>
+                  <div className="text-xs text-slate-600 space-y-2">
+                    <p>
+                      Status Saat Ini:{" "}
+                      <strong className={isAnalisisRtpEnabled ? "text-emerald-700" : "text-rose-700"}>
+                        {isAnalisisRtpEnabled ? "Aktif (Terlihat)" : "Non-Aktif (Disembunyikan)"}
+                      </strong>
+                    </p>
+                    <p>
+                      Terakhir Diperbarui Oleh: <strong>{analisisRtpUpdatedBy || "Sistem"}</strong>
+                    </p>
+                    <p>
+                      Waktu Pembaruan:{" "}
+                      <strong>
+                        {analisisRtpUpdatedAt
+                          ? new Date(analisisRtpUpdatedAt).toLocaleString("id-ID", {
+                              dateStyle: "full",
+                              timeStyle: "medium",
+                            })
+                          : "Belum pernah diubah"}
+                      </strong>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ====================================================================== */}
+          {/* COLLAPSIBLE PREVIEW SECTION FOR ADMINISTRATOR                         */}
+          {/* ====================================================================== */}
+          <div className="pt-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-100 rounded-2xl border border-slate-200">
+              <div className="space-y-0.5">
+                <h4 className="text-xs font-bold text-slate-800">
+                  Pratinjau Data RTP (Mode Pratinjau Administrator)
+                </h4>
+                <p className="text-[11px] text-slate-500">
+                  Buka pratinjau ini jika Administrator ingin meninjau data RTP yang dilihat oleh pengguna saat menu Analisis RTP diaktifkan.
+                </p>
+              </div>
+              <Button
+                onClick={() => {
+                  setShowAdminPreview(!showAdminPreview);
+                  if (!showAdminPreview && completedRtps.length === 0) {
+                    loadUnitsAndData();
+                  }
+                }}
+                variant="outline"
+                size="sm"
+                className="text-xs bg-white border-slate-300 font-semibold shrink-0 cursor-pointer"
+              >
+                {showAdminPreview ? "Tutup Pratinjau Data" : "Buka Pratinjau Data"}
+              </Button>
+            </div>
+
+            {showAdminPreview && (
+              <div className="mt-4 pt-4 border-t border-slate-200 space-y-6 animate-in fade-in duration-300">
+                {renderUserContent()}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        renderUserContent()
+      )}
 
       {/* ====================================================================== */}
       {/* 5. MODAL ANALISIS OTOMATIS MENDETAIL UNTUK PENGAMBILAN KEPUTUSAN      */}

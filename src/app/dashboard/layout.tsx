@@ -27,7 +27,8 @@ import {
   Sparkles
 } from "lucide-react";
 import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -90,6 +91,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({ "Proses Manajemen Risiko": true });
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const { user, loading, activeYear } = useAuth();
+  const [isAnalisisRtpEnabled, setIsAnalisisRtpEnabled] = useState<boolean>(true);
+
+  // Subscribe to real-time general settings for Analisis RTP visibility
+  useEffect(() => {
+    const unsub = onSnapshot(
+      doc(db, "settings", "general"),
+      (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          if (typeof data.isAnalisisRtpEnabled === "boolean") {
+            setIsAnalisisRtpEnabled(data.isAnalisisRtpEnabled);
+          } else {
+            setIsAnalisisRtpEnabled(true);
+          }
+        }
+      },
+      (err) => {
+        console.error("Error subscribing to settings:", err);
+      }
+    );
+
+    return () => unsub();
+  }, []);
 
   // Redirect jika tidak login
   useEffect(() => {
@@ -142,14 +166,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Group 3: Manajemen Risiko (Khusus non-admin)
   if (user.role !== "admin" && user.role !== "auditor") {
     if (user.role === "pimpinan") {
+      const pimpinanItems: NavItem[] = [];
+      if (isAnalisisRtpEnabled) {
+        pimpinanItems.push({ name: "Analisis RTP", href: "/dashboard/mr-analisis-rtp", icon: Sparkles });
+      }
+      pimpinanItems.push({ name: "Cetak Laporan", href: "/dashboard/laporan", icon: BarChart4 });
+
       navGroups.push({
         title: "Pemantauan & Laporan",
-        items: [
-          { name: "Analisis RTP", href: "/dashboard/mr-analisis-rtp", icon: Sparkles },
-          { name: "Cetak Laporan", href: "/dashboard/laporan", icon: BarChart4 }
-        ]
+        items: pimpinanItems
       });
     } else {
+      const prosesMRChildren = [
+        { name: "Identifikasi Risiko", href: "/dashboard/mr-identifikasi" },
+        { name: "Analisis Risiko", href: "/dashboard/mr-analisis" },
+        { name: "Rencana Tindak Pengendalian", href: "/dashboard/mr-rtp" },
+        { name: "Pemantauan RTP", href: "/dashboard/mr-pemantauan" },
+        { name: "Pencatatan Keterjadian", href: "/dashboard/mr-keterjadian" },
+        { name: "Efektifitas RTP", href: "/dashboard/mr-efektifitas" },
+      ];
+      if (isAnalisisRtpEnabled) {
+        prosesMRChildren.push({ name: "Analisis RTP", href: "/dashboard/mr-analisis-rtp" });
+      }
+
       navGroups.push({
         title: "Manajemen Risiko",
         items: [
@@ -157,31 +196,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {
             name: "Proses Manajemen Risiko",
             icon: FolderTree,
+            children: prosesMRChildren
+          },
+          {
+            name: "Proses Riviu",
+            icon: SearchCheck,
             children: [
-              { name: "Identifikasi Risiko", href: "/dashboard/mr-identifikasi" },
-              { name: "Analisis Risiko", href: "/dashboard/mr-analisis" },
-              { name: "Rencana Tindak Pengendalian", href: "/dashboard/mr-rtp" },
-              { name: "Pemantauan RTP", href: "/dashboard/mr-pemantauan" },
-              { name: "Pencatatan Keterjadian", href: "/dashboard/mr-keterjadian" },
-              { name: "Efektifitas RTP", href: "/dashboard/mr-efektifitas" },
-              { name: "Analisis RTP", href: "/dashboard/mr-analisis-rtp" },
-              ]
-            },
-            {
-              name: "Proses Riviu",
-              icon: SearchCheck,
-              children: [
-                { name: "Kirim ke Auditor", href: "/dashboard/proses-audit/kirim" },
-                { name: "Inbox Hasil Auditor", href: "/dashboard/proses-audit/inbox" }
-              ]
-            },
+              { name: "Kirim ke Auditor", href: "/dashboard/proses-audit/kirim" },
+              { name: "Inbox Hasil Auditor", href: "/dashboard/proses-audit/inbox" }
+            ]
+          },
           { name: "Cetak Laporan", href: "/dashboard/laporan", icon: BarChart4 }
         ]
       });
     }
   }
 
-  // Group 4: Administrator (khusus admin)
+  // Group 4: Administrator (khusus admin - selalu tampil agar admin bisa mengatur)
   if (user.role === "admin") {
     navGroups.push({
       title: "Administrator",
@@ -197,13 +228,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   if (user?.role === "auditor") {
+    const auditorItems: NavItem[] = [
+      { name: "Audit Risiko", href: "/dashboard/audit", icon: SearchCheck },
+    ];
+    if (isAnalisisRtpEnabled) {
+      auditorItems.push({ name: "Analisis RTP", href: "/dashboard/mr-analisis-rtp", icon: Sparkles });
+    }
+    auditorItems.push({ name: "Cetak Laporan", href: "/dashboard/laporan", icon: BarChart4 });
+
     navGroups.push({
       title: "Auditor",
-      items: [
-        { name: "Audit Risiko", href: "/dashboard/audit", icon: SearchCheck },
-        { name: "Analisis RTP", href: "/dashboard/mr-analisis-rtp", icon: Sparkles },
-        { name: "Cetak Laporan", href: "/dashboard/laporan", icon: BarChart4 }
-      ]
+      items: auditorItems
     });
   }
   
