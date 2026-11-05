@@ -11,10 +11,9 @@ import {
   deleteDoc,
   doc,
   serverTimestamp,
-  query,
-  orderBy
+  writeBatch
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { logActivity } from "@/lib/logger";
 import { toast } from "sonner";
 import {
@@ -35,13 +34,11 @@ import {
   FileCheck,
   ShieldAlert,
   Calendar,
-  Layers,
   Sparkles,
-  Link as LinkIcon,
   X,
-  FileUp,
   AlertTriangle,
-  Info
+  Info,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -167,6 +164,7 @@ export default function KatalogPeraturanPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadStats, setUploadStats] = useState<{ transferred: number; total: number } | null>(null);
 
   // Form State
   const [formData, setFormData] = useState<{
@@ -203,8 +201,8 @@ export default function KatalogPeraturanPage() {
   const [deleteTarget, setDeleteTarget] = useState<Peraturan | null>(null);
 
   // Fetch Peraturan from Firestore
-  const fetchPeraturan = async () => {
-    setIsLoading(true);
+  const fetchPeraturan = async (showLoadingSpinner = true) => {
+    if (showLoadingSpinner) setIsLoading(true);
     try {
       const colRef = collection(db, "katalog_peraturan");
       const snap = await getDocs(colRef);
@@ -244,7 +242,7 @@ export default function KatalogPeraturanPage() {
       console.error("Gagal memuat katalog peraturan:", error);
       toast.error("Gagal memuat katalog peraturan.");
     } finally {
-      setIsLoading(false);
+      if (showLoadingSpinner) setIsLoading(false);
     }
   };
 
@@ -254,25 +252,30 @@ export default function KatalogPeraturanPage() {
     }
   }, [authLoading, user]);
 
-  // Seed default data if empty
+  // Seed default data if empty using high-speed writeBatch
   const handleSeedDefaults = async () => {
     if (!canManage) return;
     setIsLoading(true);
     const toastId = toast.loading("Menginisialisasi peraturan standar manajemen risiko...");
 
     try {
-      const colRef = collection(db, "katalog_peraturan");
-      for (const item of DEFAULT_PERATURAN_LIST) {
-        await addDoc(colRef, {
+      const batch = writeBatch(db);
+      const nowIso = new Date().toISOString();
+
+      DEFAULT_PERATURAN_LIST.forEach((item) => {
+        const newDocRef = doc(collection(db, "katalog_peraturan"));
+        batch.set(newDocRef, {
           ...item,
-          createdAt: new Date().toISOString(),
+          createdAt: nowIso,
           createdBy: user?.email || "System",
           createdByName: user?.unitName || "Kementerian Desa PDT",
           timestamp: serverTimestamp()
         });
-      }
+      });
 
-      await logActivity(
+      await batch.commit();
+
+      logActivity(
         user,
         "Inisialisasi Peraturan Standar",
         "Katalog Peraturan",
@@ -280,10 +283,11 @@ export default function KatalogPeraturanPage() {
       );
 
       toast.success("Berhasil memuat 4 peraturan standar manajemen risiko!", { id: toastId });
-      fetchPeraturan();
+      fetchPeraturan(false);
     } catch (error) {
       console.error("Gagal inisialisasi default peraturan:", error);
       toast.error("Gagal menginisialisasi peraturan standar.", { id: toastId });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -292,6 +296,8 @@ export default function KatalogPeraturanPage() {
   const handleOpenCreate = () => {
     setIsEditMode(false);
     setSelectedFile(null);
+    setUploadProgress(null);
+    setUploadStats(null);
     setUploadMode("file");
     setFormData({
       nomor: "",
@@ -312,6 +318,8 @@ export default function KatalogPeraturanPage() {
   const handleOpenEdit = (item: Peraturan) => {
     setIsEditMode(true);
     setSelectedFile(null);
+    setUploadProgress(null);
+    setUploadStats(null);
     setUploadMode(item.fileUrl && !item.storagePath ? "url" : "file");
     setFormData({
       id: item.id,
@@ -330,39 +338,39 @@ export default function KatalogPeraturanPage() {
   };
 
   // Quick Toggle Status (Berlaku <-> Tidak Berlaku)
-  const handleToggleStatus = async (item: Peraturan) => {
+  const handleToggleStatus = (item: Peraturan) => {
     if (!canManage) return;
 
-    const newStatus = item.status === "berlaku" ? "tidak_berlaku" : "berlaku";
+    const newStatus: "berlaku" | "tidak_berlaku" = item.status === "berlaku" ? "tidak_berlaku" : "berlaku";
     const statusLabel = newStatus === "berlaku" ? "Berlaku" : "Tidak Berlaku";
 
-    try {
-      const docRef = doc(db, "katalog_peraturan", item.id);
-      await updateDoc(docRef, {
-        status: newStatus,
-        updatedAt: new Date().toISOString(),
-        updatedBy: user?.email || "System"
-      });
+    // Optimistic Update: langsung perbarui UI seketika
+    setPeraturanList(prev =>
+      prev.map(p => (p.id === item.id ? { ...p, status: newStatus } : p))
+    );
+    toast.success(`Status ${item.nomor} diubah menjadi "${statusLabel}"`);
 
-      setPeraturanList(prev =>
-        prev.map(p => (p.id === item.id ? { ...p, status: newStatus } : p))
-      );
+    // Async Firestore write in background
+    const docRef = doc(db, "katalog_peraturan", item.id);
+    updateDoc(docRef, {
+      status: newStatus,
+      updatedAt: new Date().toISOString(),
+      updatedBy: user?.email || "System"
+    }).catch(err => {
+      console.error("Gagal sinkron status:", err);
+      toast.error("Gagal memperbarui status di server.");
+      fetchPeraturan(false);
+    });
 
-      await logActivity(
-        user,
-        `Ubah Status: ${item.nomor} -> ${statusLabel}`,
-        "Katalog Peraturan",
-        `Peraturan ${item.nomor} sekarang ${statusLabel}`
-      );
-
-      toast.success(`Status ${item.nomor} diubah menjadi "${statusLabel}"`);
-    } catch (error) {
-      console.error("Gagal mengubah status:", error);
-      toast.error("Gagal memperbarui status peraturan.");
-    }
+    logActivity(
+      user,
+      `Ubah Status: ${item.nomor} -> ${statusLabel}`,
+      "Katalog Peraturan",
+      `Peraturan ${item.nomor} sekarang ${statusLabel}`
+    );
   };
 
-  // Handle Form Submit (Create / Edit)
+  // Handle Form Submit (Create / Edit) with Resumable Upload
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nomor.trim() || !formData.nama.trim()) {
@@ -371,6 +379,7 @@ export default function KatalogPeraturanPage() {
     }
 
     setIsSubmitting(true);
+    setUploadProgress(null);
     const toastId = toast.loading(isEditMode ? "Memperbarui peraturan..." : "Menyimpan peraturan baru...");
 
     try {
@@ -379,24 +388,54 @@ export default function KatalogPeraturanPage() {
       let finalFileSize = formData.fileSize || 0;
       let finalStoragePath = formData.storagePath || "";
 
-      // Upload file to Firebase Storage if selected
+      // 1. Upload file if selected using uploadBytesResumable with real-time progress
       if (selectedFile) {
-        toast.info("Mengunggah dokumen ke penyimpanan...", { id: toastId });
+        toast.info("Mengunggah berkas ke penyimpanan...", { id: toastId });
         const cleanName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
         const path = `katalog_peraturan/${Date.now()}_${cleanName}`;
         const storageRef = ref(storage, path);
 
-        await uploadBytes(storageRef, selectedFile);
-        finalFileUrl = await getDownloadURL(storageRef);
+        const uploadTask = uploadBytesResumable(storageRef, selectedFile);
+
+        const uploadedUrl = await new Promise<string>((resolve, reject) => {
+          uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+              const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+              setUploadProgress(pct);
+              setUploadStats({
+                transferred: snapshot.bytesTransferred,
+                total: snapshot.totalBytes
+              });
+            },
+            (error) => {
+              console.error("Upload error:", error);
+              reject(error);
+            },
+            async () => {
+              try {
+                const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                resolve(downloadUrl);
+              } catch (err) {
+                reject(err);
+              }
+            }
+          );
+        });
+
+        finalFileUrl = uploadedUrl;
         finalFileName = selectedFile.name;
         finalFileSize = selectedFile.size;
         finalStoragePath = path;
       }
 
+      // 2. Save / Update Firestore Document
+      const nowIso = new Date().toISOString();
+
       if (isEditMode && formData.id) {
         // UPDATE
         const docRef = doc(db, "katalog_peraturan", formData.id);
-        await updateDoc(docRef, {
+        const updatePayload = {
           nomor: formData.nomor.trim(),
           nama: formData.nama.trim(),
           jenis: formData.jenis,
@@ -407,11 +446,18 @@ export default function KatalogPeraturanPage() {
           fileName: finalFileName,
           fileSize: finalFileSize,
           storagePath: finalStoragePath,
-          updatedAt: new Date().toISOString(),
+          updatedAt: nowIso,
           updatedBy: user?.email || "System"
-        });
+        };
 
-        await logActivity(
+        await updateDoc(docRef, updatePayload);
+
+        // Optimistic State Update
+        setPeraturanList(prev =>
+          prev.map(p => (p.id === formData.id ? { ...p, ...updatePayload } : p))
+        );
+
+        logActivity(
           user,
           `Edit Peraturan: ${formData.nomor}`,
           "Katalog Peraturan",
@@ -422,7 +468,7 @@ export default function KatalogPeraturanPage() {
       } else {
         // CREATE
         const colRef = collection(db, "katalog_peraturan");
-        await addDoc(colRef, {
+        const createPayload = {
           nomor: formData.nomor.trim(),
           nama: formData.nama.trim(),
           jenis: formData.jenis,
@@ -433,13 +479,22 @@ export default function KatalogPeraturanPage() {
           fileName: finalFileName,
           fileSize: finalFileSize,
           storagePath: finalStoragePath,
-          createdAt: new Date().toISOString(),
+          createdAt: nowIso,
           createdBy: user?.email || "System",
           createdByName: user?.unitName || "Kementerian Desa PDT",
           timestamp: serverTimestamp()
-        });
+        };
 
-        await logActivity(
+        const newDoc = await addDoc(colRef, createPayload);
+
+        // Optimistic State Update
+        const createdPeraturan: Peraturan = {
+          id: newDoc.id,
+          ...createPayload
+        };
+        setPeraturanList(prev => [createdPeraturan, ...prev]);
+
+        logActivity(
           user,
           `Tambah Peraturan: ${formData.nomor}`,
           "Katalog Peraturan",
@@ -449,13 +504,15 @@ export default function KatalogPeraturanPage() {
         toast.success(`Peraturan "${formData.nomor}" berhasil ditambahkan!`, { id: toastId });
       }
 
+      // Close modal immediately
       setIsModalOpen(false);
-      fetchPeraturan();
     } catch (error: any) {
       console.error("Gagal menyimpan peraturan:", error);
-      toast.error(`Gagal menyimpan peraturan: ${error.message || "Kesalahan jaringan"}`, { id: toastId });
+      toast.error(`Gagal menyimpan: ${error.message || "Periksa koneksi internet Anda"}`, { id: toastId });
     } finally {
       setIsSubmitting(false);
+      setUploadProgress(null);
+      setUploadStats(null);
     }
   };
 
@@ -465,31 +522,30 @@ export default function KatalogPeraturanPage() {
 
     const toastId = toast.loading(`Menghapus ${deleteTarget.nomor}...`);
     try {
-      // If there's an attached file in Firebase Storage, try deleting it
-      if (deleteTarget.storagePath) {
-        try {
-          const fileRef = ref(storage, deleteTarget.storagePath);
-          await deleteObject(fileRef);
-        } catch (e) {
-          console.warn("Storage delete skipped or failed:", e);
-        }
-      }
+      // Optimistic remove from UI
+      setPeraturanList(prev => prev.filter(p => p.id !== deleteTarget.id));
 
+      // Delete Firestore doc
       await deleteDoc(doc(db, "katalog_peraturan", deleteTarget.id));
 
-      await logActivity(
+      // Clean up file in background if exists
+      if (deleteTarget.storagePath) {
+        deleteObject(ref(storage, deleteTarget.storagePath)).catch(e => console.warn(e));
+      }
+
+      logActivity(
         user,
         `Hapus Peraturan: ${deleteTarget.nomor}`,
         "Katalog Peraturan",
-        `Menghapus dokumen peraturan: ${deleteTarget.nama}`
+        `Menghapus peraturan: ${deleteTarget.nama}`
       );
 
       toast.success(`Peraturan "${deleteTarget.nomor}" berhasil dihapus.`, { id: toastId });
       setDeleteTarget(null);
-      fetchPeraturan();
     } catch (error) {
       console.error("Gagal menghapus peraturan:", error);
       toast.error("Gagal menghapus peraturan.", { id: toastId });
+      fetchPeraturan(false);
     }
   };
 
@@ -579,7 +635,7 @@ export default function KatalogPeraturanPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={fetchPeraturan}
+            onClick={() => fetchPeraturan(true)}
             disabled={isLoading}
             className="text-slate-600 hover:text-slate-900 border-slate-200 hover:bg-slate-50 text-xs"
           >
@@ -623,7 +679,7 @@ export default function KatalogPeraturanPage() {
           </div>
         </div>
 
-        {/* Peraturan Tidak Berlaku (Admin/Kementerian) / Jenis Terbanyak */}
+        {/* Peraturan Tidak Berlaku (Admin/Kementerian) */}
         {canManage ? (
           <div className="bg-white p-4 rounded-xl border border-rose-100 shadow-xs flex items-center justify-between">
             <div>
@@ -975,6 +1031,30 @@ export default function KatalogPeraturanPage() {
             </DialogHeader>
 
             <div className="grid gap-4 py-4 text-xs sm:text-sm">
+              {/* Realtime Upload Progress Bar */}
+              {isSubmitting && uploadProgress !== null && (
+                <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 space-y-1.5 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between text-xs font-semibold text-emerald-900">
+                    <span className="flex items-center gap-1.5">
+                      <Loader2 className="w-4 h-4 text-emerald-600 animate-spin" />
+                      Mengunggah Berkas ke Penyimpanan Cloud...
+                    </span>
+                    <span className="font-mono text-emerald-700">{uploadProgress}%</span>
+                  </div>
+                  <div className="w-full bg-emerald-200 rounded-full h-2.5 overflow-hidden">
+                    <div
+                      className="bg-emerald-600 h-2.5 rounded-full transition-all duration-200"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                  {uploadStats && (
+                    <p className="text-[10px] text-emerald-700 text-right font-mono">
+                      {formatFileSize(uploadStats.transferred)} dari {formatFileSize(uploadStats.total)}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Nomor Peraturan */}
               <div className="grid gap-1.5">
                 <Label htmlFor="nomor" className="font-semibold text-slate-800">
@@ -987,6 +1067,7 @@ export default function KatalogPeraturanPage() {
                   value={formData.nomor}
                   onChange={(e) => setFormData({ ...formData, nomor: e.target.value })}
                   className="bg-slate-50 focus:bg-white"
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -1003,6 +1084,7 @@ export default function KatalogPeraturanPage() {
                   value={formData.nama}
                   onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                   className="bg-slate-50 focus:bg-white resize-none"
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -1016,6 +1098,7 @@ export default function KatalogPeraturanPage() {
                     id="jenis"
                     value={formData.jenis}
                     onChange={(e) => setFormData({ ...formData, jenis: e.target.value })}
+                    disabled={isSubmitting}
                     className="w-full h-9 rounded-md border border-slate-200 bg-slate-50 px-3 py-1 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   >
                     {JENIS_PERATURAN_OPTIONS.map((opt) => (
@@ -1036,6 +1119,7 @@ export default function KatalogPeraturanPage() {
                     value={formData.tahun}
                     onChange={(e) => setFormData({ ...formData, tahun: e.target.value })}
                     className="bg-slate-50 focus:bg-white"
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
@@ -1060,6 +1144,7 @@ export default function KatalogPeraturanPage() {
                       value="berlaku"
                       checked={formData.status === "berlaku"}
                       onChange={() => setFormData({ ...formData, status: "berlaku" })}
+                      disabled={isSubmitting}
                       className="mt-0.5 text-emerald-600 focus:ring-emerald-500"
                     />
                     <div>
@@ -1087,6 +1172,7 @@ export default function KatalogPeraturanPage() {
                       value="tidak_berlaku"
                       checked={formData.status === "tidak_berlaku"}
                       onChange={() => setFormData({ ...formData, status: "tidak_berlaku" })}
+                      disabled={isSubmitting}
                       className="mt-0.5 text-rose-600 focus:ring-rose-500"
                     />
                     <div>
@@ -1112,6 +1198,7 @@ export default function KatalogPeraturanPage() {
                   <div className="flex items-center gap-1 text-xs">
                     <button
                       type="button"
+                      disabled={isSubmitting}
                       onClick={() => setUploadMode("file")}
                       className={`px-2 py-0.5 rounded transition-colors ${
                         uploadMode === "file"
@@ -1123,6 +1210,7 @@ export default function KatalogPeraturanPage() {
                     </button>
                     <button
                       type="button"
+                      disabled={isSubmitting}
                       onClick={() => setUploadMode("url")}
                       className={`px-2 py-0.5 rounded transition-colors ${
                         uploadMode === "url"
@@ -1140,9 +1228,15 @@ export default function KatalogPeraturanPage() {
                     <input
                       type="file"
                       ref={fileInputRef}
+                      disabled={isSubmitting}
                       onChange={(e) => {
                         if (e.target.files && e.target.files[0]) {
-                          setSelectedFile(e.target.files[0]);
+                          const f = e.target.files[0];
+                          if (f.size > 25 * 1024 * 1024) {
+                            toast.error("Ukuran berkas melebihi batas 25 MB. Gunakan berkas lebih kecil atau opsi Tautan Eksternal.");
+                            return;
+                          }
+                          setSelectedFile(f);
                         }
                       }}
                       accept=".pdf,.doc,.docx,.xls,.xlsx"
@@ -1157,16 +1251,18 @@ export default function KatalogPeraturanPage() {
                         <span className="font-medium truncate max-w-[320px]">
                           📎 {selectedFile.name} ({formatFileSize(selectedFile.size)})
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedFile(null);
-                            if (fileInputRef.current) fileInputRef.current.value = "";
-                          }}
-                          className="text-rose-600 hover:text-rose-800 text-xs font-semibold"
-                        >
-                          Batal
-                        </button>
+                        {!isSubmitting && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedFile(null);
+                              if (fileInputRef.current) fileInputRef.current.value = "";
+                            }}
+                            className="text-rose-600 hover:text-rose-800 text-xs font-semibold"
+                          >
+                            Batal
+                          </button>
+                        )}
                       </div>
                     )}
 
@@ -1190,13 +1286,14 @@ export default function KatalogPeraturanPage() {
                   <div className="space-y-1 mt-1">
                     <Input
                       type="url"
+                      disabled={isSubmitting}
                       placeholder="https://jdih.kemendesa.go.id/... atau tautan Google Drive / Cloud"
                       value={formData.fileUrl}
                       onChange={(e) => setFormData({ ...formData, fileUrl: e.target.value })}
                       className="bg-white text-xs sm:text-sm"
                     />
                     <p className="text-[11px] text-slate-500">
-                      Masukkan URL link dokumen sah dari JDIH Kemendesa atau portal regulasi pemerintah.
+                      💡 Tip: Masukkan URL link dokumen sah dari JDIH Kemendesa atau portal regulasi pemerintah jika tidak ingin mengunggah berkas lokal.
                     </p>
                   </div>
                 )}
@@ -1210,6 +1307,7 @@ export default function KatalogPeraturanPage() {
                 <Textarea
                   id="keterangan"
                   rows={2}
+                  disabled={isSubmitting}
                   placeholder="Misal: Mencabut Keputusan Menteri Nomor ... atau pedoman implementasi SPIP"
                   value={formData.keterangan}
                   onChange={(e) => setFormData({ ...formData, keterangan: e.target.value })}
@@ -1236,7 +1334,7 @@ export default function KatalogPeraturanPage() {
                 {isSubmitting ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                    Menyimpan...
+                    {uploadProgress !== null ? `Mengunggah (${uploadProgress}%)...` : "Menyimpan..."}
                   </>
                 ) : (
                   "Simpan Peraturan"
@@ -1261,7 +1359,7 @@ export default function KatalogPeraturanPage() {
               <strong className="text-slate-900 block my-1">
                 {deleteTarget?.nomor} — {deleteTarget?.nama}
               </strong>
-              Tindakan ini permanen dan akan menghapus berkas dokumen yang terunggah.
+              Tindakan ini bersifat permanen dan akan menghapus berkas dokumen yang tersimpan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
