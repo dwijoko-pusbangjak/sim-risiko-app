@@ -16,7 +16,9 @@ import {
   ChevronRight,
   ShieldAlert,
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  HelpCircle,
+  MessageSquare
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -65,6 +67,20 @@ function FormattedMessage({ content }: { content: string }) {
           );
         }
 
+        // Blockquotes
+        if (trimmed.startsWith("> ")) {
+          return (
+            <blockquote key={idx} className="border-l-3 border-emerald-500 bg-emerald-50/70 pl-2.5 py-1 my-1 rounded-r text-slate-700 italic text-xs sm:text-sm">
+              {renderInline(trimmed.replace(/^>\s*/, ""))}
+            </blockquote>
+          );
+        }
+
+        // Horizontal rule
+        if (trimmed === "---" || trimmed === "***") {
+          return <hr key={idx} className="my-2 border-slate-200" />;
+        }
+
         // Unordered List
         if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
           return (
@@ -105,13 +121,11 @@ function FormattedMessage({ content }: { content: string }) {
 
 // Inline Markdown parser (Bold, Italic, Code, Link)
 function renderInline(text: string): React.ReactNode {
-  // Split by bold `**text**` and code `` `code` ``
   const parts: React.ReactNode[] = [];
-  let remaining = text;
   let keyIdx = 0;
 
-  // Regex matches `**bold**` OR `` `code` ``
-  const regex = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+  // Regex matches `**bold**` OR `` `code` `` OR `*italic*`
+  const regex = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*)/g;
   let match;
   let lastIndex = 0;
 
@@ -132,6 +146,12 @@ function renderInline(text: string): React.ReactNode {
         <code key={keyIdx++} className="bg-slate-100 text-emerald-800 text-xs px-1 py-0.5 rounded font-mono border border-slate-200">
           {token.slice(1, -1)}
         </code>
+      );
+    } else if (token.startsWith("*") && token.endsWith("*")) {
+      parts.push(
+        <em key={keyIdx++} className="italic text-slate-700">
+          {token.slice(1, -1)}
+        </em>
       );
     }
 
@@ -157,6 +177,7 @@ export default function AIChatBox() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastMessageRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Quick Prompt Suggestions
@@ -165,7 +186,8 @@ export default function AIChatBox() {
     "Berikan contoh risiko untuk unit kerja saya",
     "Jelaskan skala 5x5 kemungkinan & dampak",
     "Cara menyusun Rencana Tindak Pengendalian (RTP)",
-    "Bagaimana peran APIP dalam pengawasan risiko?"
+    "Bagaimana alur audit dengan Auditor APIP?",
+    "Apa dasar hukum pengelolaan risiko?"
   ];
 
   // Initialize chat from localStorage or greeting
@@ -211,10 +233,16 @@ export default function AIChatBox() {
     }
   }, [messages]);
 
-  // Auto scroll to bottom
+  // Smart Auto-scroll: When assistant finishes replying, scroll to start of new message
   useEffect(() => {
     if (isOpen && !isMinimized) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      if (isLoading) {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      } else if (lastMessageRef.current) {
+        lastMessageRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }
     }
   }, [messages, isOpen, isMinimized, isLoading]);
 
@@ -336,13 +364,13 @@ export default function AIChatBox() {
       {!isOpen && (
         <div className="relative group">
           {/* Greeting Tooltip Bubble */}
-          <div className="absolute right-0 bottom-16 w-60 bg-white/95 backdrop-blur-md p-3 rounded-xl shadow-xl border border-emerald-100 text-xs text-slate-700 pointer-events-none transform translate-y-2 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+          <div className="absolute right-0 bottom-16 w-64 bg-white/95 backdrop-blur-md p-3.5 rounded-xl shadow-xl border border-emerald-100 text-xs text-slate-700 pointer-events-none transform translate-y-2 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
             <div className="flex items-center gap-1.5 font-bold text-emerald-800 mb-1">
               <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
               Si-MaRi AI Assistant
             </div>
             <p className="text-[11px] leading-relaxed text-slate-600">
-              Butuh panduan merumuskan risiko atau matriks 5x5? Klik untuk konsultasi langsung dengan AI!
+              Butuh panduan merumuskan risiko, matriks 5x5, atau konsultasi APIP? Klik untuk diskusi langsung dengan AI!
             </p>
           </div>
 
@@ -372,7 +400,7 @@ export default function AIChatBox() {
           className={`bg-white rounded-2xl shadow-2xl border border-slate-200/80 flex flex-col transition-all duration-300 overflow-hidden ${
             isMinimized
               ? "w-80 h-14"
-              : "w-[94vw] sm:w-[420px] md:w-[450px] h-[600px] max-h-[85vh]"
+              : "w-[94vw] sm:w-[440px] md:w-[480px] h-[620px] max-h-[88vh]"
           }`}
         >
           {/* HEADER CHAT */}
@@ -389,8 +417,8 @@ export default function AIChatBox() {
                     Online
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-300 truncate max-w-[190px] sm:max-w-[240px]">
-                  {user?.unitName || "Kemendesa PDT"}
+                <p className="text-[11px] text-slate-300 truncate max-w-[190px] sm:max-w-[260px]">
+                  {user?.unitName || "Kemendesa PDT"} • TA {activeYear}
                 </p>
               </div>
             </div>
@@ -446,8 +474,8 @@ export default function AIChatBox() {
                       Tutup
                     </button>
                   </div>
-                  <p className="text-[11px] text-slate-600 mb-2">
-                    Secara bawaan, Si-MaRi menggunakan <strong>Kemendesa Expert Knowledge Base</strong>. Anda juga dapat memasukkan <em>Google Gemini API Key</em> jika ingin memanfaatkan model generative online langsung.
+                  <p className="text-[11px] text-slate-600 mb-2 leading-relaxed">
+                    Secara bawaan, Si-MaRi dilengkapi <strong>Built-in Expert Knowledge Base Kemendesa PDT</strong> yang dapat menjawab seluruh pertanyaan regulasi & perumusan risiko secara offline/lokal. Anda juga dapat memasukkan <em>Google Gemini API Key</em> jika ingin memanfaatkan model generative online langsung.
                   </p>
                   <div className="flex gap-2">
                     <input
@@ -468,81 +496,76 @@ export default function AIChatBox() {
               )}
 
               {/* MESSAGES LIST AREA */}
-              <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5 bg-slate-50/60 custom-scrollbar">
-                {messages.map((msg) => (
+              <div className="flex-1 overflow-y-auto p-3.5 space-y-4 bg-slate-50/60 custom-scrollbar">
+                {messages.map((msg, idx) => (
                   <div
                     key={msg.id}
-                    className={`flex flex-col ${
-                      msg.role === "user" ? "items-end" : "items-start"
-                    }`}
+                    ref={idx === messages.length - 1 ? lastMessageRef : null}
+                    className="w-full flex flex-col"
                   >
-                    <div
-                      className={`max-w-[88%] rounded-2xl p-3 shadow-sm relative group ${
-                        msg.role === "user"
-                          ? "bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-tr-xs"
-                          : "bg-white text-slate-800 border border-slate-200/90 rounded-tl-xs"
-                      }`}
-                    >
-                      {/* Copy Action Button */}
-                      <button
-                        onClick={() => handleCopy(msg.content, msg.id)}
-                        title="Salin jawaban"
-                        className={`absolute top-2 right-2 p-1 rounded transition-opacity opacity-0 group-hover:opacity-100 ${
-                          msg.role === "user"
-                            ? "hover:bg-white/20 text-white"
-                            : "hover:bg-slate-100 text-slate-400 hover:text-slate-700"
-                        }`}
-                      >
-                        {copiedId === msg.id ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-500" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-
-                      {/* Content rendering */}
-                      {msg.role === "user" ? (
-                        <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed pr-5">
-                          {msg.content}
-                        </p>
-                      ) : (
-                        <div className="pr-5">
+                    {msg.role === "user" ? (
+                      /* USER MESSAGE BUBBLE */
+                      <div className="flex items-start justify-end gap-2 max-w-[90%] self-end">
+                        <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-2xl rounded-tr-xs p-3 shadow-sm">
+                          <div className="flex items-center justify-between gap-3 mb-1 text-[10px] text-emerald-100/90 font-medium pb-1 border-b border-emerald-500/30">
+                            <span className="font-semibold text-white flex items-center gap-1">
+                              Anda ({user?.role === "kementerian" ? "Kementerian" : user?.role === "auditor" ? "Auditor" : "Unit Kerja"})
+                            </span>
+                            <span>{msg.timestamp}</span>
+                          </div>
+                          <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed">
+                            {msg.content}
+                          </p>
+                        </div>
+                        <div className="w-7 h-7 rounded-full bg-emerald-700 text-white flex items-center justify-center shrink-0 text-xs font-bold shadow-sm ring-2 ring-emerald-200 mt-1">
+                          {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                        </div>
+                      </div>
+                    ) : (
+                      /* ASSISTANT MESSAGE BUBBLE */
+                      <div className="flex items-start gap-2 max-w-[94%] self-start">
+                        <div className="w-7 h-7 rounded-full bg-slate-900 border border-emerald-500/50 text-emerald-400 flex items-center justify-center shrink-0 shadow-sm mt-1">
+                          <Bot className="w-4 h-4 text-emerald-400" />
+                        </div>
+                        <div className="bg-white text-slate-800 border border-slate-200/90 rounded-2xl rounded-tl-xs p-3.5 shadow-sm flex-1 relative group">
+                          <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-slate-100 text-[11px] text-slate-500">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-emerald-900">Si-MaRi AI</span>
+                              <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono font-medium">
+                                {msg.source === "gemini" ? "Gemini 2.0" : "KB Expert Engine"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-slate-400">
+                              <span className="text-[10px]">{msg.timestamp}</span>
+                              <button
+                                onClick={() => handleCopy(msg.content, msg.id)}
+                                title="Salin jawaban"
+                                className="p-1 hover:bg-slate-100 hover:text-slate-700 rounded transition-colors"
+                              >
+                                {copiedId === msg.id ? (
+                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                ) : (
+                                  <Copy className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                            </div>
+                          </div>
                           <FormattedMessage content={msg.content} />
                         </div>
-                      )}
-
-                      {/* Timestamp & Tag */}
-                      <div
-                        className={`flex items-center justify-between gap-2 mt-1.5 pt-1 text-[10px] border-t ${
-                          msg.role === "user"
-                            ? "border-emerald-500/30 text-emerald-100"
-                            : "border-slate-100 text-slate-400"
-                        }`}
-                      >
-                        <span>
-                          {msg.role === "assistant" && (
-                            <span className="font-semibold text-emerald-700">
-                              Si-MaRi AI •{" "}
-                            </span>
-                          )}
-                          {msg.timestamp}
-                        </span>
-                        {msg.source && msg.role === "assistant" && (
-                          <span className="text-[9px] uppercase px-1 rounded bg-slate-100 text-slate-500 font-mono">
-                            {msg.source === "gemini" ? "Gemini 2.0" : "KB Engine"}
-                          </span>
-                        )}
                       </div>
-                    </div>
+                    )}
                   </div>
                 ))}
 
                 {/* Loading Bubble */}
                 {isLoading && (
-                  <div className="flex items-start gap-2">
-                    <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-xs p-3 shadow-sm flex items-center gap-2 text-xs text-slate-600">
-                      <Loader2 className="w-4 h-4 text-emerald-600 animate-spin" />
-                      <span>Si-MaRi sedang menganalisis & menyusun jawaban...</span>
+                  <div className="flex items-start gap-2 max-w-[90%] self-start">
+                    <div className="w-7 h-7 rounded-full bg-slate-900 border border-emerald-500/50 text-emerald-400 flex items-center justify-center shrink-0 shadow-sm mt-1">
+                      <Bot className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-xs p-3 shadow-sm flex items-center gap-2.5 text-xs text-slate-600">
+                      <Loader2 className="w-4 h-4 text-emerald-600 animate-spin shrink-0" />
+                      <span>Si-MaRi sedang menganalisis & merumuskan jawaban...</span>
                     </div>
                   </div>
                 )}
@@ -550,8 +573,8 @@ export default function AIChatBox() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* QUICK PROMPT SUGGESTIONS CHIPS */}
-              <div className="bg-white px-3 py-2 border-t border-slate-100 overflow-x-auto custom-scrollbar shrink-0">
+              {/* QUICK PROMPT SUGGESTIONS CHIPS (No ugly scrollbar) */}
+              <div className="bg-white px-3 py-2 border-t border-slate-100 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden shrink-0">
                 <div className="flex items-center gap-1.5 whitespace-nowrap">
                   <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1 shrink-0">
                     <Sparkles className="w-3 h-3 text-amber-500" /> Contoh:
@@ -561,7 +584,7 @@ export default function AIChatBox() {
                       key={i}
                       onClick={() => handleSendMessage(prompt)}
                       disabled={isLoading}
-                      className="text-[11px] bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 px-2.5 py-1 rounded-full border border-slate-200 transition-colors disabled:opacity-50"
+                      className="text-[11px] bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 px-2.5 py-1 rounded-full border border-slate-200 transition-colors disabled:opacity-50 shrink-0"
                     >
                       {prompt}
                     </button>
@@ -588,12 +611,16 @@ export default function AIChatBox() {
                     className="p-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0 shadow-sm"
                     title="Kirim (Enter)"
                   >
-                    <Send className="w-4 h-4" />
+                    {isLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
                 <div className="flex items-center justify-between mt-1.5 text-[10px] text-slate-400 px-1">
-                  <span>Enter untuk kirim, Shift+Enter untuk baris baru</span>
-                  <span className="flex items-center gap-1">
+                  <span>Tekan <strong>Enter</strong> kirim, <strong>Shift+Enter</strong> baris baru</span>
+                  <span className="flex items-center gap-1 font-medium text-emerald-700">
                     <ShieldAlert className="w-3 h-3 text-emerald-600" />
                     Permenpan RB 5/2020
                   </span>
