@@ -54,8 +54,12 @@ import {
   Layers,
   ChevronRight,
   Filter,
-  UserCheck
+  UserCheck,
+  Maximize2,
+  Minimize2,
+  X
 } from "lucide-react";
+import { cn } from "cn";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/logger";
 
@@ -156,6 +160,7 @@ export default function AnalisisRTPPage() {
   const [selectedItem, setSelectedItem] = useState<CompletedRTP | null>(null);
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
   const [isSavingDecision, setIsSavingDecision] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   // Form Keputusan Pimpinan di dalam Modal
   const [decisionCategory, setDecisionCategory] = useState<string>("");
@@ -867,13 +872,21 @@ export default function AnalisisRTPPage() {
       {/* 5. MODAL ANALISIS OTOMATIS MENDETAIL UNTUK PENGAMBILAN KEPUTUSAN      */}
       {/* ====================================================================== */}
       <Dialog open={isAnalysisModalOpen} onOpenChange={setIsAnalysisModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto p-0 rounded-2xl">
+        <DialogContent
+          showCloseButton={false}
+          className={cn(
+            "p-0 flex flex-col overflow-hidden bg-white shadow-2xl transition-all duration-300 border border-slate-700/40 outline-none",
+            isFullScreen
+              ? "fixed inset-0 w-screen h-screen max-w-none sm:max-w-none md:max-w-none lg:max-w-none rounded-none z-[100]"
+              : "w-[96vw] sm:max-w-[96vw] md:max-w-[95vw] lg:max-w-7xl max-h-[94vh] rounded-3xl"
+          )}
+        >
           {selectedItem && currentAnalysis && (
-            <div>
+            <div className={`flex flex-col ${isFullScreen ? "h-screen" : "max-h-[94vh]"} overflow-hidden`}>
               {/* MODAL HEADER */}
-              <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white p-6 border-b border-emerald-900/40 relative">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="space-y-1">
+              <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white p-5 sm:p-6 border-b border-emerald-900/40 shrink-0">
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                  <div className="space-y-1.5 flex-1 pr-4">
                     <div className="flex items-center gap-2">
                       <span className="p-1.5 bg-emerald-500/20 border border-emerald-400/30 rounded-lg">
                         <Brain className="w-5 h-5 text-emerald-400" />
@@ -882,11 +895,15 @@ export default function AnalisisRTPPage() {
                         Hasil Analisis Otomatis Penanganan Risiko
                       </span>
                     </div>
-                    <DialogTitle className="text-lg sm:text-xl font-bold text-white leading-tight">
+                    <DialogTitle className="text-lg sm:text-2xl font-black text-white leading-snug">
                       {selectedItem.pernyataanRisiko}
                     </DialogTitle>
-                    <DialogDescription className="text-xs text-slate-300">
-                      Unit Kerja: <strong>{selectedItem.unitName}</strong> • Tahun Anggaran: {selectedItem.tahun}
+                    <DialogDescription className="text-xs sm:text-sm text-slate-300 flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <span>Unit Kerja: <strong className="text-white">{selectedItem.unitName}</strong></span>
+                      <span>•</span>
+                      <span>Tahun Anggaran: <strong className="text-white">{selectedItem.tahun}</strong></span>
+                      <span>•</span>
+                      <span>Kategori: <strong className="text-white">{selectedItem.kategori}</strong></span>
                     </DialogDescription>
                   </div>
 
@@ -895,156 +912,197 @@ export default function AnalisisRTPPage() {
                       onClick={handlePrintAnalysis}
                       variant="outline"
                       size="sm"
-                      className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs backdrop-blur-md"
+                      className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs backdrop-blur-md font-semibold"
                     >
-                      <Printer className="w-3.5 h-3.5 mr-1 text-emerald-300" />
+                      <Printer className="w-3.5 h-3.5 mr-1.5 text-emerald-300" />
                       <span>Cetak Lembar Keputusan</span>
                     </Button>
+
+                    <button
+                      onClick={() => setIsFullScreen(!isFullScreen)}
+                      className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all cursor-pointer shadow-xs"
+                      title={isFullScreen ? "Tampilan Standar (Perkecil)" : "Tampilan Layar Penuh (Fullscreen)"}
+                    >
+                      {isFullScreen ? (
+                        <Minimize2 className="w-4 h-4 text-emerald-300" />
+                      ) : (
+                        <Maximize2 className="w-4 h-4 text-emerald-300" />
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => setIsAnalysisModalOpen(false)}
+                      className="p-2 rounded-xl bg-white/10 hover:bg-rose-600/80 text-white border border-white/20 transition-all cursor-pointer shadow-xs"
+                      title="Tutup Modal"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
 
-              {/* MODAL BODY */}
-              <div className="p-6 space-y-6 text-slate-800">
+              {/* MODAL BODY (SCROLLABLE FULL-WIDTH) */}
+              <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6 text-slate-800 custom-scrollbar">
                 {/* 1. KARTU PERBANDINGAN RESIDUAL RISK & EFEKTIVITAS */}
-                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-5 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-5 sm:p-6 space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
                     <div className="flex items-center gap-2">
-                      <Scale className="w-4 h-4 text-emerald-600" />
-                      <h4 className="font-bold text-sm text-slate-900">
+                      <Scale className="w-5 h-5 text-emerald-600" />
+                      <h4 className="font-bold text-sm sm:text-base text-slate-900">
                         1. Evaluasi Kuantitatif Penurunan Besaran Risiko
                       </h4>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border ${currentAnalysis.badgeEfektivitas}`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border shadow-xs ${currentAnalysis.badgeEfektivitas}`}>
                       {currentAnalysis.statusEfektivitasLabel}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Risiko Awal */}
-                    <div className="p-3.5 bg-white rounded-xl border border-slate-200 space-y-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    <div className="p-4 sm:p-5 bg-white rounded-xl border border-slate-200 space-y-2 shadow-xs">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
                         Kondisi Awal (Inherent)
                       </span>
                       <div className="flex items-baseline justify-between">
-                        <span className="text-2xl font-black text-slate-900">
+                        <span className="text-3xl font-black text-slate-900">
                           {currentAnalysis.awalSkor}
                         </span>
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${currentAnalysis.awalLevel.badge}`}>
+                        <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${currentAnalysis.awalLevel.badge}`}>
                           {currentAnalysis.awalLevel.label}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-500 font-mono">
+                      <p className="text-xs text-slate-500 font-mono">
                         Kemungkinan: {currentAnalysis.awalK} × Dampak: {currentAnalysis.awalD}
                       </p>
                     </div>
 
                     {/* Target Pengendalian */}
-                    <div className="p-3.5 bg-white rounded-xl border border-slate-200 space-y-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    <div className="p-4 sm:p-5 bg-white rounded-xl border border-slate-200 space-y-2 shadow-xs">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
                         Target Mitigasi
                       </span>
                       <div className="flex items-baseline justify-between">
-                        <span className="text-2xl font-black text-blue-700">
+                        <span className="text-3xl font-black text-blue-700">
                           {currentAnalysis.targetSkor}
                         </span>
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${currentAnalysis.targetLevel.badge}`}>
+                        <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${currentAnalysis.targetLevel.badge}`}>
                           {currentAnalysis.targetLevel.label}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-500 font-mono">
+                      <p className="text-xs text-slate-500 font-mono">
                         Target K: {currentAnalysis.targetK} × Target D: {currentAnalysis.targetD}
                       </p>
                     </div>
 
                     {/* Aktual Residual */}
-                    <div className="p-3.5 bg-emerald-50/70 rounded-xl border border-emerald-200 space-y-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 block">
+                    <div className="p-4 sm:p-5 bg-emerald-50/70 rounded-xl border border-emerald-200 space-y-2 shadow-xs">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 block">
                         Aktual Setelah Mitigasi (Residual)
                       </span>
                       <div className="flex items-baseline justify-between">
-                        <span className="text-2xl font-black text-emerald-700">
+                        <span className="text-3xl font-black text-emerald-700">
                           {currentAnalysis.aktualSkor}
                         </span>
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${currentAnalysis.aktualLevel.badge}`}>
+                        <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${currentAnalysis.aktualLevel.badge}`}>
                           {currentAnalysis.aktualLevel.label}
                         </span>
                       </div>
-                      <p className="text-[11px] text-emerald-700 font-mono">
+                      <p className="text-xs text-emerald-700 font-mono">
                         Aktual K: {currentAnalysis.aktualK} × Aktual D: {currentAnalysis.aktualD}
                       </p>
                     </div>
                   </div>
 
                   {/* Ringkasan Penurunan */}
-                  <div className="p-3 bg-emerald-900 text-white rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                    <div className="flex items-center gap-2">
-                      <TrendingDown className="w-5 h-5 text-emerald-300" />
+                  <div className="p-4 bg-emerald-900 text-white rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm shadow-md">
+                    <div className="flex items-center gap-2.5">
+                      <TrendingDown className="w-5 h-5 text-emerald-300 shrink-0" />
                       <span>
-                        Penurunan Besaran Risiko Sebesar: <strong>-{currentAnalysis.poinPenurunan} Poin</strong> ({currentAnalysis.persenPenurunan}% Penurunan dari Skor Awal)
+                        Penurunan Besaran Risiko: <strong>-{currentAnalysis.poinPenurunan} Poin</strong> ({currentAnalysis.persenPenurunan}% Efisiensi Penurunan dari Skor Awal)
                       </span>
                     </div>
-                    <span className="text-[11px] bg-white/20 px-2.5 py-1 rounded-full font-bold">
+                    <span className="text-xs bg-white/20 px-3 py-1 rounded-full font-bold self-start sm:self-auto">
                       Deviasi Target: {currentAnalysis.deviasiTarget <= 0 ? "Tercapai (Optimal)" : `+${currentAnalysis.deviasiTarget} Poin`}
                     </span>
                   </div>
                 </div>
 
-                {/* 2. SUBSTANSI & TINJAUAN AKAR MASALAH */}
+                {/* 2. SUBSTANSI & TINJAUAN AKAR MASALAH (4 KOLOM LEBAR) */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-                    <FileText className="w-4 h-4 text-emerald-600" />
-                    <h4 className="font-bold text-sm text-slate-900">
+                    <FileText className="w-5 h-5 text-emerald-600" />
+                    <h4 className="font-bold text-sm sm:text-base text-slate-900">
                       2. Substansi Tindakan Mitigasi &amp; Tinjauan Lapangan
                     </h4>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
-                      <span className="font-bold text-slate-700 block">Akar Masalah (Penyebab Risiko):</span>
-                      <p className="text-slate-600 bg-white p-2 rounded-lg border border-slate-100">
-                        {selectedItem.penyebab || "Akar masalah operasional unit kerja."}
-                      </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                    {/* Akar Masalah */}
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 flex flex-col justify-between">
+                      <div>
+                        <span className="font-bold text-slate-700 uppercase tracking-wider text-[11px] block mb-1">
+                          Akar Masalah (Penyebab Risiko)
+                        </span>
+                        <p className="text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200/80 leading-relaxed">
+                          {selectedItem.penyebab || "Akar masalah operasional unit kerja."}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
-                      <span className="font-bold text-slate-700 block">Tindakan RTP yang Terlaksana:</span>
-                      <p className="text-slate-600 bg-white p-2 rounded-lg border border-slate-100 font-medium">
-                        {selectedItem.rencana}
-                      </p>
+                    {/* Rencana RTP */}
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 flex flex-col justify-between">
+                      <div>
+                        <span className="font-bold text-slate-700 uppercase tracking-wider text-[11px] block mb-1">
+                          Tindakan RTP Terlaksana
+                        </span>
+                        <p className="text-slate-800 bg-white p-2.5 rounded-lg border border-slate-200/80 font-medium leading-relaxed">
+                          {selectedItem.rencana}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-                      <span className="font-bold text-slate-700 block">Penanggung Jawab &amp; Waktu:</span>
-                      <p className="text-slate-600">
-                        PIC: <strong>{selectedItem.penanggungjawab}</strong> • Target: {selectedItem.targetWaktu}
-                      </p>
-                      <p className="text-[11px] text-slate-500">
-                        Realisasi Waktu: {selectedItem.pemantauan?.waktuPelaksanaan || "Sesuai Jadwal"}
-                      </p>
+                    {/* PIC & Jadwal */}
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 flex flex-col justify-between">
+                      <div>
+                        <span className="font-bold text-slate-700 uppercase tracking-wider text-[11px] block mb-1">
+                          Penanggung Jawab &amp; Jadwal
+                        </span>
+                        <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 space-y-1">
+                          <p className="text-slate-800 font-semibold">{selectedItem.penanggungjawab}</p>
+                          <p className="text-slate-500 font-mono text-[11px]">Target: {selectedItem.targetWaktu}</p>
+                          <p className="text-slate-500 text-[11px]">Realisasi: {selectedItem.pemantauan?.waktuPelaksanaan || "Tepat Waktu"}</p>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-                      <span className="font-bold text-slate-700 block">Bukti Eviden / Dokumen Output:</span>
-                      {selectedItem.pemantauan?.linkEviden ? (
-                        <a
-                          href={selectedItem.pemantauan.linkEviden}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 underline font-semibold flex items-center gap-1"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          <span>Buka Tautan Dokumen Eviden Fisik</span>
-                        </a>
-                      ) : (
-                        <p className="text-slate-400 italic">Belum menyematkan tautan dokumen eviden.</p>
-                      )}
+                    {/* Bukti Eviden */}
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 flex flex-col justify-between">
+                      <div>
+                        <span className="font-bold text-slate-700 uppercase tracking-wider text-[11px] block mb-1">
+                          Bukti Eviden / Dokumen Output
+                        </span>
+                        <div className="bg-white p-2.5 rounded-lg border border-slate-200/80">
+                          {selectedItem.pemantauan?.linkEviden ? (
+                            <a
+                              href={selectedItem.pemantauan.linkEviden}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 underline font-semibold flex items-center gap-1.5 py-1"
+                            >
+                              <ExternalLink className="w-4 h-4 shrink-0 text-blue-600" />
+                              <span className="truncate">Buka Dokumen Eviden</span>
+                            </a>
+                          ) : (
+                            <p className="text-slate-400 italic py-1">Belum ada tautan eviden.</p>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* 3. REKOMENDASI PENGAMBILAN KEPUTUSAN OTOMATIS */}
-                <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-indigo-50 border border-emerald-200 rounded-2xl p-5 space-y-3">
+                <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-indigo-50 border border-emerald-200 rounded-2xl p-5 sm:p-6 space-y-3">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-emerald-700" />
                     <h4 className="font-bold text-sm sm:text-base text-slate-900">
@@ -1052,15 +1110,15 @@ export default function AnalisisRTPPage() {
                     </h4>
                   </div>
 
-                  <p className="text-xs text-slate-700 leading-relaxed bg-white/70 p-3 rounded-xl border border-emerald-100">
+                  <p className="text-xs sm:text-sm text-slate-700 leading-relaxed bg-white/80 p-4 rounded-xl border border-emerald-100 shadow-xs">
                     {currentAnalysis.narasiAnalisis}
                   </p>
 
-                  <div className="p-3.5 bg-white rounded-xl border border-emerald-200 space-y-2">
+                  <div className="p-4 bg-white rounded-xl border border-emerald-200 space-y-2 shadow-xs">
                     <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                       Rekomendasi Arah Kebijakan Manajemen:
                     </span>
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs sm:text-sm shadow-xs">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs sm:text-sm shadow-xs">
                       <CheckCircle2 className="w-4 h-4" />
                       <span>{currentAnalysis.kategoriKeputusanDefault}</span>
                     </div>
@@ -1068,8 +1126,8 @@ export default function AnalisisRTPPage() {
                 </div>
 
                 {/* 4. FORM PENETAPAN KEPUTUSAN & ARAHAN PIMPINAN */}
-                <div className="bg-white rounded-2xl border-2 border-slate-300 p-5 space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                <div className="bg-white rounded-2xl border-2 border-slate-300 p-5 sm:p-6 space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
                     <div className="flex items-center gap-2">
                       <Award className="w-5 h-5 text-emerald-600" />
                       <h4 className="font-bold text-sm sm:text-base text-slate-900">
@@ -1077,13 +1135,13 @@ export default function AnalisisRTPPage() {
                       </h4>
                     </div>
                     {selectedItem.keputusanPimpinan && (
-                      <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-bold">
+                      <span className="text-[11px] bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold">
                         Telah Ditetapkan: {new Date(selectedItem.keputusanPimpinan.tanggalKeputusan).toLocaleDateString("id-ID")}
                       </span>
                     )}
                   </div>
 
-                  <div className="space-y-4 text-xs">
+                  <div className="space-y-4 text-xs sm:text-sm">
                     {/* Dropdown Kategori Keputusan */}
                     <div className="space-y-1.5">
                       <Label className="text-xs font-bold text-slate-800">
@@ -1093,7 +1151,7 @@ export default function AnalisisRTPPage() {
                         value={decisionCategory}
                         onValueChange={(val) => setDecisionCategory(val)}
                       >
-                        <SelectTrigger className="text-xs bg-slate-50">
+                        <SelectTrigger className="text-xs sm:text-sm bg-slate-50">
                           <SelectValue placeholder="Pilih Kategori Keputusan Manajemen" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1126,32 +1184,32 @@ export default function AnalisisRTPPage() {
                         placeholder="Tuliskan arahan resmi, penugasan tindak lanjut, tenggat waktu, atau disposisi spesifik pimpinan..."
                         value={decisionNotes}
                         onChange={(e) => setDecisionNotes(e.target.value)}
-                        className="text-xs bg-slate-50 font-sans leading-relaxed"
+                        className="text-xs sm:text-sm bg-slate-50 font-sans leading-relaxed"
                       />
                     </div>
 
                     {/* Nama & Jabatan Pimpinan */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                      <div className="space-y-1">
-                        <Label className="text-[11px] font-semibold text-slate-600">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold text-slate-700">
                           Nama Pimpinan Penandatangan:
                         </Label>
                         <Input
                           value={leaderName}
                           onChange={(e) => setLeaderName(e.target.value)}
                           placeholder="Nama Pimpinan Unit Kerja"
-                          className="text-xs bg-slate-50"
+                          className="text-xs sm:text-sm bg-slate-50"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-[11px] font-semibold text-slate-600">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold text-slate-700">
                           Jabatan Struktural:
                         </Label>
                         <Input
                           value={leaderTitle}
                           onChange={(e) => setLeaderTitle(e.target.value)}
                           placeholder="Kepala Unit Kerja / Direktur / Sesditjen"
-                          className="text-xs bg-slate-50"
+                          className="text-xs sm:text-sm bg-slate-50"
                         />
                       </div>
                     </div>
@@ -1160,7 +1218,7 @@ export default function AnalisisRTPPage() {
               </div>
 
               {/* MODAL FOOTER ACTIONS */}
-              <div className="bg-slate-50 p-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="bg-slate-50 p-4 sm:px-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
                 <Button
                   onClick={() => setIsAnalysisModalOpen(false)}
                   variant="outline"
@@ -1174,7 +1232,7 @@ export default function AnalisisRTPPage() {
                   <Button
                     onClick={handleSaveDecision}
                     disabled={isSavingDecision}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-5 shadow-md flex items-center gap-2 cursor-pointer w-full sm:w-auto"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-6 py-2 shadow-md flex items-center gap-2 cursor-pointer w-full sm:w-auto"
                   >
                     {isSavingDecision ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
