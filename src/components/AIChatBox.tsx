@@ -179,6 +179,16 @@ export default function AIChatBox() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const loadedUserIdRef = useRef<string | null>(null);
+
+  // Helper functions for user-specific chat storage keys
+  const getUserChatStorageKey = (userId: string) => {
+    return `simrisiko_ai_chat_${userId.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+  };
+
+  const getUserApiKeyStorageKey = (userId: string) => {
+    return `simrisiko_gemini_api_key_${userId.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+  };
 
   // Quick Prompt Suggestions
   const quickPrompts = [
@@ -190,48 +200,79 @@ export default function AIChatBox() {
     "Apa dasar hukum pengelolaan risiko?"
   ];
 
-  // Initialize chat from localStorage or greeting
+  // Initialize chat from localStorage per logged-in user or personalized greeting
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Load saved API key
-    const savedKey = localStorage.getItem("simrisiko_gemini_api_key") || "";
+    // Purge legacy global key to prevent cross-account history leak
+    try {
+      localStorage.removeItem("simrisiko_ai_chat_history");
+    } catch (e) {}
+
+    const currentUserId = user?.uid || user?.email || null;
+
+    if (!currentUserId) {
+      // User is not logged in
+      loadedUserIdRef.current = null;
+      setMessages([]);
+      setApiKeyInput("");
+      return;
+    }
+
+    // Load saved API key for this specific user
+    const apiKeyKey = getUserApiKeyStorageKey(currentUserId);
+    const savedKey = localStorage.getItem(apiKeyKey) || "";
     setApiKeyInput(savedKey);
 
-    // Load saved messages
-    const savedMessages = localStorage.getItem("simrisiko_ai_chat_history");
+    // Load saved messages for this specific user
+    const storageKey = getUserChatStorageKey(currentUserId);
+    const savedMessages = localStorage.getItem(storageKey);
+    let isLoaded = false;
+
     if (savedMessages) {
       try {
         const parsed = JSON.parse(savedMessages);
         if (Array.isArray(parsed) && parsed.length > 0) {
           setMessages(parsed);
-          return;
+          isLoaded = true;
         }
       } catch (e) {
         console.error("Failed to parse saved chat history:", e);
       }
     }
 
-    // Default welcome message if empty
-    const welcomeMsg: Message = {
-      id: "welcome-1",
-      role: "assistant",
-      content: `Halo! Saya **Si-MaRi AI**, asisten kecerdasan buatan konsultasi Manajemen Risiko Kementerian Desa, PDT, dan Transmigrasi.\n\nSaya siap mendampingi Anda (${user?.unitName || "Unit Kerja Kemendesa"}) dalam:\n- **Perumusan Pernyataan Risiko** (*[Sebab] -> [Peristiwa] -> [Dampak]*)\n- **Penetapan Skala 5x5** (*Kemungkinan & Dampak*)\n- **Penyusunan Rencana Tindak Pengendalian (RTP)**\n- **Konsultasi Audit & Reviu APIP**\n\nSilakan pilih salah satu pertanyaan cepat di bawah atau ketik pertanyaan Anda!`,
-      timestamp: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
-      source: "knowledge_base"
-    };
-    setMessages([welcomeMsg]);
+    if (!isLoaded) {
+      // Default welcome message personalized for this specific user
+      const welcomeMsg: Message = {
+        id: `welcome-${currentUserId}`,
+        role: "assistant",
+        content: `Halo! Saya **Si-MaRi AI**, asisten kecerdasan buatan konsultasi Manajemen Risiko Kementerian Desa, PDT, dan Transmigrasi.\n\nSaya siap mendampingi Anda (${user?.unitName || user?.email || "Unit Kerja Kemendesa"}) dalam:\n- **Perumusan Pernyataan Risiko** (*[Sebab] -> [Peristiwa] -> [Dampak]*)\n- **Penetapan Skala 5x5** (*Kemungkinan & Dampak*)\n- **Penyusunan Rencana Tindak Pengendalian (RTP)**\n- **Konsultasi Audit & Proses Riviu APIP**\n\nSilakan pilih salah satu pertanyaan cepat di bawah atau ketik pertanyaan Anda!`,
+        timestamp: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+        source: "knowledge_base"
+      };
+      setMessages([welcomeMsg]);
+    }
+
+    loadedUserIdRef.current = currentUserId;
   }, [user]);
 
-  // Save messages to localStorage when updated
+  // Save messages to localStorage strictly under the current user's isolated key
   useEffect(() => {
-    if (typeof window === "undefined" || messages.length === 0) return;
+    if (typeof window === "undefined" || !user) return;
+    const currentUserId = user?.uid || user?.email || null;
+    if (!currentUserId) return;
+
+    // Guard: Only save if the currently loaded messages belong to this user
+    if (loadedUserIdRef.current !== currentUserId) return;
+    if (messages.length === 0) return;
+
+    const storageKey = getUserChatStorageKey(currentUserId);
     try {
-      localStorage.setItem("simrisiko_ai_chat_history", JSON.stringify(messages));
+      localStorage.setItem(storageKey, JSON.stringify(messages));
     } catch (e) {
-      console.warn("Could not save chat history:", e);
+      console.warn("Could not save user chat history:", e);
     }
-  }, [messages]);
+  }, [messages, user]);
 
   // Smart Auto-scroll: When assistant finishes replying, scroll to start of new message
   useEffect(() => {
@@ -326,26 +367,43 @@ export default function AIChatBox() {
 
   const handleClearChat = () => {
     if (window.confirm("Apakah Anda yakin ingin menghapus seluruh riwayat percakapan dengan Si-MaRi AI?")) {
+      const currentUserId = user?.uid || user?.email || null;
       const resetMsg: Message = {
         id: Date.now().toString(),
         role: "assistant",
-        content: `Percakapan telah direset. Halo kembali, rekan ${user?.unitName || "Kemendesa PDT"}! Ada yang bisa saya bantu terkait penyusunan atau analisis risiko hari ini?`,
+        content: `Percakapan telah direset. Halo kembali, rekan ${user?.unitName || user?.email || "Kemendesa PDT"}! Ada yang bisa saya bantu terkait penyusunan atau analisis risiko hari ini?`,
         timestamp: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
         source: "knowledge_base"
       };
       setMessages([resetMsg]);
-      localStorage.removeItem("simrisiko_ai_chat_history");
-      toast.success("Riwayat percakapan berhasil dibersihkan");
+
+      if (currentUserId) {
+        try {
+          const storageKey = getUserChatStorageKey(currentUserId);
+          localStorage.removeItem(storageKey);
+        } catch (e) {}
+      }
+      try {
+        localStorage.removeItem("simrisiko_ai_chat_history");
+      } catch (e) {}
+      toast.success("Riwayat percakapan Anda berhasil dibersihkan");
     }
   };
 
   const handleSaveApiKey = () => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("simrisiko_gemini_api_key", apiKeyInput.trim());
+      const currentUserId = user?.uid || user?.email || null;
+      const trimmedKey = apiKeyInput.trim();
+      if (currentUserId) {
+        const apiKeyKey = getUserApiKeyStorageKey(currentUserId);
+        localStorage.setItem(apiKeyKey, trimmedKey);
+      } else {
+        localStorage.setItem("simrisiko_gemini_api_key", trimmedKey);
+      }
       setShowSettings(false);
       toast.success(
-        apiKeyInput.trim()
-          ? "Kunci Google Gemini API berhasil disimpan!"
+        trimmedKey
+          ? "Kunci Google Gemini API berhasil disimpan untuk akun Anda!"
           : "Menggunakan Built-in Expert Engine Kemendesa (default)"
       );
     }
