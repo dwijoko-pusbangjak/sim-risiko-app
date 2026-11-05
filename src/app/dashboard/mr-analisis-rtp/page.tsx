@@ -149,7 +149,7 @@ export default function AnalisisRTPPage() {
   const [completedRtps, setCompletedRtps] = useState<CompletedRTP[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"100_only" | "all_with_progress">("100_only");
+  const [statusFilter, setStatusFilter] = useState<"all" | "completed" | "in_progress" | "not_started">("all");
   const [decisionFilter, setDecisionFilter] = useState<"all" | "has_decision" | "no_decision">("all");
 
   // Multi-unit selector for non-unit-restricted users
@@ -214,34 +214,28 @@ export default function AnalisisRTPPage() {
         const data = docSnap.data();
         if (data.rtpList && Array.isArray(data.rtpList)) {
           data.rtpList.forEach((rtp: any) => {
-            const pct = Number(rtp.pemantauan?.persentase || 0);
-            const prog = (rtp.pemantauan?.progres || "").toLowerCase();
-            const isSelesai = pct >= 100 || prog.includes("selesai") || prog.includes("terlaksana") || rtp.efektifitas?.status === "Efektif";
-
-            // Filter item: apakah memiliki progres
-            if (pct > 0 || isSelesai) {
-              results.push({
-                riskId: docSnap.id,
-                pernyataanRisiko: data.pernyataanRisiko || "Tanpa Judul Risiko",
-                penyebab: data.penyebab || "-",
-                dampak: data.dampak || "-",
-                kategori: data.kategoriRisiko || data.kategori || "Operasional",
-                unitName: data.unitName || user?.unitName || "Unit Kerja",
-                tahun: data.tahun || safeYear,
-                kodeRisiko: data.kodeRisiko || `R-${docSnap.id.substring(0, 4)}`,
-                awalK: Number(data.levelKemungkinan || 3),
-                awalD: Number(data.levelDampak || 3),
-                awalSkala: Number(data.besaranRisiko || 13),
-                rtpId: rtp.id,
-                rencana: rtp.rencana || "Tanpa Rencana Aksi",
-                penanggungjawab: rtp.penanggungjawab || "-",
-                targetWaktu: rtp.targetWaktu || "-",
-                bentukKomunikasi: rtp.bentukKomunikasi || "-",
-                pemantauan: rtp.pemantauan,
-                efektifitas: rtp.efektifitas,
-                keputusanPimpinan: rtp.keputusanPimpinan,
-              });
-            }
+            // Memuat seluruh RTP sama seperti di halaman Pemantauan RTP
+            results.push({
+              riskId: docSnap.id,
+              pernyataanRisiko: data.pernyataanRisiko || "Tanpa Judul Risiko",
+              penyebab: data.penyebab || "-",
+              dampak: data.dampak || "-",
+              kategori: data.kategoriRisiko || data.kategori || "Operasional",
+              unitName: data.unitName || user?.unitName || "Unit Kerja",
+              tahun: data.tahun || safeYear,
+              kodeRisiko: data.kodeRisiko || `R-${docSnap.id.substring(0, 4)}`,
+              awalK: Number(data.levelKemungkinan || 3),
+              awalD: Number(data.levelDampak || 3),
+              awalSkala: Number(data.besaranRisiko || 13),
+              rtpId: rtp.id,
+              rencana: rtp.rencana || "Tanpa Rencana Aksi",
+              penanggungjawab: rtp.penanggungjawab || "-",
+              targetWaktu: rtp.targetWaktu || "-",
+              bentukKomunikasi: rtp.bentukKomunikasi || "-",
+              pemantauan: rtp.pemantauan,
+              efektifitas: rtp.efektifitas,
+              keputusanPimpinan: rtp.keputusanPimpinan,
+            });
           });
         }
       });
@@ -262,10 +256,12 @@ export default function AnalisisRTPPage() {
       const pct = Number(item.pemantauan?.persentase || 0);
       const prog = (item.pemantauan?.progres || "").toLowerCase();
       const isCompleted = pct >= 100 || prog.includes("selesai") || prog.includes("terlaksana");
+      const isInProgress = pct > 0 && pct < 100 && !isCompleted;
+      const isNotStarted = pct === 0 && !isCompleted;
 
-      if (statusFilter === "100_only" && !isCompleted) {
-        return false;
-      }
+      if (statusFilter === "completed" && !isCompleted) return false;
+      if (statusFilter === "in_progress" && !isInProgress) return false;
+      if (statusFilter === "not_started" && !isNotStarted) return false;
 
       // 2. Decision Filter
       if (decisionFilter === "has_decision" && !item.keputusanPimpinan?.kategoriKeputusan) {
@@ -290,27 +286,49 @@ export default function AnalisisRTPPage() {
 
   // Statistik Ringkasan
   const stats = useMemo(() => {
-    const totalCompleted = completedRtps.filter(
-      (item) => Number(item.pemantauan?.persentase || 0) >= 100 || (item.pemantauan?.progres || "").toLowerCase().includes("selesai")
-    ).length;
-
+    const totalAll = completedRtps.length;
+    let totalCompleted = 0;
+    let totalInProgress = 0;
+    let totalNotStarted = 0;
     let totalReduction = 0;
     let reductionCount = 0;
     let decisionsCount = 0;
     let needFollowUpCount = 0;
 
     completedRtps.forEach((item) => {
+      const pct = Number(item.pemantauan?.persentase || 0);
+      const prog = (item.pemantauan?.progres || "").toLowerCase();
+      const isCompleted = pct >= 100 || prog.includes("selesai") || prog.includes("terlaksana");
+      const isInProgress = pct > 0 && pct < 100 && !isCompleted;
+
+      if (isCompleted) {
+        totalCompleted++;
+      } else if (isInProgress) {
+        totalInProgress++;
+      } else {
+        totalNotStarted++;
+      }
+
       if (item.keputusanPimpinan?.kategoriKeputusan) {
         decisionsCount++;
       }
 
       const awal = item.awalSkala || 1;
-      const akhir = item.efektifitas?.aktualSkala || Math.max(1, Math.round(awal * 0.4)); // simulasi jika belum diisi efektifitas
+      let akhir = awal;
+      if (item.efektifitas?.aktualSkala) {
+        akhir = item.efektifitas.aktualSkala;
+      } else if (isCompleted) {
+        akhir = Math.max(1, Math.round(awal * 0.4));
+      } else if (isInProgress) {
+        const reduksiProyeksi = Math.round((awal * 0.4) * (pct / 100));
+        akhir = Math.max(1, awal - reduksiProyeksi);
+      }
+
       const diffPct = Math.max(0, Math.round(((awal - akhir) / awal) * 100));
       totalReduction += diffPct;
       reductionCount++;
 
-      if (item.efektifitas?.aktualSkala && item.efektifitas.aktualSkala >= 12) {
+      if (akhir >= 12) {
         needFollowUpCount++;
       }
     });
@@ -318,7 +336,10 @@ export default function AnalisisRTPPage() {
     const avgReduction = reductionCount > 0 ? Math.round(totalReduction / reductionCount) : 0;
 
     return {
+      totalAll,
       totalCompleted,
+      totalInProgress,
+      totalNotStarted,
       avgReduction,
       decisionsCount,
       needFollowUpCount,
@@ -426,19 +447,46 @@ export default function AnalisisRTPPage() {
     const targetSkor = item.efektifitas?.targetSkala || calculateScale(targetK, targetD) || 6;
     const targetLevel = getRiskLevelInfo(targetSkor);
 
-    // Aktual Residual Risk (dari Efektifitas jika ada, atau proyeksi penurunan bila 100% terlaksana)
-    const aktualK = item.efektifitas?.aktualKemungkinan || Math.max(1, awalK - 2);
-    const aktualD = item.efektifitas?.aktualDampak || Math.max(1, awalD - 1);
-    const aktualSkor = item.efektifitas?.aktualSkala || calculateScale(aktualK, aktualD) || 6;
+    // Progres pemantauan
+    const pct = Number(item.pemantauan?.persentase || 0);
+    const prog = (item.pemantauan?.progres || "").toLowerCase();
+    const isCompleted = pct >= 100 || prog.includes("selesai") || prog.includes("terlaksana");
+    const isInProgress = pct > 0 && pct < 100 && !isCompleted;
+    const isNotStarted = pct === 0 && !isCompleted;
+
+    // Evaluasi Keselarasan Bukti Fisik
+    const adaEviden = Boolean(item.pemantauan?.linkEviden && item.pemantauan.linkEviden.trim().length > 3);
+
+    // Aktual Residual Risk (dari Efektifitas jika ada, atau berdasarkan progres)
+    let aktualK = item.efektifitas?.aktualKemungkinan;
+    let aktualD = item.efektifitas?.aktualDampak;
+    let aktualSkor = item.efektifitas?.aktualSkala;
+
+    if (!aktualSkor) {
+      if (isCompleted) {
+        aktualK = Math.max(1, awalK - 2);
+        aktualD = Math.max(1, awalD - 1);
+        aktualSkor = calculateScale(aktualK, aktualD) || 6;
+      } else if (isInProgress) {
+        const reduksiProyeksi = Math.round((awalSkor * 0.4) * (pct / 100));
+        aktualSkor = Math.max(1, awalSkor - reduksiProyeksi);
+        aktualK = Math.max(1, Math.round(awalK - (pct >= 50 ? 1 : 0)));
+        aktualD = Math.max(1, Math.round(awalD - (pct >= 80 ? 1 : 0)));
+      } else {
+        // Belum mulai (0%)
+        aktualK = awalK;
+        aktualD = awalD;
+        aktualSkor = awalSkor;
+      }
+    }
+    if (!aktualK) aktualK = Math.max(1, awalK - 1);
+    if (!aktualD) aktualD = Math.max(1, awalD - 1);
     const aktualLevel = getRiskLevelInfo(aktualSkor);
 
     // Penurunan Skor & Indeks Reduksi Risiko
     const poinPenurunan = Math.max(0, awalSkor - aktualSkor);
     const persenPenurunan = awalSkor > 0 ? Math.round((poinPenurunan / awalSkor) * 100) : 0;
     const deviasiTarget = aktualSkor - targetSkor;
-
-    // Evaluasi Keselarasan Bukti Fisik
-    const adaEviden = Boolean(item.pemantauan?.linkEviden && item.pemantauan.linkEviden.trim().length > 3);
 
     // Penentuan Kategori Keputusan Otomatis
     let kategoriKeputusanDefault = "";
@@ -447,24 +495,39 @@ export default function AnalisisRTPPage() {
     let arahanDefault = "";
     let narasiAnalisis = "";
 
-    if (aktualSkor <= 6 || persenPenurunan >= 60) {
-      kategoriKeputusanDefault = "Institusionalisasi ke SOP / Regulasi Tetap";
-      statusEfektivitasLabel = "SANGAT EFEKTIF (Optimal)";
-      badgeEfektivitas = "bg-emerald-100 text-emerald-800 border-emerald-300";
-      narasiAnalisis = `Pelaksanaan Rencana Tindak Pengendalian (RTP) terbukti sangat efektif menekan besaran risiko dari level ${awalLevel.label} (skor ${awalSkor}) menjadi level ${aktualLevel.label} (skor ${aktualSkor}) dengan efisiensi penurunan risiko mencapai ${persenPenurunan}%. Risiko residual saat ini telah berada jauh di bawah selera risiko toleransi instansi.`;
-      arahanDefault = `1. Segera formalkan butir tindakan mitigasi "${item.rencana}" menjadi Standar Operasional Prosedur (SOP) baku pada ${item.unitName}.\n2. Masukkan kepatuhan prosedur ini sebagai bagian dari checklist pengawasan rutin triwulanan.\n3. Pertahankan sistem verifikasi saat ini agar risiko tidak bangkit kembali.`;
-    } else if (aktualSkor <= 11) {
-      kategoriKeputusanDefault = "Pertahankan Pengendalian Eksisting & Pengawasan Rutin";
-      statusEfektivitasLabel = "EFEKTIF (Sesuai Target)";
-      badgeEfektivitas = "bg-blue-100 text-blue-800 border-blue-300";
-      narasiAnalisis = `Tindakan mitigasi telah berhasil menurunkan tingkat keparahan risiko ke level ${aktualLevel.label} (skor ${aktualSkor}) dengan penurunan sebesar ${persenPenurunan}%. Pengendalian telah berjalan namun tetap membutuhkan komitmen pengawasan disiplin dari penanggung jawab (${item.penanggungjawab}).`;
-      arahanDefault = `1. Pertahankan implementasi tindakan pengendalian "${item.rencana}".\n2. Lakukan evaluasi berkala setiap akhir triwulan untuk memastikan tidak terjadi keterlambatan atau pengabaian eviden.\n3. Penanggung jawab (${item.penanggungjawab}) wajib melaporkan laporan berkala ke Pimpinan Unit.`;
-    } else {
-      kategoriKeputusanDefault = "Susun Rencana Tindak Pengendalian Tambahan (RTP Lanjutan)";
-      statusEfektivitasLabel = "KURANG EFEKTIF (Perlu Mitigasi Tambahan)";
+    if (isNotStarted) {
+      kategoriKeputusanDefault = "Instruksi Segera Eksekusi & Penugasan Definitif PIC";
+      statusEfektivitasLabel = "BELUM BERJALAN (Risiko Masih Terbuka Penuh)";
+      badgeEfektivitas = "bg-rose-100 text-rose-800 border-rose-300";
+      narasiAnalisis = `Rencana Tindak Pengendalian (RTP) ini terdata belum mulai dilaksanakan (progres 0%). Dengan demikian, besaran risiko saat ini masih berada pada tingkat keparahan penuh ${awalLevel.label} (skor ${awalSkor}) tanpa bantalan mitigasi aktif. Kondisi ini menempatkan sasaran strategis unit kerja pada risiko keterpaparan tinggi apabila timbul ancaman atau kegagalan operasional.`;
+      arahanDefault = `1. Penanggung jawab (${item.penanggungjawab}) diinstruksikan segera memulai pelaksanaan rencana aksi "${item.rencana}" paling lambat 7 hari kerja.\n2. Alokasikan sumber daya/anggaran yang dibutuhkan dan segera tetapkan tim pelaksana teknis.\n3. Laporkan progres awal pelaksanaan dan dokumen pendukung (eviden) secara berkala ke aplikasi pemantauan.`;
+    } else if (isInProgress) {
+      kategoriKeputusanDefault = "Kawal Ketat Pelaksanaan Sesuai Target Waktu & Akselerasi";
+      statusEfektivitasLabel = `DALAM PELAKSANAAN (${pct}% Berjalan)`;
       badgeEfektivitas = "bg-amber-100 text-amber-800 border-amber-300";
-      narasiAnalisis = `Meskipun progres RTP telah dilaporkan selesai, besaran risiko residual masih berada pada level ${aktualLevel.label} (skor ${aktualSkor}) dengan deviasi sebesar +${deviasiTarget} poin dari target. Hal ini mengindikasikan bahwa akar masalah (${item.penyebab}) belum sepenuhnya ternetralisir oleh instrumen mitigasi yang digunakan saat ini.`;
-      arahanDefault = `1. Segera rumuskan Rencana Tindak Pengendalian Tambahan (RTP Lanjutan) dengan memperkuat instrumen pengawasan verifikasi ganda.\n2. Alokasikan sumber daya pendukung atau otomatisasi sistem guna menekan kemungkinan keterjadian.\n3. Koordinasikan dengan Auditor APIP untuk asistensi perbaikan desain pengendalian internal.`;
+      narasiAnalisis = `Rencana Tindak Pengendalian saat ini telah berjalan ${pct}%. Tindakan pengendalian sedang dalam proses implementasi aktif oleh penanggung jawab (${item.penanggungjawab}). Pengawalan berkala diperlukan agar tahapan mitigasi dapat rampung tepat waktu sesuai target (${item.targetWaktu}) sehingga penurunan risiko ke level ${targetLevel.label} (skor ${targetSkor}) dapat tercapai secara maksimal.`;
+      arahanDefault = `1. Tingkatkan intensitas pelaksanaan tindakan "${item.rencana}" agar selesai tepat waktu sesuai batas target (${item.targetWaktu}).\n2. Siapkan dokumen bukti dukung (eviden) secara bertahap untuk diunggah pada modul pemantauan.\n3. Laporkan segera kepada Pimpinan Unit jika terdapat kendala operasional yang menghambat penyelesaian.`;
+    } else {
+      // 100% Selesai
+      if (aktualSkor <= 6 || persenPenurunan >= 60) {
+        kategoriKeputusanDefault = "Institusionalisasi ke SOP / Regulasi Tetap";
+        statusEfektivitasLabel = "SANGAT EFEKTIF (Optimal)";
+        badgeEfektivitas = "bg-emerald-100 text-emerald-800 border-emerald-300";
+        narasiAnalisis = `Pelaksanaan Rencana Tindak Pengendalian (RTP) terbukti sangat efektif menekan besaran risiko dari level ${awalLevel.label} (skor ${awalSkor}) menjadi level ${aktualLevel.label} (skor ${aktualSkor}) dengan efisiensi penurunan risiko mencapai ${persenPenurunan}%. Risiko residual saat ini telah berada jauh di bawah selera risiko toleransi instansi.`;
+        arahanDefault = `1. Segera formalkan butir tindakan mitigasi "${item.rencana}" menjadi Standar Operasional Prosedur (SOP) baku pada ${item.unitName}.\n2. Masukkan kepatuhan prosedur ini sebagai bagian dari checklist pengawasan rutin triwulanan.\n3. Pertahankan sistem verifikasi saat ini agar risiko tidak bangkit kembali.`;
+      } else if (aktualSkor <= 11) {
+        kategoriKeputusanDefault = "Pertahankan Pengendalian Eksisting & Pengawasan Rutin";
+        statusEfektivitasLabel = "EFEKTIF (Sesuai Target)";
+        badgeEfektivitas = "bg-blue-100 text-blue-800 border-blue-300";
+        narasiAnalisis = `Tindakan mitigasi telah berhasil menurunkan tingkat keparahan risiko ke level ${aktualLevel.label} (skor ${aktualSkor}) dengan penurunan sebesar ${persenPenurunan}%. Pengendalian telah berjalan namun tetap membutuhkan komitmen pengawasan disiplin dari penanggung jawab (${item.penanggungjawab}).`;
+        arahanDefault = `1. Pertahankan implementasi tindakan pengendalian "${item.rencana}".\n2. Lakukan evaluasi berkala setiap akhir triwulan untuk memastikan tidak terjadi keterlambatan atau pengabaian eviden.\n3. Penanggung jawab (${item.penanggungjawab}) wajib melaporkan laporan berkala ke Pimpinan Unit.`;
+      } else {
+        kategoriKeputusanDefault = "Susun Rencana Tindak Pengendalian Tambahan (RTP Lanjutan)";
+        statusEfektivitasLabel = "KURANG EFEKTIF (Perlu Mitigasi Tambahan)";
+        badgeEfektivitas = "bg-rose-100 text-rose-800 border-rose-300";
+        narasiAnalisis = `Meskipun progres RTP telah dilaporkan selesai, besaran risiko residual masih berada pada level ${aktualLevel.label} (skor ${aktualSkor}) dengan deviasi sebesar +${deviasiTarget} poin dari target. Hal ini mengindikasikan bahwa akar masalah (${item.penyebab}) belum sepenuhnya ternetralisir oleh instrumen mitigasi yang digunakan saat ini.`;
+        arahanDefault = `1. Segera rumuskan Rencana Tindak Pengendalian Tambahan (RTP Lanjutan) dengan memperkuat instrumen pengawasan verifikasi ganda.\n2. Alokasikan sumber daya pendukung atau otomatisasi sistem guna menekan kemungkinan keterjadian.\n3. Koordinasikan dengan Auditor APIP untuk asistensi perbaikan desain pengendalian internal.`;
+      }
     }
 
     return {
@@ -484,6 +547,10 @@ export default function AnalisisRTPPage() {
       persenPenurunan,
       deviasiTarget,
       adaEviden,
+      pct,
+      isCompleted,
+      isInProgress,
+      isNotStarted,
       kategoriKeputusanDefault,
       statusEfektivitasLabel,
       badgeEfektivitas,
@@ -517,7 +584,7 @@ export default function AnalisisRTPPage() {
               Analisis RTP (Rencana Tindak Pengendalian)
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Memuat seluruh Rencana Tindak Pengendalian yang <strong>telah terlaksana (100% Selesai)</strong>, dilengkapi dengan <strong>analisis otomatis mendalam</strong> mengenai efektivitas penurunan risiko, evaluasi akar masalah, dan rekomendasi arah kebijakan untuk pengambilan keputusan pimpinan.
+              Memuat seluruh Rencana Tindak Pengendalian dari menu <strong>Pemantauan RTP</strong> (terlaksana 100%, sedang berjalan, maupun belum dilaksanakan), dilengkapi dengan <strong>analisis otomatis mendalam</strong> mengenai efektivitas penurunan risiko, evaluasi sisa risiko (residual), dan rekomendasi arah kebijakan untuk pengambilan keputusan pimpinan.
             </p>
           </div>
 
@@ -562,16 +629,16 @@ export default function AnalisisRTPPage() {
           <CardContent className="p-4 flex items-center justify-between">
             <div className="space-y-1">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                RTP Telah Terlaksana
+                Total RTP Terpantau
               </p>
-              <p className="text-2xl font-black text-slate-900">{stats.totalCompleted}</p>
-              <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />
-                Progres 100% / Selesai
+              <p className="text-2xl font-black text-slate-900">{stats.totalAll}</p>
+              <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-slate-600" />
+                Seluruh data Pemantauan RTP
               </p>
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
-              <ShieldCheck className="w-6 h-6" />
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center border border-slate-200">
+              <Layers className="w-6 h-6" />
             </div>
           </CardContent>
         </Card>
@@ -580,15 +647,33 @@ export default function AnalisisRTPPage() {
           <CardContent className="p-4 flex items-center justify-between">
             <div className="space-y-1">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Rata-Rata Penurunan Risiko
+                Terlaksana (100% Selesai)
               </p>
-              <p className="text-2xl font-black text-emerald-700">-{stats.avgReduction}%</p>
-              <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
-                <TrendingDown className="w-3 h-3 text-emerald-600" />
-                Efisiensi Residual Risk
+              <p className="text-2xl font-black text-emerald-700">{stats.totalCompleted}</p>
+              <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+                <TrendingDown className="w-3 h-3" />
+                Reduksi risiko: -{stats.avgReduction}%
               </p>
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center border border-teal-100">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-slate-200/80 shadow-xs hover:shadow-md transition-all">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Sedang Berjalan (1%-99%)
+              </p>
+              <p className="text-2xl font-black text-blue-700">{stats.totalInProgress}</p>
+              <p className="text-[11px] text-blue-600 font-medium flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                Dalam proses pemenuhan target
+              </p>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
               <Scale className="w-6 h-6" />
             </div>
           </CardContent>
@@ -598,34 +683,16 @@ export default function AnalisisRTPPage() {
           <CardContent className="p-4 flex items-center justify-between">
             <div className="space-y-1">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Keputusan Ditetapkan
+                Belum Dilaksanakan (0%)
               </p>
-              <p className="text-2xl font-black text-blue-700">{stats.decisionsCount}</p>
-              <p className="text-[11px] text-blue-600 font-medium flex items-center gap-1">
-                <UserCheck className="w-3 h-3" />
-                Telah Memiliki Disposisi Pimpinan
-              </p>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
-              <Award className="w-6 h-6" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-slate-200/80 shadow-xs hover:shadow-md transition-all">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Perlu Mitigasi Lanjutan
-              </p>
-              <p className="text-2xl font-black text-amber-600">{stats.needFollowUpCount}</p>
-              <p className="text-[11px] text-amber-700 font-medium flex items-center gap-1">
+              <p className="text-2xl font-black text-rose-600">{stats.totalNotStarted}</p>
+              <p className="text-[11px] text-rose-700 font-medium flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
-                Residual Skor Masih Sedang/Tinggi
+                Risiko masih terbuka penuh
               </p>
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
-              <Layers className="w-6 h-6" />
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
+              <Award className="w-6 h-6" />
             </div>
           </CardContent>
         </Card>
@@ -654,13 +721,15 @@ export default function AnalisisRTPPage() {
                 value={statusFilter}
                 onValueChange={(val: any) => setStatusFilter(val)}
               >
-                <SelectTrigger className="w-44 text-xs bg-white">
+                <SelectTrigger className="w-56 text-xs bg-white">
                   <Filter className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
                   <SelectValue placeholder="Status Pelaksanaan" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="100_only">Hanya Terlaksana (100%)</SelectItem>
-                  <SelectItem value="all_with_progress">Semua dengan Progres (&gt;0%)</SelectItem>
+                  <SelectItem value="all">Semua RTP (Sesuai Pemantauan)</SelectItem>
+                  <SelectItem value="completed">Sudah Selesai (100%)</SelectItem>
+                  <SelectItem value="in_progress">Sedang Berjalan (1% - 99%)</SelectItem>
+                  <SelectItem value="not_started">Belum Dilaksanakan (0%)</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -669,11 +738,11 @@ export default function AnalisisRTPPage() {
                 value={decisionFilter}
                 onValueChange={(val: any) => setDecisionFilter(val)}
               >
-                <SelectTrigger className="w-44 text-xs bg-white">
+                <SelectTrigger className="w-48 text-xs bg-white">
                   <SelectValue placeholder="Status Keputusan" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Semua Keputusan</SelectItem>
+                  <SelectItem value="all">Semua Status Keputusan</SelectItem>
                   <SelectItem value="has_decision">Sudah Ada Arahan Pimpinan</SelectItem>
                   <SelectItem value="no_decision">Belum Ada Keputusan</SelectItem>
                 </SelectContent>
@@ -692,10 +761,10 @@ export default function AnalisisRTPPage() {
             <div>
               <CardTitle className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                Daftar Rencana Tindak Pengendalian (RTP) yang Terlaksana
+                Daftar Rencana Tindak Pengendalian (RTP) - Seluruh Hasil Pemantauan
               </CardTitle>
               <CardDescription className="text-xs text-slate-500">
-                Menampilkan daftar tindakan mitigasi yang telah rampung dieksekusi. Klik tombol <strong>Analisis</strong> di kolom paling kanan untuk memunculkan telaah otomatis mendalam.
+                Menampilkan seluruh tindakan mitigasi yang terdata pada Pemantauan RTP (Selesai, Berjalan, maupun Belum Dimulai). Klik tombol <strong>Analisis</strong> di kolom paling kanan untuk memunculkan telaah otomatis mendalam dan arahan pimpinan.
               </CardDescription>
             </div>
 
@@ -718,7 +787,7 @@ export default function AnalisisRTPPage() {
               </div>
               <h3 className="text-sm font-bold text-slate-800">Tidak ada RTP yang memenuhi kriteria filter</h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto">
-                Pastikan unit kerja Anda telah mengisi pemantauan progres pelaksanaan RTP hingga 100% pada menu <strong>Pemantauan RTP</strong>.
+                Tidak ditemukan Rencana Tindak Pengendalian untuk filter atau unit kerja yang dipilih.
               </p>
             </div>
           ) : (
@@ -742,10 +811,19 @@ export default function AnalisisRTPPage() {
                   {filteredRtps.map((item, idx) => {
                     const awalLevel = getRiskLevelInfo(item.awalSkala);
                     const pct = Number(item.pemantauan?.persentase || 0);
+                    const prog = (item.pemantauan?.progres || "").toLowerCase();
+                    const isCompleted = pct >= 100 || prog.includes("selesai") || prog.includes("terlaksana");
+                    const isInProgress = pct > 0 && pct < 100 && !isCompleted;
                     const hasDecision = Boolean(item.keputusanPimpinan?.kategoriKeputusan);
 
                     // Residual info
-                    const resSkor = item.efektifitas?.aktualSkala || Math.max(1, Math.round(item.awalSkala * 0.4));
+                    const resSkor =
+                      item.efektifitas?.aktualSkala ||
+                      (isCompleted
+                        ? Math.max(1, Math.round(item.awalSkala * 0.4))
+                        : isInProgress
+                        ? Math.max(1, item.awalSkala - Math.round((item.awalSkala * 0.4) * (pct / 100)))
+                        : item.awalSkala);
                     const resLevel = getRiskLevelInfo(resSkor);
 
                     return (
@@ -792,13 +870,48 @@ export default function AnalisisRTPPage() {
                         </TableCell>
 
                         {/* Progres Pelaksanaan & Eviden */}
-                        <TableCell className="space-y-1">
+                        <TableCell className="space-y-1.5">
                           <div className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                            <span className="font-bold text-emerald-700">
-                              {pct >= 100 ? "100% Selesai" : `${pct}% Dilaksanakan`}
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                isCompleted
+                                  ? "bg-emerald-500"
+                                  : isInProgress
+                                  ? "bg-blue-500"
+                                  : "bg-slate-300"
+                              }`}
+                            />
+                            <span
+                              className={`font-bold ${
+                                isCompleted
+                                  ? "text-emerald-700"
+                                  : isInProgress
+                                  ? "text-blue-700"
+                                  : "text-slate-500"
+                              }`}
+                            >
+                              {isCompleted
+                                ? "100% Selesai"
+                                : isInProgress
+                                ? `${pct}% Berjalan`
+                                : "0% Belum Mulai"}
                             </span>
                           </div>
+
+                          {/* Progress bar */}
+                          <div className="w-24 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full transition-all ${
+                                isCompleted
+                                  ? "bg-emerald-500"
+                                  : isInProgress
+                                  ? "bg-blue-500"
+                                  : "bg-slate-300"
+                              }`}
+                              style={{ width: `${Math.max(4, pct)}%` }}
+                            />
+                          </div>
+
                           {item.pemantauan?.linkEviden ? (
                             <a
                               href={item.pemantauan.linkEviden}
@@ -1053,7 +1166,7 @@ export default function AnalisisRTPPage() {
                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 flex flex-col justify-between">
                       <div>
                         <span className="font-bold text-slate-700 uppercase tracking-wider text-[11px] block mb-1">
-                          Tindakan RTP Terlaksana
+                          Rencana Tindak Pengendalian (RTP)
                         </span>
                         <p className="text-slate-800 bg-white p-2.5 rounded-lg border border-slate-200/80 font-medium leading-relaxed">
                           {selectedItem.rencana}
@@ -1070,7 +1183,9 @@ export default function AnalisisRTPPage() {
                         <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 space-y-1">
                           <p className="text-slate-800 font-semibold">{selectedItem.penanggungjawab}</p>
                           <p className="text-slate-500 font-mono text-[11px]">Target: {selectedItem.targetWaktu}</p>
-                          <p className="text-slate-500 text-[11px]">Realisasi: {selectedItem.pemantauan?.waktuPelaksanaan || "Tepat Waktu"}</p>
+                          <p className="text-slate-500 text-[11px]">
+                            Realisasi: {selectedItem.pemantauan?.waktuPelaksanaan || (currentAnalysis.isCompleted ? "Selesai Sesuai Target" : currentAnalysis.isInProgress ? "Dalam Pelaksanaan" : "Belum Mulai")}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -1161,14 +1276,20 @@ export default function AnalisisRTPPage() {
                           <SelectItem value="Pertahankan Pengendalian Eksisting & Pengawasan Rutin">
                             2. Pertahankan Pengendalian Eksisting &amp; Pengawasan Rutin (Lanjutkan Kendali)
                           </SelectItem>
+                          <SelectItem value="Kawal Ketat Pelaksanaan Sesuai Target Waktu & Akselerasi">
+                            3. Kawal Ketat Pelaksanaan Sesuai Target Waktu &amp; Akselerasi (Percepatan Progres)
+                          </SelectItem>
+                          <SelectItem value="Instruksi Segera Eksekusi & Penugasan Definitif PIC">
+                            4. Instruksi Segera Eksekusi &amp; Penugasan Definitif PIC (Atensi Belum Berjalan)
+                          </SelectItem>
                           <SelectItem value="Susun Rencana Tindak Pengendalian Tambahan (RTP Lanjutan)">
-                            3. Susun Rencana Tindak Pengendalian Tambahan (RTP Lanjutan / Mitigasi Tambahan)
+                            5. Susun Rencana Tindak Pengendalian Tambahan (RTP Lanjutan / Mitigasi Tambahan)
                           </SelectItem>
                           <SelectItem value="Eskalasi ke Komite Manajemen Risiko Kementerian">
-                            4. Eskalasi ke Komite Manajemen Risiko Kementerian (Wewenang Lintas Unit)
+                            6. Eskalasi ke Komite Manajemen Risiko Kementerian (Wewenang Lintas Unit)
                           </SelectItem>
                           <SelectItem value="Penurunan Frekuensi Monitoring / Pengarsipan">
-                            5. Penurunan Frekuensi Monitoring / Pengarsipan (Risiko Tuntas)
+                            7. Penurunan Frekuensi Monitoring / Pengarsipan (Risiko Tuntas)
                           </SelectItem>
                         </SelectContent>
                       </Select>
