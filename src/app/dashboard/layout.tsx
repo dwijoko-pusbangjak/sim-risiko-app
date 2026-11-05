@@ -22,7 +22,8 @@ import {
   ClipboardList,
   ShieldAlert,
   BarChart4,
-  BookOpen
+  BookOpen,
+  BookMarked
 } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -117,7 +118,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     title: "Overview",
     items: [
       { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { name: "Katalog Peraturan", href: "/dashboard/katalog-peraturan", icon: BookOpen }
+      { name: "Katalog Peraturan", href: "/dashboard/katalog-peraturan", icon: BookOpen },
+      { name: "Modul Aplikasi", href: "/dashboard/modul", icon: BookMarked }
     ]
   });
 
