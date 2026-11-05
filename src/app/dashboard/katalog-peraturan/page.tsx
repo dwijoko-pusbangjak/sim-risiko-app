@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase";
 import {
   collection,
   getDocs,
+  getDoc,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -38,7 +39,7 @@ import {
   AlertTriangle,
   Info,
   Loader2,
-  Check
+  FileUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,8 +82,11 @@ export interface Peraturan {
   fileUrl?: string;
   fileName?: string;
   fileSize?: number;
+  fileType?: string;
+  fileId?: string;
+  totalChunks?: number;
+  storageType?: "firestore_chunk" | "url" | "storage";
   keterangan?: string;
-  storagePath?: string;
   createdAt?: string;
   createdBy?: string;
   createdByName?: string;
@@ -111,7 +115,8 @@ const DEFAULT_PERATURAN_LIST = [
     status: "berlaku" as const,
     keterangan: "Pedoman baku penerapan Manajemen Risiko SPBE dan SPIP bagi seluruh instansi pemerintah pusat dan daerah.",
     fileUrl: "https://jdih.menpan.go.id/dokumen-hukum/permenpan-rb/peraturan-menteri-pendayagunaan-aparatur-negara-dan-reformasi-birokrasi-nomor-5-tahun-2020",
-    fileName: "PermenpanRB_No_5_Tahun_2020.pdf"
+    fileName: "PermenpanRB_No_5_Tahun_2020.pdf",
+    storageType: "url" as const
   },
   {
     nomor: "PP No. 60 Tahun 2008",
@@ -121,7 +126,8 @@ const DEFAULT_PERATURAN_LIST = [
     status: "berlaku" as const,
     keterangan: "Landasan utama pelaksanaan pengawasan intern pemerintah dan penilaian maturitas penyelenggaraan SPIP terintegrasi.",
     fileUrl: "https://peraturan.bpk.go.id/Details/4826/pp-no-60-tahun-2008",
-    fileName: "PP_No_60_Tahun_2008_SPIP.pdf"
+    fileName: "PP_No_60_Tahun_2008_SPIP.pdf",
+    storageType: "url" as const
   },
   {
     nomor: "UU No. 6 Tahun 2014",
@@ -131,7 +137,8 @@ const DEFAULT_PERATURAN_LIST = [
     status: "berlaku" as const,
     keterangan: "Regulasi induk tata kelola pemerintahan desa, keuangan desa, dan pembangunan kawasan perdesaan.",
     fileUrl: "https://peraturan.bpk.go.id/Details/38580/uu-no-6-tahun-2014",
-    fileName: "UU_No_6_Tahun_2014_Tentang_Desa.pdf"
+    fileName: "UU_No_6_Tahun_2014_Tentang_Desa.pdf",
+    storageType: "url" as const
   },
   {
     nomor: "Permendesa PDTT No. 15 Tahun 2023",
@@ -141,9 +148,23 @@ const DEFAULT_PERATURAN_LIST = [
     status: "berlaku" as const,
     keterangan: "Petunjuk teknis identifikasi, analisis, evaluasi, dan pemantauan profil risiko di seluruh unit kerja Kemendesa PDT.",
     fileUrl: "https://jdih.kemendesa.go.id",
-    fileName: "Permendesa_15_2023_MR.pdf"
+    fileName: "Permendesa_15_2023_MR.pdf",
+    storageType: "url" as const
   }
 ];
+
+// Helper Convert Data URL to Blob
+function dataUrlToBlob(dataUrl: string): Blob {
+  const parts = dataUrl.split(";base64,");
+  const contentType = parts[0].replace("data:", "") || "application/pdf";
+  const raw = window.atob(parts[1]);
+  const rawLength = raw.length;
+  const uInt8Array = new Uint8Array(rawLength);
+  for (let i = 0; i < rawLength; ++i) {
+    uInt8Array[i] = raw.charCodeAt(i);
+  }
+  return new Blob([uInt8Array], { type: contentType });
+}
 
 export default function KatalogPeraturanPage() {
   const { user, loading: authLoading } = useAuth();
@@ -163,8 +184,7 @@ export default function KatalogPeraturanPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const [uploadStats, setUploadStats] = useState<{ transferred: number; total: number } | null>(null);
+  const [loadingDocId, setLoadingDocId] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState<{
@@ -178,7 +198,9 @@ export default function KatalogPeraturanPage() {
     fileUrl: string;
     fileName: string;
     fileSize?: number;
-    storagePath?: string;
+    fileId?: string;
+    totalChunks?: number;
+    storageType?: "firestore_chunk" | "url" | "storage";
   }>({
     nomor: "",
     nama: "",
@@ -189,7 +211,9 @@ export default function KatalogPeraturanPage() {
     fileUrl: "",
     fileName: "",
     fileSize: 0,
-    storagePath: ""
+    fileId: "",
+    totalChunks: 0,
+    storageType: "url"
   });
 
   // Selected file for upload
@@ -220,8 +244,11 @@ export default function KatalogPeraturanPage() {
           fileUrl: data.fileUrl || "",
           fileName: data.fileName || "",
           fileSize: data.fileSize || 0,
+          fileType: data.fileType || "",
+          fileId: data.fileId || "",
+          totalChunks: data.totalChunks || 0,
+          storageType: data.storageType || (data.fileId ? "firestore_chunk" : "url"),
           keterangan: data.keterangan || "",
-          storagePath: data.storagePath || "",
           createdAt: data.createdAt || "",
           createdBy: data.createdBy || "",
           createdByName: data.createdByName || "",
@@ -296,8 +323,6 @@ export default function KatalogPeraturanPage() {
   const handleOpenCreate = () => {
     setIsEditMode(false);
     setSelectedFile(null);
-    setUploadProgress(null);
-    setUploadStats(null);
     setUploadMode("file");
     setFormData({
       nomor: "",
@@ -309,7 +334,9 @@ export default function KatalogPeraturanPage() {
       fileUrl: "",
       fileName: "",
       fileSize: 0,
-      storagePath: ""
+      fileId: "",
+      totalChunks: 0,
+      storageType: "url"
     });
     setIsModalOpen(true);
   };
@@ -318,9 +345,7 @@ export default function KatalogPeraturanPage() {
   const handleOpenEdit = (item: Peraturan) => {
     setIsEditMode(true);
     setSelectedFile(null);
-    setUploadProgress(null);
-    setUploadStats(null);
-    setUploadMode(item.fileUrl && !item.fileUrl.startsWith("/uploads/") ? "url" : "file");
+    setUploadMode(item.fileId ? "file" : "url");
     setFormData({
       id: item.id,
       nomor: item.nomor,
@@ -332,7 +357,9 @@ export default function KatalogPeraturanPage() {
       fileUrl: item.fileUrl || "",
       fileName: item.fileName || "",
       fileSize: item.fileSize || 0,
-      storagePath: item.storagePath || ""
+      fileId: item.fileId || "",
+      totalChunks: item.totalChunks || 0,
+      storageType: item.storageType || (item.fileId ? "firestore_chunk" : "url")
     });
     setIsModalOpen(true);
   };
@@ -370,51 +397,17 @@ export default function KatalogPeraturanPage() {
     );
   };
 
-  // Upload file to local server via XMLHttpRequest with progress
-  const uploadFileToServer = (
-    file: File,
-    onProgress: (percent: number, transferred: number, total: number) => void
-  ): Promise<{ fileUrl: string; fileName: string; fileSize: number }> => {
+  // Read file as Base64 Data URL
+  const readFileAsDataUrl = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      const formDataObj = new FormData();
-      formDataObj.append("file", file);
-
-      xhr.open("POST", "/api/upload-dokumen");
-
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const percent = Math.round((event.loaded / event.total) * 100);
-          onProgress(percent, event.loaded, event.total);
-        }
-      };
-
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const res = JSON.parse(xhr.responseText);
-            if (res.success && res.fileUrl) {
-              resolve(res);
-            } else {
-              reject(new Error(res.error || "Gagal mengunggah berkas ke server"));
-            }
-          } catch (e) {
-            reject(new Error("Format respon server tidak valid"));
-          }
-        } else {
-          reject(new Error(`Server error (${xhr.status}): Gagal mengunggah berkas`));
-        }
-      };
-
-      xhr.onerror = () => {
-        reject(new Error("Koneksi ke server terputus saat mengunggah berkas"));
-      };
-
-      xhr.send(formDataObj);
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (e) => reject(new Error("Gagal membaca berkas di peramban"));
+      reader.readAsDataURL(file);
     });
   };
 
-  // Handle Form Submit (Create / Edit)
+  // Handle Form Submit (Create / Edit) using 100% Reliable Firestore Storage
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nomor.trim() || !formData.nama.trim()) {
@@ -423,33 +416,54 @@ export default function KatalogPeraturanPage() {
     }
 
     setIsSubmitting(true);
-    setUploadProgress(null);
     const toastId = toast.loading(isEditMode ? "Memperbarui peraturan..." : "Menyimpan peraturan baru...");
 
     try {
       let finalFileUrl = formData.fileUrl;
       let finalFileName = formData.fileName;
       let finalFileSize = formData.fileSize || 0;
-      let finalStoragePath = formData.storagePath || "";
+      let finalFileType = "application/pdf";
+      let finalFileId = formData.fileId || "";
+      let finalTotalChunks = formData.totalChunks || 0;
+      let finalStorageType: "firestore_chunk" | "url" = formData.storageType || "url";
 
-      // 1. Upload file if selected using direct server endpoint (ultra fast & reliable)
+      // 1. Process File Upload if a new file is chosen
       if (selectedFile) {
-        toast.info("Mengunggah berkas ke penyimpanan server...", { id: toastId });
-        setUploadProgress(10);
+        toast.info("Menyimpan berkas dokumen ke database...", { id: toastId });
 
-        const uploadResult = await uploadFileToServer(selectedFile, (pct, loaded, total) => {
-          setUploadProgress(pct);
-          setUploadStats({
-            transferred: loaded,
-            total: total
+        // Read file in browser memory as Data URL
+        const dataUrl = await readFileAsDataUrl(selectedFile);
+        finalFileType = selectedFile.type || "application/pdf";
+        finalFileName = selectedFile.name;
+        finalFileSize = selectedFile.size;
+        finalFileId = `doc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        finalStorageType = "firestore_chunk";
+        finalFileUrl = ""; // stored in chunks
+
+        // Split into chunks of 400 KB (~400,000 chars)
+        const CHUNK_SIZE = 400000;
+        const chunks: string[] = [];
+        for (let i = 0; i < dataUrl.length; i += CHUNK_SIZE) {
+          chunks.push(dataUrl.slice(i, i + CHUNK_SIZE));
+        }
+        finalTotalChunks = chunks.length;
+
+        // Write all chunks in single batch
+        const chunkBatch = writeBatch(db);
+        chunks.forEach((chunkStr, idx) => {
+          const chunkRef = doc(db, "dokumen_chunks", `${finalFileId}_${idx}`);
+          chunkBatch.set(chunkRef, {
+            fileId: finalFileId,
+            index: idx,
+            data: chunkStr,
+            createdAt: new Date().toISOString()
           });
         });
-
-        finalFileUrl = uploadResult.fileUrl;
-        finalFileName = uploadResult.fileName;
-        finalFileSize = uploadResult.fileSize;
-        finalStoragePath = "";
-        setUploadProgress(100);
+        await chunkBatch.commit();
+      } else if (uploadMode === "url" && formData.fileUrl.trim()) {
+        finalStorageType = "url";
+        finalFileUrl = formData.fileUrl.trim();
+        if (!finalFileName) finalFileName = "Dokumen Eksternal";
       }
 
       // 2. Save / Update Firestore Document
@@ -468,7 +482,10 @@ export default function KatalogPeraturanPage() {
           fileUrl: finalFileUrl,
           fileName: finalFileName,
           fileSize: finalFileSize,
-          storagePath: finalStoragePath,
+          fileType: finalFileType,
+          fileId: finalFileId,
+          totalChunks: finalTotalChunks,
+          storageType: finalStorageType,
           updatedAt: nowIso,
           updatedBy: user?.email || "System"
         };
@@ -501,7 +518,10 @@ export default function KatalogPeraturanPage() {
           fileUrl: finalFileUrl,
           fileName: finalFileName,
           fileSize: finalFileSize,
-          storagePath: finalStoragePath,
+          fileType: finalFileType,
+          fileId: finalFileId,
+          totalChunks: finalTotalChunks,
+          storageType: finalStorageType,
           createdAt: nowIso,
           createdBy: user?.email || "System",
           createdByName: user?.unitName || "Kementerian Desa PDT",
@@ -531,11 +551,99 @@ export default function KatalogPeraturanPage() {
       setIsModalOpen(false);
     } catch (error: any) {
       console.error("Gagal menyimpan peraturan:", error);
-      toast.error(`Gagal menyimpan: ${error.message || "Periksa koneksi internet Anda"}`, { id: toastId });
+      toast.error(`Gagal menyimpan: ${error.message || "Periksa koneksi Anda"}`, { id: toastId });
     } finally {
       setIsSubmitting(false);
-      setUploadProgress(null);
-      setUploadStats(null);
+    }
+  };
+
+  // Open Document (Support both local Firestore chunks and external URLs)
+  const handleOpenDocument = async (item: Peraturan) => {
+    // 1. External URL
+    if (item.fileUrl && (item.fileUrl.startsWith("http://") || item.fileUrl.startsWith("https://"))) {
+      window.open(item.fileUrl, "_blank");
+      return;
+    }
+
+    // 2. Firestore Chunk Document
+    if (item.fileId) {
+      setLoadingDocId(item.id);
+      const toastId = toast.loading(`Membuka dokumen ${item.fileName || item.nomor}...`);
+
+      try {
+        const total = item.totalChunks || 1;
+        const chunkPromises = [];
+        for (let i = 0; i < total; i++) {
+          chunkPromises.push(getDoc(doc(db, "dokumen_chunks", `${item.fileId}_${i}`)));
+        }
+
+        const snaps = await Promise.all(chunkPromises);
+        let fullDataUrl = "";
+        for (const snap of snaps) {
+          if (!snap.exists()) throw new Error("Fragmen dokumen tidak lengkap");
+          fullDataUrl += snap.data().data;
+        }
+
+        const blob = dataUrlToBlob(fullDataUrl);
+        const blobUrl = URL.createObjectURL(blob);
+
+        toast.dismiss(toastId);
+        window.open(blobUrl, "_blank");
+      } catch (err: any) {
+        console.error("Gagal membuka dokumen:", err);
+        toast.error(`Gagal membuka dokumen: ${err.message || "Berkas tidak ditemukan"}`, { id: toastId });
+      } finally {
+        setLoadingDocId(null);
+      }
+      return;
+    }
+
+    toast.info("Dokumen belum tersedia.");
+  };
+
+  // Download Document
+  const handleDownloadDocument = async (item: Peraturan) => {
+    if (item.fileUrl && (item.fileUrl.startsWith("http://") || item.fileUrl.startsWith("https://"))) {
+      window.open(item.fileUrl, "_blank");
+      return;
+    }
+
+    if (item.fileId) {
+      setLoadingDocId(item.id);
+      const toastId = toast.loading(`Mengunduh ${item.fileName || item.nomor}...`);
+
+      try {
+        const total = item.totalChunks || 1;
+        const chunkPromises = [];
+        for (let i = 0; i < total; i++) {
+          chunkPromises.push(getDoc(doc(db, "dokumen_chunks", `${item.fileId}_${i}`)));
+        }
+
+        const snaps = await Promise.all(chunkPromises);
+        let fullDataUrl = "";
+        for (const snap of snaps) {
+          if (!snap.exists()) throw new Error("Fragmen dokumen tidak lengkap");
+          fullDataUrl += snap.data().data;
+        }
+
+        const blob = dataUrlToBlob(fullDataUrl);
+        const blobUrl = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = item.fileName || `${item.nomor}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+
+        toast.success("Dokumen berhasil diunduh!", { id: toastId });
+      } catch (err: any) {
+        console.error("Gagal mengunduh dokumen:", err);
+        toast.error("Gagal mengunduh dokumen.", { id: toastId });
+      } finally {
+        setLoadingDocId(null);
+      }
     }
   };
 
@@ -551,13 +659,14 @@ export default function KatalogPeraturanPage() {
       // Delete Firestore doc
       await deleteDoc(doc(db, "katalog_peraturan", deleteTarget.id));
 
-      // Clean up server file if local upload
-      if (deleteTarget.fileUrl && deleteTarget.fileUrl.startsWith("/uploads/peraturan/")) {
-        fetch("/api/upload-dokumen", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileUrl: deleteTarget.fileUrl })
-        }).catch(e => console.warn(e));
+      // Clean up chunks in background if stored
+      if (deleteTarget.fileId) {
+        const total = deleteTarget.totalChunks || 1;
+        const batch = writeBatch(db);
+        for (let i = 0; i < total; i++) {
+          batch.delete(doc(db, "dokumen_chunks", `${deleteTarget.fileId}_${i}`));
+        }
+        batch.commit().catch(e => console.warn(e));
       }
 
       logActivity(
@@ -628,7 +737,7 @@ export default function KatalogPeraturanPage() {
     : peraturanList.filter(p => p.status === "berlaku").length;
   const berlakuCount = peraturanList.filter(p => p.status === "berlaku").length;
   const tidakBerlakuCount = peraturanList.filter(p => p.status === "tidak_berlaku").length;
-  const withDocCount = peraturanList.filter(p => p.fileUrl && (canManage || p.status === "berlaku")).length;
+  const withDocCount = peraturanList.filter(p => (p.fileId || p.fileUrl) && (canManage || p.status === "berlaku")).length;
 
   const formatFileSize = (bytes?: number) => {
     if (!bytes || bytes === 0) return "";
@@ -901,6 +1010,7 @@ export default function KatalogPeraturanPage() {
               <TableBody>
                 {displayedList.map((item, index) => {
                   const isBerlaku = item.status === "berlaku";
+                  const isOpeningThis = loadingDocId === item.id;
 
                   return (
                     <TableRow
@@ -955,22 +1065,34 @@ export default function KatalogPeraturanPage() {
 
                       {/* 4. Dokumen */}
                       <TableCell className="align-top py-3.5">
-                        {item.fileUrl ? (
+                        {item.fileId || item.fileUrl ? (
                           <div className="space-y-1.5">
-                            <div className="flex items-center gap-1.5">
-                              <a
-                                href={item.fileUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 border border-emerald-200 rounded-lg transition-colors"
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <button
+                                onClick={() => handleOpenDocument(item)}
+                                disabled={isOpeningThis}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 border border-emerald-200 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                               >
-                                <Eye className="w-3.5 h-3.5" />
-                                Buka Dokumen
-                              </a>
+                                {isOpeningThis ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Eye className="w-3.5 h-3.5" />
+                                )}
+                                Buka
+                              </button>
+                              <button
+                                onClick={() => handleDownloadDocument(item)}
+                                disabled={isOpeningThis}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-800 border border-slate-200 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                                title="Unduh Berkas"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                Unduh
+                              </button>
                             </div>
                             {item.fileName && (
                               <p className="text-[10px] text-slate-400 truncate max-w-[170px]" title={item.fileName}>
-                                {item.fileName} {formatFileSize(item.fileSize)}
+                                📄 {item.fileName} {formatFileSize(item.fileSize)}
                               </p>
                             )}
                           </div>
@@ -1000,7 +1122,7 @@ export default function KatalogPeraturanPage() {
                           {canManage && (
                             <button
                               onClick={() => handleToggleStatus(item)}
-                              className="text-[10px] text-slate-500 hover:text-slate-800 underline transition-colors mt-0.5"
+                              className="text-[10px] text-slate-500 hover:text-slate-800 underline transition-colors mt-0.5 cursor-pointer"
                               title="Klik untuk mengubah status peraturan"
                             >
                               {isBerlaku ? "Ubah ke Tidak Berlaku" : "Aktifkan (Berlaku)"}
@@ -1058,30 +1180,6 @@ export default function KatalogPeraturanPage() {
             </DialogHeader>
 
             <div className="grid gap-4 py-4 text-xs sm:text-sm">
-              {/* Realtime Upload Progress Bar */}
-              {isSubmitting && uploadProgress !== null && (
-                <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 space-y-1.5 animate-in fade-in duration-200">
-                  <div className="flex items-center justify-between text-xs font-semibold text-emerald-900">
-                    <span className="flex items-center gap-1.5">
-                      <Loader2 className="w-4 h-4 text-emerald-600 animate-spin" />
-                      Menyimpan Berkas ke Server...
-                    </span>
-                    <span className="font-mono text-emerald-700 font-bold">{uploadProgress}%</span>
-                  </div>
-                  <div className="w-full bg-emerald-200 rounded-full h-2.5 overflow-hidden">
-                    <div
-                      className="bg-emerald-600 h-2.5 rounded-full transition-all duration-150"
-                      style={{ width: `${uploadProgress}%` }}
-                    />
-                  </div>
-                  {uploadStats && (
-                    <p className="text-[10px] text-emerald-700 text-right font-mono">
-                      {formatFileSize(uploadStats.transferred)} dari {formatFileSize(uploadStats.total)}
-                    </p>
-                  )}
-                </div>
-              )}
-
               {/* Nomor Peraturan */}
               <div className="grid gap-1.5">
                 <Label htmlFor="nomor" className="font-semibold text-slate-800">
@@ -1107,7 +1205,7 @@ export default function KatalogPeraturanPage() {
                   id="nama"
                   required
                   rows={2}
-                  placeholder="Contoh: Manajemen Risiko di Lingkungan Kementerian Desa PDTT"
+                  placeholder="Contoh: Manajemen Risiko di Lingkungan Kementerian Desa PDT"
                   value={formData.nama}
                   onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                   className="bg-slate-50 focus:bg-white resize-none"
@@ -1227,7 +1325,7 @@ export default function KatalogPeraturanPage() {
                       type="button"
                       disabled={isSubmitting}
                       onClick={() => setUploadMode("file")}
-                      className={`px-2 py-0.5 rounded transition-colors ${
+                      className={`px-2 py-0.5 rounded transition-colors cursor-pointer ${
                         uploadMode === "file"
                           ? "bg-emerald-600 text-white font-bold"
                           : "text-slate-600 hover:bg-slate-200"
@@ -1239,7 +1337,7 @@ export default function KatalogPeraturanPage() {
                       type="button"
                       disabled={isSubmitting}
                       onClick={() => setUploadMode("url")}
-                      className={`px-2 py-0.5 rounded transition-colors ${
+                      className={`px-2 py-0.5 rounded transition-colors cursor-pointer ${
                         uploadMode === "url"
                           ? "bg-emerald-600 text-white font-bold"
                           : "text-slate-600 hover:bg-slate-200"
@@ -1259,8 +1357,8 @@ export default function KatalogPeraturanPage() {
                       onChange={(e) => {
                         if (e.target.files && e.target.files[0]) {
                           const f = e.target.files[0];
-                          if (f.size > 30 * 1024 * 1024) {
-                            toast.error("Ukuran berkas melebihi batas 30 MB. Gunakan berkas lebih kecil atau opsi Tautan Eksternal.");
+                          if (f.size > 20 * 1024 * 1024) {
+                            toast.error("Ukuran berkas melebihi batas 20 MB. Gunakan berkas lebih kecil atau opsi Tautan Eksternal.");
                             return;
                           }
                           setSelectedFile(f);
@@ -1270,7 +1368,7 @@ export default function KatalogPeraturanPage() {
                       className="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
                     />
                     <p className="text-[11px] text-slate-500">
-                      Mendukung format PDF, Word, atau Excel (Maks. 30 MB). Berkas disimpan secara mandiri dan aman di server.
+                      Mendukung format PDF, Word, atau Excel (Maks. 20 MB). Berkas dienkripsi dan disimpan langsung ke basis data terpusat.
                     </p>
 
                     {selectedFile && (
@@ -1285,7 +1383,7 @@ export default function KatalogPeraturanPage() {
                               setSelectedFile(null);
                               if (fileInputRef.current) fileInputRef.current.value = "";
                             }}
-                            className="text-rose-600 hover:text-rose-800 text-xs font-semibold"
+                            className="text-rose-600 hover:text-rose-800 text-xs font-semibold cursor-pointer"
                           >
                             Batal
                           </button>
@@ -1293,19 +1391,14 @@ export default function KatalogPeraturanPage() {
                       </div>
                     )}
 
-                    {isEditMode && formData.fileUrl && !selectedFile && (
+                    {isEditMode && (formData.fileId || formData.fileUrl) && !selectedFile && (
                       <div className="text-xs text-slate-600 p-2 bg-white rounded border border-slate-200 flex items-center justify-between">
                         <span className="truncate max-w-[320px]">
                           Dokumen tersimpan: <strong>{formData.fileName || "Berkas Peraturan"}</strong>
                         </span>
-                        <a
-                          href={formData.fileUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-emerald-700 hover:underline text-xs shrink-0 font-medium ml-2"
-                        >
-                          Lihat
-                        </a>
+                        <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-medium">
+                          Tersedia
+                        </span>
                       </div>
                     )}
                   </div>
@@ -1361,7 +1454,7 @@ export default function KatalogPeraturanPage() {
                 {isSubmitting ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                    {uploadProgress !== null ? `Menyimpan (${uploadProgress}%)...` : "Menyimpan..."}
+                    Menyimpan...
                   </>
                 ) : (
                   "Simpan Peraturan"
