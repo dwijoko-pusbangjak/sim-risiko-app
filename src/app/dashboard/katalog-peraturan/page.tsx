@@ -12,7 +12,9 @@ import {
   deleteDoc,
   doc,
   serverTimestamp,
-  writeBatch
+  writeBatch,
+  query,
+  where
 } from "firebase/firestore";
 import { logActivity } from "@/lib/logger";
 import { toast } from "sonner";
@@ -38,8 +40,7 @@ import {
   X,
   AlertTriangle,
   Info,
-  Loader2,
-  FileUp
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -224,12 +225,12 @@ export default function KatalogPeraturanPage() {
   // Delete Alert
   const [deleteTarget, setDeleteTarget] = useState<Peraturan | null>(null);
 
-  // Fetch Peraturan from Firestore
+  // Fetch Peraturan from Firestore (Uses mr_konteks collection with type: "katalog_peraturan")
   const fetchPeraturan = async (showLoadingSpinner = true) => {
     if (showLoadingSpinner) setIsLoading(true);
     try {
-      const colRef = collection(db, "katalog_peraturan");
-      const snap = await getDocs(colRef);
+      const q = query(collection(db, "mr_konteks"), where("type", "==", "katalog_peraturan"));
+      const snap = await getDocs(q);
       const list: Peraturan[] = [];
 
       snap.forEach((docSnap) => {
@@ -290,8 +291,9 @@ export default function KatalogPeraturanPage() {
       const nowIso = new Date().toISOString();
 
       DEFAULT_PERATURAN_LIST.forEach((item) => {
-        const newDocRef = doc(collection(db, "katalog_peraturan"));
+        const newDocRef = doc(collection(db, "mr_konteks"));
         batch.set(newDocRef, {
+          type: "katalog_peraturan",
           ...item,
           createdAt: nowIso,
           createdBy: user?.email || "System",
@@ -378,7 +380,7 @@ export default function KatalogPeraturanPage() {
     toast.success(`Status ${item.nomor} diubah menjadi "${statusLabel}"`);
 
     // Async Firestore write in background
-    const docRef = doc(db, "katalog_peraturan", item.id);
+    const docRef = doc(db, "mr_konteks", item.id);
     updateDoc(docRef, {
       status: newStatus,
       updatedAt: new Date().toISOString(),
@@ -426,6 +428,7 @@ export default function KatalogPeraturanPage() {
       let finalFileId = formData.fileId || "";
       let finalTotalChunks = formData.totalChunks || 0;
       let finalStorageType: "firestore_chunk" | "url" = formData.storageType || "url";
+      const nowIso = new Date().toISOString();
 
       // 1. Process File Upload if a new file is chosen
       if (selectedFile) {
@@ -448,15 +451,16 @@ export default function KatalogPeraturanPage() {
         }
         finalTotalChunks = chunks.length;
 
-        // Write all chunks in single batch
+        // Write all chunks in single batch into mr_konteks
         const chunkBatch = writeBatch(db);
         chunks.forEach((chunkStr, idx) => {
-          const chunkRef = doc(db, "dokumen_chunks", `${finalFileId}_${idx}`);
+          const chunkRef = doc(db, "mr_konteks", `chunk_${finalFileId}_${idx}`);
           chunkBatch.set(chunkRef, {
+            type: "katalog_peraturan_chunk",
             fileId: finalFileId,
             index: idx,
             data: chunkStr,
-            createdAt: new Date().toISOString()
+            createdAt: nowIso
           });
         });
         await chunkBatch.commit();
@@ -466,13 +470,12 @@ export default function KatalogPeraturanPage() {
         if (!finalFileName) finalFileName = "Dokumen Eksternal";
       }
 
-      // 2. Save / Update Firestore Document
-      const nowIso = new Date().toISOString();
-
+      // 2. Save / Update Firestore Document in mr_konteks
       if (isEditMode && formData.id) {
         // UPDATE
-        const docRef = doc(db, "katalog_peraturan", formData.id);
+        const docRef = doc(db, "mr_konteks", formData.id);
         const updatePayload = {
+          type: "katalog_peraturan",
           nomor: formData.nomor.trim(),
           nama: formData.nama.trim(),
           jenis: formData.jenis,
@@ -507,8 +510,9 @@ export default function KatalogPeraturanPage() {
         toast.success(`Peraturan "${formData.nomor}" berhasil diperbarui!`, { id: toastId });
       } else {
         // CREATE
-        const colRef = collection(db, "katalog_peraturan");
+        const colRef = collection(db, "mr_konteks");
         const createPayload = {
+          type: "katalog_peraturan",
           nomor: formData.nomor.trim(),
           nama: formData.nama.trim(),
           jenis: formData.jenis,
@@ -574,7 +578,7 @@ export default function KatalogPeraturanPage() {
         const total = item.totalChunks || 1;
         const chunkPromises = [];
         for (let i = 0; i < total; i++) {
-          chunkPromises.push(getDoc(doc(db, "dokumen_chunks", `${item.fileId}_${i}`)));
+          chunkPromises.push(getDoc(doc(db, "mr_konteks", `chunk_${item.fileId}_${i}`)));
         }
 
         const snaps = await Promise.all(chunkPromises);
@@ -616,7 +620,7 @@ export default function KatalogPeraturanPage() {
         const total = item.totalChunks || 1;
         const chunkPromises = [];
         for (let i = 0; i < total; i++) {
-          chunkPromises.push(getDoc(doc(db, "dokumen_chunks", `${item.fileId}_${i}`)));
+          chunkPromises.push(getDoc(doc(db, "mr_konteks", `chunk_${item.fileId}_${i}`)));
         }
 
         const snaps = await Promise.all(chunkPromises);
@@ -656,15 +660,15 @@ export default function KatalogPeraturanPage() {
       // Optimistic remove from UI
       setPeraturanList(prev => prev.filter(p => p.id !== deleteTarget.id));
 
-      // Delete Firestore doc
-      await deleteDoc(doc(db, "katalog_peraturan", deleteTarget.id));
+      // Delete main doc in mr_konteks
+      await deleteDoc(doc(db, "mr_konteks", deleteTarget.id));
 
-      // Clean up chunks in background if stored
+      // Clean up chunks in mr_konteks
       if (deleteTarget.fileId) {
         const total = deleteTarget.totalChunks || 1;
         const batch = writeBatch(db);
         for (let i = 0; i < total; i++) {
-          batch.delete(doc(db, "dokumen_chunks", `${deleteTarget.fileId}_${i}`));
+          batch.delete(doc(db, "mr_konteks", `chunk_${deleteTarget.fileId}_${i}`));
         }
         batch.commit().catch(e => console.warn(e));
       }
@@ -1368,7 +1372,7 @@ export default function KatalogPeraturanPage() {
                       className="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
                     />
                     <p className="text-[11px] text-slate-500">
-                      Mendukung format PDF, Word, atau Excel (Maks. 20 MB). Berkas dienkripsi dan disimpan langsung ke basis data terpusat.
+                      Mendukung format PDF, Word, atau Excel (Maks. 20 MB). Berkas disimpan secara langsung dan aman di basis data cloud.
                     </p>
 
                     {selectedFile && (
