@@ -115,7 +115,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Group 1: Overview
   navGroups.push({
     title: "Overview",
-    items: [{ name: "Dashboard", href: "/dashboard", icon: LayoutDashboard }]
+    items: [
+      { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { name: "Katalog Peraturan", href: "/dashboard/katalog-peraturan", icon: BookOpen }
+    ]
   });
 
   // Group 2: Cascading Kinerja
@@ -196,14 +199,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         ]
       });
     }
-
-  // Group: Referensi & Regulasi (Tersedia untuk Semua Pengguna)
-  navGroups.push({
-    title: "Referensi & Regulasi",
-    items: [
-      { name: "Katalog Peraturan", href: "/dashboard/katalog-peraturan", icon: BookOpen }
-    ]
-  });
   
     const getRoleLabel = (role: string | null) => {
     if (role === "admin") return "Administrator";
