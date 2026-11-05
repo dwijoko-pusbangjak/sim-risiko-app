@@ -265,7 +265,7 @@ export default function ModulPanduanPage() {
       title: "Pengajuan & Reviu Auditor APIP",
       subtitle: "Unit kerja mengajukan profil risiko ke APIP dan menerima catatan perbaikan (Gate Pengawasan)",
       menuPath: "/dashboard/proses-audit/kirim",
-      menuName: "Proses Audit -> Kirim ke Auditor & Inbox Hasil Auditor",
+      menuName: "Proses Riviu -> Kirim ke Auditor & Inbox Hasil Auditor",
       roles: ["Unit Kerja (Pengaju)", "Auditor APIP / Inspektorat Jenderal (Penelaah)"],
       roleFilter: "auditor",
       color: "from-rose-600 to-pink-700",
@@ -303,7 +303,7 @@ export default function ModulPanduanPage() {
       output: "Profil Risiko Terverifikasi Resmi oleh APIP Inspektorat Jenderal.",
       doAndDont: {
         do: "Segera lakukan revisi sesuai rekomendasi catatan auditor pada menu Inbox.",
-        dont: "Jangan mengubah data secara sepihak saat proses audit sedang berjalan."
+        dont: "Jangan mengubah data secara sepihak saat proses reviu sedang berjalan."
       }
     },
     {

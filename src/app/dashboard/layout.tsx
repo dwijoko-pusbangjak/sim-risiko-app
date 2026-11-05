@@ -165,7 +165,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               ]
             },
             {
-              name: "Proses Audit",
+              name: "Proses Riviu",
               icon: SearchCheck,
               children: [
                 { name: "Kirim ke Auditor", href: "/dashboard/proses-audit/kirim" },
@@ -224,7 +224,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             const isActive = item.href ? pathname === item.href : item.children?.some(c => pathname === c.href);
             
             if (item.children) {
-              const isOpen = openMenus[item.name];
+              const isOpen = openMenus[item.name] !== undefined ? openMenus[item.name] : Boolean(isActive);
               return (
                 <div key={item.name} className="flex flex-col space-y-1">
                   <button

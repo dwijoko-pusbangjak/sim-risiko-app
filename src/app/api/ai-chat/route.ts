@@ -107,7 +107,7 @@ Berikut adalah 5 tahapan utama yang harus dilalui oleh unit kerja Anda (**${unit
 #### 4️⃣ Tahap 4: Rencana Tindak Pengendalian (*Menu Rencana Tindak Pengendalian*)
 - Menetapkan butir tindakan mitigasi konkret, nama penanggung jawab (jabatan), target waktu (Triwulan), dan indikator bukti output.
 
-#### 5️⃣ Tahap 5: Pengajuan ke APIP (*Menu Proses Audit $\\rightarrow$ Kirim ke Auditor*)
+#### 5️⃣ Tahap 5: Pengajuan ke APIP (*Menu Proses Riviu $\\rightarrow$ Kirim ke Auditor*)
 - Setelah seluruh risiko tersusun lengkap, klik tombol **"Kirim ke Auditor APIP"** untuk mendapatkan reviu dan telaah dari Inspektorat Jenderal.
 
 ---
@@ -409,8 +409,8 @@ Di SIM-Risiko, proses pengawasan risiko oleh Inspektorat Jenderal berlangsung tr
 
 #### 1️⃣ Alur Bagi Unit Kerja (${unit}):
 1. **Penyusunan Mandiri:** Selesaikan Penetapan Konteks, Identifikasi Risiko, Analisis 5×5, dan butir RTP.
-2. **Pengajuan:** Buka menu **Proses Audit $\\rightarrow$ Kirim ke Auditor**. Periksa kelengkapan data, lalu klik tombol **"Kirim ke Auditor APIP"**. Status unit akan berubah menjadi *Submitted (Diajukan)*.
-3. **Pengecekan Catatan:** Buka menu **Proses Audit $\\rightarrow$ Inbox Hasil Auditor**. Bila ada masukan atau perbaikan dari auditor, lakukan revisi di menu Identifikasi/Analisis/RTP lalu ajukan kembali.
+2. **Pengajuan:** Buka menu **Proses Riviu $\\rightarrow$ Kirim ke Auditor**. Periksa kelengkapan data, lalu klik tombol **"Kirim ke Auditor APIP"**. Status unit akan berubah menjadi *Submitted (Diajukan)*.
+3. **Pengecekan Catatan:** Buka menu **Proses Riviu $\\rightarrow$ Inbox Hasil Auditor**. Bila ada masukan atau perbaikan dari auditor, lakukan revisi di menu Identifikasi/Analisis/RTP lalu ajukan kembali.
 
 #### 2️⃣ Alur Bagi Auditor APIP:
 - Auditor menelaah risiko unit kerja di menu **Auditor APIP**.

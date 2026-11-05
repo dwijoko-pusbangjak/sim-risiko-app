@@ -119,7 +119,7 @@ export default function KirimAuditorPage() {
 
       setSubmissionStatus({ id: cleanDocId, ...submissionData });
       
-      logActivity(user, "Kirim", "Proses Audit", `Mengirim peta risiko tahun ${safeYear} ke auditor`);
+      logActivity(user, "Kirim", "Proses Riviu", `Mengirim peta risiko tahun ${safeYear} ke auditor`);
       toast.success(isResubmit ? "Peta risiko berhasil dikirim ulang ke Auditor!" : "Berhasil dikirim ke Auditor!", { id: toastId });
     } catch (error) {
       console.error("Send error", error);
