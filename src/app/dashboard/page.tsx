@@ -47,22 +47,27 @@ export default function DashboardPage() {
   // State for Regular User
   const [data, setData] = useState<IdentifikasiRisiko[]>([]);
   
-  // State for Admin
+  // State for Admin & Kementerian
   const [adminHierarchy, setAdminHierarchy] = useState<any[]>([]);
   const [expandedE1, setExpandedE1] = useState<Record<string, boolean>>({});
   const [adminTotals, setAdminTotals] = useState({ totalRisiko: 0, risikoPrioritas: 0, totalRtp: 0 });
+  const [kementerianUnitName, setKementerianUnitName] = useState<string>("Kementerian Desa dan PDT");
+  const [ministryTotals, setMinistryTotals] = useState({ totalRisiko: 0, risikoPrioritas: 0, totalRtp: 0 });
   const [allRisks, setAllRisks] = useState<IdentifikasiRisiko[]>([]);
   const [selectedChartUnit, setSelectedChartUnit] = useState<string>("all");
   
   const [isLoading, setIsLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<"admin" | "eselon_1" | "eselon_2">("eselon_2");
+  const [viewMode, setViewMode] = useState<"admin" | "kementerian" | "eselon_1" | "eselon_2">("eselon_2");
 
   useEffect(() => {
     const init = async () => {
       if (!authLoading && user) {
         if (user.role === "admin" || user.role === "kementerian") {
-          setViewMode("admin");
-          fetchAdminData("admin", "");
+          const isKemen = user.role === "kementerian";
+          setViewMode(isKemen ? "kementerian" : "admin");
+          // Default user kementerian adalah risiko level kementerian saja
+          setSelectedChartUnit(isKemen ? "kementerian" : "all");
+          fetchAdminData(isKemen ? "kementerian" : "admin", "");
         } else {
           try {
             const uq = query(collection(db, "units"), where("name", "==", user.unitName));
@@ -108,6 +113,27 @@ export default function DashboardPage() {
         risksByUnit[unitNameKey].push(r);
       });
       
+      // 1. Identifikasi Unit Kementerian & Risiko Level Kementerian
+      const kUnit = allUnits.find(u => u.level === "kementerian");
+      const kName = kUnit ? kUnit.name : (user?.unitName || "Kementerian Desa dan PDT");
+      setKementerianUnitName(kName);
+
+      const isMinistryRisk = (r: IdentifikasiRisiko) => {
+        if ((r as any).role === "kementerian") return true;
+        if (kUnit && r.unitName === kUnit.name) return true;
+        if (user?.role === "kementerian" && r.unitName === user.unitName) return true;
+        if (r.unitName?.toLowerCase().includes("kementerian")) return true;
+        return false;
+      };
+
+      const mRisks = allRisks.filter(isMinistryRisk);
+      const mTotals = {
+        totalRisiko: mRisks.length,
+        risikoPrioritas: mRisks.filter(r => (r.besaranRisiko || 0) >= 12).length,
+        totalRtp: mRisks.reduce((acc, r) => acc + (r.rtpList?.length || 0), 0)
+      };
+      setMinistryTotals(mTotals);
+
       let eselon1Units = allUnits.filter(u => u.level === "eselon_1");
       if (mode === "eselon_1") {
          eselon1Units = eselon1Units.filter(u => u.name === specificUnitName);
@@ -162,9 +188,10 @@ export default function DashboardPage() {
         };
       });
       
-      let tRisiko = 0;
-      let tPrioritas = 0;
-      let tRtp = 0;
+      // Global totals mencakup Tingkat Kementerian + seluruh Eselon
+      let tRisiko = mTotals.totalRisiko;
+      let tPrioritas = mTotals.risikoPrioritas;
+      let tRtp = mTotals.totalRtp;
       hierarchy.forEach(h => {
          tRisiko += h.totalRisiko;
          tPrioritas += h.risikoPrioritas;
@@ -175,8 +202,7 @@ export default function DashboardPage() {
       if (mode === "admin") {
         const unmappedRisks = allRisks.filter(r => 
           !mappedRiskIds.has(r.id) && 
-          (r as any).role !== "kementerian" && 
-          !r.unitName?.toLowerCase().includes("kementerian")
+          !isMinistryRisk(r)
         );
         if (unmappedRisks.length > 0) {
           Promise.all(unmappedRisks.map(r => deleteDoc(doc(db, "mr_identifikasi", r.id))))
@@ -189,7 +215,10 @@ export default function DashboardPage() {
       setExpandedE1(initialExpand);
       
       // Save risks that belong to this hierarchy or ministry level
-      const visibleRisks = allRisks.filter(r => mappedRiskIds.has(r.id) || (r as any).role === "kementerian" || r.unitName?.toLowerCase().includes("kementerian"));
+      const visibleRisks = allRisks.filter(r => 
+        mappedRiskIds.has(r.id) || 
+        isMinistryRisk(r)
+      );
       setAllRisks(visibleRisks);
       
       setAdminHierarchy(hierarchy);
@@ -244,27 +273,41 @@ export default function DashboardPage() {
   }
 
   // ==========================================
-  // TAMPILAN ADMIN
+  // TAMPILAN ADMIN & KEMENTERIAN
   // ==========================================
-  if (viewMode === "admin" || viewMode === "eselon_1") {
-    const filteredRisksForDashboard = selectedChartUnit === "all" 
-      ? allRisks 
-      : allRisks.filter(r => r.unitName === selectedChartUnit);
+  if (viewMode === "admin" || viewMode === "kementerian" || viewMode === "eselon_1") {
+    const isMinistryRisk = (r: IdentifikasiRisiko) => {
+      if ((r as any).role === "kementerian") return true;
+      if (r.unitName === kementerianUnitName) return true;
+      if (user?.role === "kementerian" && r.unitName === user.unitName) return true;
+      if (r.unitName?.toLowerCase().includes("kementerian")) return true;
+      return false;
+    };
 
-    const displayTotals = selectedChartUnit === "all" 
-      ? adminTotals 
-      : {
-          totalRisiko: filteredRisksForDashboard.length,
-          risikoPrioritas: filteredRisksForDashboard.filter(r => (r.besaranRisiko || 0) >= 12).length,
-          totalRtp: filteredRisksForDashboard.reduce((acc, r) => acc + (r.rtpList?.length || 0), 0)
-        };
+    let filteredRisksForDashboard: IdentifikasiRisiko[] = [];
+    let displayTotals = { totalRisiko: 0, risikoPrioritas: 0, totalRtp: 0 };
+
+    if (selectedChartUnit === "kementerian") {
+      filteredRisksForDashboard = allRisks.filter(isMinistryRisk);
+      displayTotals = ministryTotals;
+    } else if (selectedChartUnit === "all") {
+      filteredRisksForDashboard = allRisks;
+      displayTotals = adminTotals;
+    } else {
+      filteredRisksForDashboard = allRisks.filter(r => r.unitName === selectedChartUnit);
+      displayTotals = {
+        totalRisiko: filteredRisksForDashboard.length,
+        risikoPrioritas: filteredRisksForDashboard.filter(r => (r.besaranRisiko || 0) >= 12).length,
+        totalRtp: filteredRisksForDashboard.reduce((acc, r) => acc + (r.rtpList?.length || 0), 0)
+      };
+    }
 
     const totalSemuaRisiko = displayTotals.totalRisiko;
     const totalSemuaPrioritas = displayTotals.risikoPrioritas;
     const totalSemuaRtp = displayTotals.totalRtp;
 
     let displayHierarchy = adminHierarchy;
-    if (selectedChartUnit !== "all") {
+    if (selectedChartUnit !== "all" && selectedChartUnit !== "kementerian") {
       displayHierarchy = adminHierarchy.filter(e1 => {
         return e1.name === selectedChartUnit || e1.children.some((c: any) => c.name === selectedChartUnit);
       }).map(e1 => {
@@ -275,8 +318,6 @@ export default function DashboardPage() {
         return { 
           ...e1, 
           children: filteredChildren,
-          // Zero out E1's own numbers so its internal row doesn't show or shows zeros, 
-          // but we actually want the parent row's totals to ONLY reflect the selected E2!
           totalRisiko: filteredChildren[0]?.totalRisiko || 0,
           risikoPrioritas: filteredChildren[0]?.risikoPrioritas || 0,
           totalRtp: filteredChildren[0]?.totalRtp || 0,
@@ -290,75 +331,157 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900">{viewMode === "admin" ? "Dashboard Konsolidasi Nasional" : "Dashboard Konsolidasi Eselon 1"}</h2>
-          <p className="text-slate-500 mt-1">{viewMode === "admin" ? "Gabungan profil risiko dari seluruh unit kerja Eselon 1 dan Eselon 2" : "Gabungan profil risiko dari unit kerja Anda dan Eselon 2 di bawahnya"} di Tahun {activeYear}.</p>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+            {viewMode === "kementerian"
+              ? "Dashboard Pengelola Risiko Kementerian"
+              : viewMode === "admin"
+              ? "Dashboard Konsolidasi Nasional"
+              : "Dashboard Konsolidasi Eselon 1"}
+          </h2>
+          <p className="text-slate-500 mt-1">
+            {viewMode === "kementerian"
+              ? selectedChartUnit === "kementerian"
+                ? `Menampilkan profil risiko Tingkat Kementerian TA ${activeYear}. Pilih Eselon 1, Eselon 2, atau Konsolidasi Nasional pada menu dropdown untuk memantau unit lain.`
+                : selectedChartUnit === "all"
+                ? `Menampilkan gabungan profil risiko seluruh unit kerja kementerian dan eselon di TA ${activeYear}.`
+                : `Menampilkan profil risiko unit kerja ${selectedChartUnit} di TA ${activeYear}.`
+              : viewMode === "admin"
+              ? `Gabungan profil risiko dari seluruh unit kerja di Tahun ${activeYear}.`
+              : `Gabungan profil risiko dari unit kerja Anda dan Eselon 2 di bawahnya di Tahun ${activeYear}.`}
+          </p>
         </div>
 
-        
         {/* DROPDOWN FILTER & CHARTS */}
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h3 className="text-lg font-bold text-slate-800">Visualisasi & Rekapitulasi Risiko</h3>
-              <p className="text-sm text-slate-500">Pilih unit kerja untuk melihat grafik distribusinya.</p>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-slate-800">Visualisasi & Rekapitulasi Risiko</h3>
+                {selectedChartUnit === "kementerian" && (
+                  <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full font-bold">
+                    Tingkat Kementerian
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-slate-500">
+                {viewMode === "kementerian"
+                  ? "Pilih level unit (Kementerian, Eselon 1, Eselon 2, atau Konsolidasi) untuk melihat grafik distribusinya."
+                  : "Pilih unit kerja untuk melihat grafik distribusinya."}
+              </p>
             </div>
-            <div className="w-full md:w-[350px]">
+            <div className="w-full md:w-[380px]">
               <Select value={selectedChartUnit} onValueChange={setSelectedChartUnit}>
-                <SelectTrigger className="w-full bg-slate-50 border-slate-300">
-                  <SelectValue placeholder="Pilih Unit Kerja" />
+                <SelectTrigger className="w-full bg-slate-50 border-slate-300 font-medium">
+                  <SelectValue placeholder="Pilih Level / Unit Kerja" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all" className="font-bold">Semua Unit (Konsolidasi)</SelectItem>
-                  {displayHierarchy.map(e1 => (
-                    <div key={e1.id}>
-                      <SelectItem value={e1.name} className="font-semibold text-blue-700">UKE I - {e1.name}</SelectItem>
-                      {e1.children.map((e2: any) => (
-                        <SelectItem key={e2.id} value={e2.name} className="pl-8 text-slate-700">UKE II - {e2.name}</SelectItem>
-                      ))}
+                <SelectContent className="max-h-96">
+                  {/* OPSI 1: TINGKAT KEMENTERIAN */}
+                  <SelectItem value="kementerian" className="font-bold text-indigo-700 bg-indigo-50/70 focus:bg-indigo-100 py-2">
+                    <div className="flex items-center justify-between w-full gap-2">
+                      <span>🏛️ Tingkat Kementerian ({kementerianUnitName})</span>
+                      {user?.role === "kementerian" && (
+                        <span className="text-[10px] bg-indigo-200 text-indigo-900 px-1.5 py-0.2 rounded font-bold">
+                          Default
+                        </span>
+                      )}
                     </div>
-                  ))}
+                  </SelectItem>
+
+                  {/* OPSI 2: SEMUA UNIT (KONSOLIDASI NASIONAL) */}
+                  <SelectItem value="all" className="font-bold text-slate-800 border-y border-slate-200 my-1 py-2">
+                    🌐 Semua Unit (Konsolidasi Nasional)
+                  </SelectItem>
+
+                  {/* OPSI 3 & 4: ESELON 1 & ESELON 2 */}
+                  <div className="pt-1">
+                    <div className="px-2 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Unit Kerja Eselon 1 & 2:
+                    </div>
+                    {adminHierarchy.map(e1 => (
+                      <div key={e1.id}>
+                        <SelectItem value={e1.name} className="font-semibold text-blue-700 pl-4">
+                          🏢 UKE I - {e1.name}
+                        </SelectItem>
+                        {e1.children.map((e2: any) => (
+                          <SelectItem key={e2.id} value={e2.name} className="pl-8 text-slate-700 text-xs">
+                            ↳ UKE II - {e2.name}
+                          </SelectItem>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
                 </SelectContent>
               </Select>
             </div>
           </div>
           
           <DashboardCharts 
-            risks={selectedChartUnit === "all" ? allRisks : allRisks.filter(r => r.unitName === selectedChartUnit)} 
+            risks={filteredRisksForDashboard} 
           />
         </div>
 
-        {/* Kartu Ringkasan Admin */}
+        {/* Kartu Ringkasan */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card className="border-l-4 border-l-blue-500 shadow-sm">
+          <Card className={`border-l-4 shadow-sm ${selectedChartUnit === "kementerian" ? "border-l-indigo-600 bg-indigo-50/20" : "border-l-blue-500"}`}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wider">Total Risiko Global</CardTitle>
-              <Target className="h-5 w-5 text-blue-500" />
+              <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+                {selectedChartUnit === "kementerian"
+                  ? "Total Risiko Kementerian"
+                  : selectedChartUnit === "all"
+                  ? "Total Risiko Global"
+                  : "Total Risiko Unit"}
+              </CardTitle>
+              <Target className={`h-5 w-5 ${selectedChartUnit === "kementerian" ? "text-indigo-600" : "text-blue-500"}`} />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-black text-slate-900">{totalSemuaRisiko}</div>
-              <p className="text-xs text-slate-500 mt-1 font-medium">Akumulasi seluruh unit kerja</p>
+              <div className={`text-3xl font-black ${selectedChartUnit === "kementerian" ? "text-indigo-950" : "text-slate-900"}`}>
+                {totalSemuaRisiko}
+              </div>
+              <p className="text-xs text-slate-500 mt-1 font-medium">
+                {selectedChartUnit === "kementerian"
+                  ? `Risiko Tingkat Kementerian (${kementerianUnitName})`
+                  : selectedChartUnit === "all"
+                  ? "Akumulasi seluruh unit kerja"
+                  : `Unit: ${selectedChartUnit}`}
+              </p>
             </CardContent>
           </Card>
 
           <Card className="border-l-4 border-l-red-500 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wider">Risiko Prioritas Global</CardTitle>
+              <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+                {selectedChartUnit === "kementerian"
+                  ? "Risiko Prioritas Kementerian"
+                  : selectedChartUnit === "all"
+                  ? "Risiko Prioritas Global"
+                  : "Risiko Prioritas Unit"}
+              </CardTitle>
               <AlertOctagon className="h-5 w-5 text-red-500" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-black text-slate-900">{totalSemuaPrioritas}</div>
-              <p className="text-xs text-slate-500 mt-1 font-medium">Nilai Sedang - Sangat Tinggi</p>
+              <p className="text-xs text-slate-500 mt-1 font-medium">Nilai Sedang - Sangat Tinggi (Skor ≥ 12)</p>
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-indigo-500 shadow-sm">
+          <Card className={`border-l-4 shadow-sm ${selectedChartUnit === "kementerian" ? "border-l-emerald-600" : "border-l-indigo-500"}`}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wider">Total RTP Global</CardTitle>
-              <ShieldCheck className="h-5 w-5 text-indigo-500" />
+              <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+                {selectedChartUnit === "kementerian"
+                  ? "Total RTP Kementerian"
+                  : selectedChartUnit === "all"
+                  ? "Total RTP Global"
+                  : "Total RTP Unit"}
+              </CardTitle>
+              <ShieldCheck className={`h-5 w-5 ${selectedChartUnit === "kementerian" ? "text-emerald-600" : "text-indigo-500"}`} />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-black text-slate-900">{totalSemuaRtp}</div>
-              <p className="text-xs text-slate-500 mt-1 font-medium">Akumulasi rencana mitigasi</p>
+              <p className="text-xs text-slate-500 mt-1 font-medium">
+                {selectedChartUnit === "kementerian"
+                  ? "Mitigasi Tingkat Kementerian"
+                  : "Akumulasi rencana mitigasi"}
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -369,7 +492,11 @@ export default function DashboardPage() {
             <CardTitle className="flex items-center text-lg">
               <Building2 className="mr-2 h-5 w-5 text-slate-600" /> Profil Risiko per Unit Kerja
             </CardTitle>
-            <CardDescription>Klik nama Eselon 1 untuk memperluas (melihat data per Eselon 2).</CardDescription>
+            <CardDescription>
+              {selectedChartUnit === "kementerian"
+                ? "Menampilkan profil Tingkat Kementerian dan daftar unit kerja Eselon 1 & 2."
+                : "Klik nama Eselon 1 untuk memperluas (melihat data per Eselon 2)."}
+            </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-auto max-h-[calc(100vh-14.5rem)] relative custom-scrollbar">
@@ -383,6 +510,25 @@ export default function DashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
+                  {/* Row Tingkat Kementerian */}
+                  {(selectedChartUnit === "all" || selectedChartUnit === "kementerian") && (
+                    <TableRow className={`transition-colors border-b-2 border-indigo-200 ${selectedChartUnit === "kementerian" ? "bg-indigo-50/90 hover:bg-indigo-100/80" : "bg-indigo-50/40 hover:bg-indigo-100/40"}`}>
+                      <TableCell className="font-bold text-indigo-950 py-4">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-indigo-600 shrink-0" />
+                          <span className="whitespace-normal break-words max-w-[400px]">
+                            Tingkat Kementerian ({kementerianUnitName})
+                          </span>
+                          <span className="text-[10px] bg-indigo-200 text-indigo-900 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0">
+                            Kementerian
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center font-bold text-lg text-indigo-900">{ministryTotals.totalRisiko}</TableCell>
+                      <TableCell className="text-center font-bold text-lg text-red-600">{ministryTotals.risikoPrioritas}</TableCell>
+                      <TableCell className="text-center font-bold text-lg text-indigo-700">{ministryTotals.totalRtp}</TableCell>
+                    </TableRow>
+                  )}
                   {adminHierarchy.length > 0 ? (
                     adminHierarchy.map((e1) => {
                       const isOpen = expandedE1[e1.id];
