@@ -23,7 +23,7 @@ const buildSystemPrompt = (context: UserContext) => {
     context.role === "auditor" ? "Auditor APIP (Inspektorat Jenderal)" :
     context.role === "pimpinan" ? "Pimpinan Unit Kerja" : "Pengguna Sistem";
 
-  return `Anda adalah "Si-MaRi AI", asisten kecerdasan buatan cerdas dan konsultan ahli Manajemen Risiko untuk Kementerian Desa, Pembangunan Daerah Tertinggal, dan Transmigrasi (Kemendesa PDT).
+  return `Anda adalah "Si-MaRi AI", asisten kecerdasan buatan cerdas dan konsultan ahli Manajemen Risiko untuk Kementerian Desa dan Pembangunan Daerah Tertinggal (Kemendesa PDT).
 
 Tugas Anda adalah mendampingi pegawai, pengelola risiko, dan pimpinan dalam menyusun, mengidentifikasi, menganalisis, memitigasi, serta mengevaluasi manajemen risiko instansi pemerintah.
 
@@ -66,7 +66,7 @@ function generateKnowledgeBaseResponse(messages: ChatMessage[], context: UserCon
   ) {
     return `Halo! Salam hangat dari **Si-MaRi AI** 👋
 
-Saya adalah asisten cerdas konsultan Manajemen Risiko Kementerian Desa, PDT, dan Transmigrasi. Saya siap mendampingi Anda (**${unit}** - *${role}*) dalam pengelolaan risiko tahun anggaran **${year}**.
+Saya adalah asisten cerdas konsultan Manajemen Risiko Kementerian Desa dan Pembangunan Daerah Tertinggal (Kemendesa PDT). Saya siap mendampingi Anda (**${unit}** - *${role}*) dalam pengelolaan risiko tahun anggaran **${year}**.
 
 Apa yang ingin kita diskusikan atau selesaikan hari ini? Berikut beberapa topik yang sering ditanyakan:
 1. ✍️ **Merumuskan Pernyataan Risiko Baru** (Formula: *Sebab $\\rightarrow$ Peristiwa $\\rightarrow$ Dampak*)
@@ -546,7 +546,7 @@ Berikut solusi untuk beberapa kendala yang kerap ditemui:
 Terima kasih atas pertanyaan Anda mengenai:  
 > **"${lastUserRaw}"**
 
-Berdasarkan pedoman **Permenpan RB No. 5 Tahun 2020** dan tata kelola Manajemen Risiko di lingkungan **Kementerian Desa, PDT, dan Transmigrasi**, berikut panduan dan arahan untuk unit kerja Anda (**${unit}**):
+Berdasarkan pedoman **Permenpan RB No. 5 Tahun 2020** dan tata kelola Manajemen Risiko di lingkungan **Kementerian Desa dan Pembangunan Daerah Tertinggal**, berikut panduan dan arahan untuk unit kerja Anda (**${unit}**):
 
 ---
 

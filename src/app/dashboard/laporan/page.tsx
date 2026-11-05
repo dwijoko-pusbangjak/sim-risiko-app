@@ -957,7 +957,7 @@ export default function LaporanPage() {
                   </tbody>
                 </table>
 
-                <div className="font-bold text-sm mb-2">b. Kriteria Dampak (sesuai Peraturan Menteri Desa, Pembangunan Daerah Tertinggal, dan Transmigrasi Nomor 9 Tahun 2020)</div>
+                <div className="font-bold text-sm mb-2">b. Kriteria Dampak (sesuai Peraturan Menteri Desa dan Pembangunan Daerah Tertinggal)</div>
                 <table className="w-full border-collapse border border-black text-xs mb-8 text-center">
                   <thead>
                     <tr>
@@ -1023,7 +1023,7 @@ export default function LaporanPage() {
                   </tbody>
                 </table>
 
-                <div className="font-bold text-sm mb-2">Matriks Analisis Risiko dan Level Risiko (sesuai Peraturan Menteri Desa, Pembangunan Daerah Tertinggal, dan Transmigrasi Nomor 9 Tahun 2020)</div>
+                <div className="font-bold text-sm mb-2">Matriks Analisis Risiko dan Level Risiko (sesuai Peraturan Menteri Desa dan Pembangunan Daerah Tertinggal)</div>
                 <table className="w-full border-collapse border border-black text-sm mb-4 text-center">
                   <thead>
                     <tr>

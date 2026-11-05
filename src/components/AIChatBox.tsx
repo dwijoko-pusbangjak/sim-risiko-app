@@ -246,7 +246,7 @@ export default function AIChatBox() {
       const welcomeMsg: Message = {
         id: `welcome-${currentUserId}`,
         role: "assistant",
-        content: `Halo! Saya **Si-MaRi AI**, asisten kecerdasan buatan konsultasi Manajemen Risiko Kementerian Desa, PDT, dan Transmigrasi.\n\nSaya siap mendampingi Anda (${user?.unitName || user?.email || "Unit Kerja Kemendesa"}) dalam:\n- **Perumusan Pernyataan Risiko** (*[Sebab] -> [Peristiwa] -> [Dampak]*)\n- **Penetapan Skala 5x5** (*Kemungkinan & Dampak*)\n- **Penyusunan Rencana Tindak Pengendalian (RTP)**\n- **Konsultasi Audit & Proses Riviu APIP**\n\nSilakan pilih salah satu pertanyaan cepat di bawah atau ketik pertanyaan Anda!`,
+        content: `Halo! Saya **Si-MaRi AI**, asisten kecerdasan buatan konsultasi Manajemen Risiko Kementerian Desa dan Pembangunan Daerah Tertinggal (Kemendesa PDT).\n\nSaya siap mendampingi Anda (${user?.unitName || user?.email || "Unit Kerja Kemendesa"}) dalam:\n- **Perumusan Pernyataan Risiko** (*[Sebab] -> [Peristiwa] -> [Dampak]*)\n- **Penetapan Skala 5x5** (*Kemungkinan & Dampak*)\n- **Penyusunan Rencana Tindak Pengendalian (RTP)**\n- **Konsultasi Audit & Proses Riviu APIP**\n\nSilakan pilih salah satu pertanyaan cepat di bawah atau ketik pertanyaan Anda!`,
         timestamp: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
         source: "knowledge_base"
       };

@@ -142,8 +142,8 @@ const DEFAULT_PERATURAN_LIST = [
     storageType: "url" as const
   },
   {
-    nomor: "Permendesa PDTT No. 15 Tahun 2023",
-    nama: "Pedoman Penerapan Manajemen Risiko di Lingkungan Kementerian Desa, Pembangunan Daerah Tertinggal, dan Transmigrasi",
+    nomor: "Permendesa PDT No. 15 Tahun 2023",
+    nama: "Pedoman Penerapan Manajemen Risiko di Lingkungan Kementerian Desa dan Pembangunan Daerah Tertinggal",
     jenis: "Peraturan Menteri Desa PDT",
     tahun: "2023",
     status: "berlaku" as const,
