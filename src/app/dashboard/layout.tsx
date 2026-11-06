@@ -51,7 +51,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
 import AIChatBox from "@/components/AIChatBox";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 type NavItemChild = {
   name: string;
@@ -84,10 +84,10 @@ const LiveClock = () => {
     return () => clearInterval(interval);
   }, []);
 
-  if (!time) return <div className="h-4"></div>;
+  if (!time) return <div className="h-4" />;
 
   return (
-    <div className="text-[11px] xl:text-[12px] font-medium text-slate-500 flex items-center gap-1.5">
+    <div suppressHydrationWarning className="text-[11px] xl:text-[12px] font-medium text-slate-500 flex items-center gap-1.5">
       <Calendar className="w-3.5 h-3.5 text-slate-400" />
       <span>
         {time.toLocaleDateString("id-ID", {
@@ -110,7 +110,8 @@ const LiveClock = () => {
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  const pathname = rawPathname || "/dashboard";
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -125,22 +126,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Subscribe to real-time general settings for Analisis RTP visibility
   useEffect(() => {
-    const unsub = onSnapshot(
-      doc(db, "settings", "general"),
-      (snap) => {
-        if (snap.exists()) {
-          const data = snap.data();
-          if (typeof data.isAnalisisRtpEnabled === "boolean") {
-            setIsAnalisisRtpEnabled(data.isAnalisisRtpEnabled);
-          } else {
-            setIsAnalisisRtpEnabled(true);
+    let unsub = () => {};
+    try {
+      unsub = onSnapshot(
+        doc(db, "settings", "general"),
+        (snap) => {
+          if (snap.exists()) {
+            const data = snap.data();
+            if (typeof data.isAnalisisRtpEnabled === "boolean") {
+              setIsAnalisisRtpEnabled(data.isAnalisisRtpEnabled);
+            } else {
+              setIsAnalisisRtpEnabled(true);
+            }
           }
+        },
+        (err) => {
+          console.warn("Could not subscribe to settings/general:", err);
         }
-      },
-      (err) => {
-        console.error("Error subscribing to settings:", err);
-      }
-    );
+      );
+    } catch (e) {
+      console.warn("Error subscribing to settings:", e);
+    }
 
     return () => unsub();
   }, []);
@@ -154,6 +160,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Otomatis buka menu induk jika child sedang aktif
   useEffect(() => {
+    if (!pathname) return;
     if (pathname.startsWith("/dashboard/mr-")) {
       setOpenMenus((prev) => ({ ...prev, "Proses Manajemen Risiko": true }));
     }
@@ -171,7 +178,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setOpenMenus((prev) => ({ ...prev, [name]: !prev[name] }));
   };
 
-  const getRoleLabel = (role: string | null) => {
+  const getRoleLabel = (role: string | null | undefined) => {
     if (role === "admin") return "Administrator";
     if (role === "kementerian") return "Pengelola Risiko Kementerian";
     if (role === "auditor") return "Auditor APIP";
@@ -182,12 +189,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const getUserInitials = (nameOrEmail: string | undefined | null) => {
-    if (!nameOrEmail) return "MR";
-    const parts = nameOrEmail.trim().split(" ");
-    if (parts.length >= 2) {
+    if (!nameOrEmail || typeof nameOrEmail !== "string") return "MR";
+    const parts = nameOrEmail.trim().split(/\s+/).filter(Boolean);
+    if (parts.length >= 2 && parts[0][0] && parts[1][0]) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
-    return nameOrEmail.substring(0, 2).toUpperCase();
+    return nameOrEmail.slice(0, 2).toUpperCase() || "MR";
   };
 
   if (loading || !user) {
@@ -293,7 +300,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     });
   }
 
-  if (user?.role === "auditor") {
+  if (user.role === "auditor") {
     const auditorItems: NavItem[] = [
       { name: "Audit Risiko", href: "/dashboard/audit", icon: SearchCheck, badge: "APIP" },
     ];
@@ -354,7 +361,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Breadcrumbs Generator Dinamis
   const breadcrumbs = useMemo(() => {
     const crumbs: { label: string; href?: string }[] = [{ label: "Beranda", href: "/dashboard" }];
-    if (pathname === "/dashboard") return crumbs;
+    if (!pathname || pathname === "/dashboard") return crumbs;
 
     for (const group of navGroups) {
       for (const item of group.items) {
@@ -394,6 +401,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             Tidak ada menu yang sesuai kata kunci &quot;{searchQuery}&quot;
           </p>
           <button
+            type="button"
             onClick={() => setSearchQuery("")}
             className="text-xs text-emerald-400 hover:underline font-medium pt-1 cursor-pointer"
           >
@@ -406,7 +414,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const collapsedView = isCollapsed && !isMobile;
 
     return groups.map((group, idx) => (
-      <div key={group.title} className={idx > 0 ? (collapsedView ? "mt-4 pt-3 border-t border-slate-800/60" : "mt-5") : ""}>
+      <div key={group.title || idx} className={idx > 0 ? (collapsedView ? "mt-4 pt-3 border-t border-slate-800/60" : "mt-5") : ""}>
         {/* Header Kategori */}
         {!collapsedView ? (
           <div className="flex items-center justify-between px-3 mb-2">
@@ -443,6 +451,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 return (
                   <div key={item.name} className="flex justify-center py-0.5">
                     <button
+                      type="button"
                       onClick={() => {
                         setIsCollapsed(false);
                         setOpenMenus((prev) => ({ ...prev, [item.name]: true }));
@@ -467,25 +476,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               return (
                 <div key={item.name} className="flex flex-col space-y-1">
                   <button
+                    type="button"
                     onClick={() => toggleMenu(item.name)}
                     className={cn(
-                      "group flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold transition-all w-full cursor-pointer",
+                      "group flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold transition-all w-full cursor-pointer text-left",
                       hasChildActive
                         ? "bg-slate-800/90 text-emerald-300 border border-emerald-900/40 shadow-xs"
                         : "text-slate-300 hover:bg-slate-800/70 hover:text-white"
                     )}
                   >
-                    <div className="flex items-center flex-1 min-w-0 pr-2">
-                      <div className={cn(
+                    <span className="flex items-center flex-1 min-w-0 pr-2">
+                      <span className={cn(
                         "w-7 h-7 rounded-lg flex items-center justify-center mr-2.5 transition-colors shrink-0",
                         hasChildActive ? "bg-emerald-500/20 text-emerald-400" : "bg-slate-900 text-slate-400 group-hover:text-emerald-400 group-hover:bg-slate-800"
                       )}>
                         <Icon className="h-4 w-4" />
-                      </div>
+                      </span>
                       <span className="text-left leading-tight truncate flex-1 font-semibold">{item.name}</span>
-                    </div>
+                    </span>
 
-                    <div className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-1.5 shrink-0">
                       <span className="text-[10px] px-1.5 py-0.5 rounded-md font-mono bg-slate-900/80 text-slate-400 border border-slate-800">
                         {item.children.length}
                       </span>
@@ -494,7 +504,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       ) : (
                         <ChevronRight className="h-4 w-4 text-slate-400 transition-transform" />
                       )}
-                    </div>
+                    </span>
                   </button>
 
                   {/* Daftar Submenu Children dengan Timeline Line & Step Badge */}
@@ -575,7 +585,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               return (
                 <div key={item.name} className="flex justify-center py-0.5">
                   <Link
-                    href={item.href!}
+                    href={item.href || "/dashboard"}
                     title={item.name}
                     className={cn(
                       "p-2.5 rounded-xl transition-all relative group cursor-pointer",
@@ -596,7 +606,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             return (
               <Link
                 key={item.name}
-                href={item.href!}
+                href={item.href || "/dashboard"}
                 onClick={() => isMobile && setIsSidebarOpen(false)}
                 className={cn(
                   "group flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold transition-all w-full cursor-pointer",
@@ -672,6 +682,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {!isCollapsed && (
             <button
+              type="button"
               onClick={() => setIsCollapsed(true)}
               className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
               title="Perkecil Sidebar"
@@ -733,6 +744,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               />
               {searchQuery && (
                 <button
+                  type="button"
                   onClick={() => setSearchQuery("")}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
                 >
@@ -744,8 +756,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         ) : (
           <div className="py-2 flex justify-center shrink-0">
             <button
+              type="button"
               onClick={() => setIsCollapsed(false)}
-              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
               title="Cari Menu Navigasi"
             >
               <Search className="w-4 h-4" />
@@ -779,6 +792,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           ) : (
             <div className="flex justify-center">
               <button
+                type="button"
                 onClick={() => setIsCollapsed(false)}
                 className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
                 title="Perluas Sidebar"
@@ -810,6 +824,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* Desktop Sidebar Toggle Button */}
             <button
+              type="button"
               onClick={() => setIsCollapsed(!isCollapsed)}
               className="hidden md:flex p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200 cursor-pointer"
               title={isCollapsed ? "Perluas Sidebar" : "Perkecil Sidebar"}
@@ -868,7 +883,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Sisi Kanan Topbar: Unit Kerja Pill, Panduan Shortcut, Clock, User Profile */}
           <div className="flex items-center gap-3 ml-auto">
             {/* Chip Info Unit & Tahun Anggaran */}
-            <div className="hidden lg:flex items-center gap-2 bg-slate-50 border border-slate-200/90 px-3 py-1 rounded-xl text-xs shadow-2xs">
+            <div className="hidden lg:flex items-center gap-2 bg-slate-50 border border-slate-200/90 px-3 py-1 rounded-xl text-xs shadow-xs">
               <Building2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
               <span className="font-semibold text-slate-700 max-w-[160px] truncate" title={user.unitName || ""}>
                 {user.unitName || "Semua Unit"}
@@ -882,7 +897,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Quick Link Panduan Alur */}
             <Link
               href="/dashboard/modul"
-              className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 border border-slate-200/90 hover:border-emerald-300 px-3 py-1.5 rounded-xl transition-all shadow-2xs"
+              className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 border border-slate-200/90 hover:border-emerald-300 px-3 py-1.5 rounded-xl transition-all shadow-xs"
             >
               <BookMarked className="w-3.5 h-3.5 text-emerald-600" />
               <span>Panduan</span>
@@ -896,9 +911,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Dropdown Profil Pengguna */}
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-2 p-1.5 rounded-full hover:bg-slate-100 transition-all border border-slate-200 cursor-pointer outline-none focus:ring-2 focus:ring-emerald-500/20">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-700 text-white font-bold text-xs flex items-center justify-center ring-2 ring-emerald-500/20 shadow-xs">
+                <span className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-700 text-white font-bold text-xs flex items-center justify-center ring-2 ring-emerald-500/20 shadow-xs shrink-0">
                   {getUserInitials(user.unitName || user.email)}
-                </div>
+                </span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-500 pr-0.5 hidden sm:block" />
               </DropdownMenuTrigger>
 
@@ -962,7 +977,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ====================================================================== */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-xs md:hidden animate-in fade-in duration-200"
+          className="fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm md:hidden animate-in fade-in duration-200"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
@@ -1022,8 +1037,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
               >
                 <X className="w-3 h-3" />
               </button>
