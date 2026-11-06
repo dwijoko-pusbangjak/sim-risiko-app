@@ -496,8 +496,16 @@ export default function ModulPanduanPage() {
 
             {/* NODE 1: PENETAPAN KONTEKS */}
             <div className="flex flex-col items-center">
-              <button
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => scrollToStage(1)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    scrollToStage(1);
+                  }
+                }}
                 className={`w-full max-w-xl p-4 rounded-2xl border-2 transition-all cursor-pointer text-left shadow-xs hover:shadow-md hover:scale-[1.01] ${
                   selectedStage === 1
                     ? "border-blue-600 bg-blue-50/80 ring-4 ring-blue-100"
@@ -523,15 +531,23 @@ export default function ModulPanduanPage() {
                   </div>
                   <ChevronRight className="w-4 h-4 text-blue-600 shrink-0" />
                 </div>
-              </button>
+              </div>
               <div className="w-0.5 h-6 bg-slate-300 my-1" />
               <ArrowDown className="w-4 h-4 text-slate-400 -mt-2" />
             </div>
 
             {/* NODE 2: IDENTIFIKASI RISIKO */}
             <div className="flex flex-col items-center">
-              <button
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => scrollToStage(2)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    scrollToStage(2);
+                  }
+                }}
                 className={`w-full max-w-xl p-4 rounded-2xl border-2 transition-all cursor-pointer text-left shadow-xs hover:shadow-md hover:scale-[1.01] ${
                   selectedStage === 2
                     ? "border-emerald-600 bg-emerald-50/80 ring-4 ring-emerald-100"
@@ -557,15 +573,23 @@ export default function ModulPanduanPage() {
                   </div>
                   <ChevronRight className="w-4 h-4 text-emerald-600 shrink-0" />
                 </div>
-              </button>
+              </div>
               <div className="w-0.5 h-6 bg-slate-300 my-1" />
               <ArrowDown className="w-4 h-4 text-slate-400 -mt-2" />
             </div>
 
             {/* NODE 3: ANALISIS RISIKO 5x5 */}
             <div className="flex flex-col items-center">
-              <button
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => scrollToStage(3)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    scrollToStage(3);
+                  }
+                }}
                 className={`w-full max-w-xl p-4 rounded-2xl border-2 transition-all cursor-pointer text-left shadow-xs hover:shadow-md hover:scale-[1.01] ${
                   selectedStage === 3
                     ? "border-amber-600 bg-amber-50/80 ring-4 ring-amber-100"
@@ -591,15 +615,23 @@ export default function ModulPanduanPage() {
                   </div>
                   <ChevronRight className="w-4 h-4 text-amber-600 shrink-0" />
                 </div>
-              </button>
+              </div>
               <div className="w-0.5 h-6 bg-slate-300 my-1" />
               <ArrowDown className="w-4 h-4 text-slate-400 -mt-2" />
             </div>
 
             {/* NODE 4: RENCANA TINDAK PENGENDALIAN (RTP) */}
             <div className="flex flex-col items-center">
-              <button
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => scrollToStage(4)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    scrollToStage(4);
+                  }
+                }}
                 className={`w-full max-w-xl p-4 rounded-2xl border-2 transition-all cursor-pointer text-left shadow-xs hover:shadow-md hover:scale-[1.01] ${
                   selectedStage === 4
                     ? "border-purple-600 bg-purple-50/80 ring-4 ring-purple-100"
@@ -625,15 +657,23 @@ export default function ModulPanduanPage() {
                   </div>
                   <ChevronRight className="w-4 h-4 text-purple-600 shrink-0" />
                 </div>
-              </button>
+              </div>
               <div className="w-0.5 h-6 bg-slate-300 my-1" />
               <ArrowDown className="w-4 h-4 text-slate-400 -mt-2" />
             </div>
 
             {/* NODE 5: PENGAJUAN & GATE AUDITOR APIP (DENGAN CABANG KEPUTUSAN REVIU) */}
             <div className="flex flex-col items-center">
-              <button
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => scrollToStage(5)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    scrollToStage(5);
+                  }
+                }}
                 className={`w-full max-w-xl p-4 rounded-2xl border-2 transition-all cursor-pointer text-left shadow-xs hover:shadow-md hover:scale-[1.01] ${
                   selectedStage === 5
                     ? "border-rose-600 bg-rose-50/80 ring-4 ring-rose-100"
@@ -659,7 +699,7 @@ export default function ModulPanduanPage() {
                   </div>
                   <ChevronRight className="w-4 h-4 text-rose-600 shrink-0" />
                 </div>
-              </button>
+              </div>
 
               <div className="w-0.5 h-6 bg-slate-300 my-1" />
               <ArrowDown className="w-4 h-4 text-slate-400 -mt-2" />
@@ -699,8 +739,16 @@ export default function ModulPanduanPage() {
 
             {/* NODE 6: PEMANTAUAN & KETERJADIAN */}
             <div className="flex flex-col items-center">
-              <button
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => scrollToStage(6)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    scrollToStage(6);
+                  }
+                }}
                 className={`w-full max-w-xl p-4 rounded-2xl border-2 transition-all cursor-pointer text-left shadow-xs hover:shadow-md hover:scale-[1.01] ${
                   selectedStage === 6
                     ? "border-teal-600 bg-teal-50/80 ring-4 ring-teal-100"
@@ -726,15 +774,23 @@ export default function ModulPanduanPage() {
                   </div>
                   <ChevronRight className="w-4 h-4 text-teal-600 shrink-0" />
                 </div>
-              </button>
+              </div>
               <div className="w-0.5 h-6 bg-slate-300 my-1" />
               <ArrowDown className="w-4 h-4 text-slate-400 -mt-2" />
             </div>
 
             {/* NODE 7: PELAPORAN RESMI & DASHBOARD */}
             <div className="flex flex-col items-center">
-              <button
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => scrollToStage(7)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    scrollToStage(7);
+                  }
+                }}
                 className={`w-full max-w-xl p-4 rounded-2xl border-2 transition-all cursor-pointer text-left shadow-xs hover:shadow-md hover:scale-[1.01] ${
                   selectedStage === 7
                     ? "border-slate-800 bg-slate-100 ring-4 ring-slate-200"
@@ -760,7 +816,7 @@ export default function ModulPanduanPage() {
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-700 shrink-0" />
                 </div>
-              </button>
+              </div>
               <div className="w-0.5 h-6 bg-slate-300 my-1" />
               <ArrowDown className="w-4 h-4 text-slate-400 -mt-2" />
             </div>
