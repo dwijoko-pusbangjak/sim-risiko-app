@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { 
-  LayoutDashboard, SearchCheck, Send, Inbox, 
-  AlertTriangle, 
-  ShieldCheck, 
-  FileText, 
+  LayoutDashboard, 
+  SearchCheck, 
   Settings,
   DatabaseBackup, 
   LogOut,
@@ -18,7 +16,6 @@ import {
   Target,
   ChevronDown,
   ChevronRight,
-  ChevronLeft,
   FolderTree,
   ClipboardList,
   ShieldAlert,
@@ -26,16 +23,8 @@ import {
   BookOpen,
   BookMarked,
   Sparkles,
-  Search,
-  X,
-  PanelLeftClose,
-  PanelLeft,
-  Home,
-  Calendar,
-  CheckCircle2,
-  HelpCircle,
   KeyRound,
-  ArrowRight
+  FileText
 } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -51,7 +40,6 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
 import AIChatBox from "@/components/AIChatBox";
-import { cn } from "@/lib/utils";
 
 type NavItemChild = {
   name: string;
@@ -87,24 +75,17 @@ const LiveClock = () => {
   if (!time) return <div className="h-4" />;
 
   return (
-    <div suppressHydrationWarning className="text-[11px] xl:text-[12px] font-medium text-slate-500 flex items-center gap-1.5">
-      <Calendar className="w-3.5 h-3.5 text-slate-400" />
-      <span>
-        {time.toLocaleDateString("id-ID", {
-          weekday: "long",
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        })}
-      </span>
-      <span className="text-slate-300">•</span>
-      <span className="font-mono text-slate-600 font-semibold">
-        {time.toLocaleTimeString("id-ID", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        })}
-      </span>
+    <div suppressHydrationWarning className="text-[11px] xl:text-[12px] font-medium text-slate-500 flex items-center mt-0.5">
+      {time.toLocaleDateString("id-ID", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })} - {time.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })}
     </div>
   );
 };
@@ -114,17 +95,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = rawPathname || "/dashboard";
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({ 
     "Proses Manajemen Risiko": true,
-    "Proses Riviu": true,
+    "Proses Riviu": false 
   });
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const { user, loading, activeYear } = useAuth();
   const [isAnalisisRtpEnabled, setIsAnalisisRtpEnabled] = useState<boolean>(true);
 
-  // Subscribe to real-time general settings for Analisis RTP visibility
+  // Subscribe ke pengaturan sistem real-time untuk status aktif menu Analisis RTP
   useEffect(() => {
     let unsub = () => {};
     try {
@@ -158,13 +137,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [user, loading, router]);
 
-  // Otomatis buka menu induk jika child sedang aktif
+  // Otomatis buka accordion menu jika child sedang aktif
   useEffect(() => {
     if (!pathname) return;
     if (pathname.startsWith("/dashboard/mr-")) {
       setOpenMenus((prev) => ({ ...prev, "Proses Manajemen Risiko": true }));
-    }
-    if (pathname.startsWith("/dashboard/proses-audit/")) {
+    } else if (pathname.startsWith("/dashboard/proses-audit")) {
       setOpenMenus((prev) => ({ ...prev, "Proses Riviu": true }));
     }
   }, [pathname]);
@@ -188,15 +166,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return "Pengguna";
   };
 
-  const getUserInitials = (nameOrEmail: string | undefined | null) => {
-    if (!nameOrEmail || typeof nameOrEmail !== "string") return "MR";
-    const parts = nameOrEmail.trim().split(/\s+/).filter(Boolean);
-    if (parts.length >= 2 && parts[0][0] && parts[1][0]) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return nameOrEmail.slice(0, 2).toUpperCase() || "MR";
-  };
-
   if (loading || !user) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50 text-emerald-700 font-medium">
@@ -211,42 +180,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Struktur Group Navigasi
   const navGroups: NavGroup[] = [];
 
-  // Group 1: Overview
+  // Group 1: Overview (Modul Aplikasi dipindahkan ke pintasan khusus Panduan Alur MR)
   navGroups.push({
     title: "Overview",
     items: [
       { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { name: "Katalog Peraturan", href: "/dashboard/katalog-peraturan", icon: BookOpen, badge: "Regulasi" },
-    ],
+      { name: "Katalog Peraturan", href: "/dashboard/katalog-peraturan", icon: BookOpen }
+    ]
   });
 
   // Group 2: Cascading Kinerja (Khusus Kementerian, Eselon 1, dan Eselon 2 - tidak untuk Admin)
   const sasaranItems: NavItem[] = [];
   if (user.role === "kementerian") {
-    sasaranItems.push({ name: "Sasaran Strategis", href: "/dashboard/sasaran-strategis", icon: Target, badge: "Level 1" });
-    sasaranItems.push({ name: "Sasaran Program", href: "/dashboard/sasaran-program", icon: Target, badge: "Level 2" });
-    sasaranItems.push({ name: "Sasaran Kegiatan", href: "/dashboard/sasaran-kegiatan", icon: Target, badge: "Level 3" });
+    sasaranItems.push({ name: "Sasaran Strategis", href: "/dashboard/sasaran-strategis", icon: Target });
+    sasaranItems.push({ name: "Sasaran Program", href: "/dashboard/sasaran-program", icon: Target });
+    sasaranItems.push({ name: "Sasaran Kegiatan", href: "/dashboard/sasaran-kegiatan", icon: Target });
   } else if (user.role === "eselon_1") {
-    sasaranItems.push({ name: "Sasaran Program", href: "/dashboard/sasaran-program", icon: Target, badge: "Level 2" });
+    sasaranItems.push({ name: "Sasaran Program", href: "/dashboard/sasaran-program", icon: Target });
   } else if (user.role === "eselon_2") {
-    sasaranItems.push({ name: "Sasaran Kegiatan", href: "/dashboard/sasaran-kegiatan", icon: Target, badge: "Level 3" });
+    sasaranItems.push({ name: "Sasaran Kegiatan", href: "/dashboard/sasaran-kegiatan", icon: Target });
   }
   if (sasaranItems.length > 0) {
     navGroups.push({ title: "Cascading Kinerja", items: sasaranItems });
   }
 
-  // Group 3: Manajemen Risiko (Khusus non-admin)
+  // Group 3: Manajemen Risiko (Khusus Pengelola Risiko Non-Admin)
   if (user.role !== "admin" && user.role !== "auditor") {
     if (user.role === "pimpinan") {
       const pimpinanItems: NavItem[] = [];
       if (isAnalisisRtpEnabled) {
         pimpinanItems.push({ name: "Analisis RTP", href: "/dashboard/mr-analisis-rtp", icon: Sparkles, badge: "Telaah" });
       }
-      pimpinanItems.push({ name: "Cetak Laporan", href: "/dashboard/laporan", icon: BarChart4, badge: "PDF" });
+      pimpinanItems.push({ name: "Cetak Laporan", href: "/dashboard/laporan", icon: BarChart4 });
 
       navGroups.push({
         title: "Pemantauan & Laporan",
-        items: pimpinanItems,
+        items: pimpinanItems
       });
     } else {
       const prosesMRChildren: NavItemChild[] = [
@@ -264,27 +233,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       navGroups.push({
         title: "Manajemen Risiko",
         items: [
-          { name: "Penetapan Konteks", href: "/dashboard/mr-konteks", icon: ClipboardList, badge: "Awal" },
+          { name: "Penetapan Konteks", href: "/dashboard/mr-konteks", icon: ClipboardList },
           {
             name: "Proses Manajemen Risiko",
             icon: FolderTree,
-            children: prosesMRChildren,
+            children: prosesMRChildren
           },
           {
             name: "Proses Riviu",
             icon: SearchCheck,
             children: [
-              { name: "Kirim ke Auditor", href: "/dashboard/proses-audit/kirim", badge: "Kirim" },
-              { name: "Inbox Hasil Auditor", href: "/dashboard/proses-audit/inbox", badge: "Inbox" },
-            ],
+              { name: "Kirim ke Auditor", href: "/dashboard/proses-audit/kirim" },
+              { name: "Inbox Hasil Auditor", href: "/dashboard/proses-audit/inbox" }
+            ]
           },
-          { name: "Cetak Laporan", href: "/dashboard/laporan", icon: BarChart4, badge: "PDF" },
-        ],
+          { name: "Cetak Laporan", href: "/dashboard/laporan", icon: BarChart4 }
+        ]
       });
     }
   }
 
-  // Group 4: Administrator (khusus admin - selalu tampil agar admin bisa mengatur)
+  // Group 4: Administrator (Khusus Admin - memiliki menu Analisis RTP untuk mengontrol aktivasi)
   if (user.role === "admin") {
     navGroups.push({
       title: "Administrator",
@@ -294,149 +263,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         { name: "Analisis RTP", href: "/dashboard/mr-analisis-rtp", icon: Sparkles, badge: "Kontrol" },
         { name: "Log Aktivitas", href: "/dashboard/logs", icon: FileText },
         { name: "Pengaturan Sistem", href: "/dashboard/settings", icon: Settings },
-        { name: "Backup & Restore", href: "/dashboard/backup", icon: DatabaseBackup },
-      ],
+        { name: "Backup & Restore", href: "/dashboard/backup", icon: DatabaseBackup }
+      ]
     });
   }
 
+  // Group 5: Auditor (Khusus Auditor APIP)
   if (user.role === "auditor") {
     const auditorItems: NavItem[] = [
-      { name: "Audit Risiko", href: "/dashboard/audit", icon: SearchCheck, badge: "APIP" },
+      { name: "Audit Risiko", href: "/dashboard/audit", icon: SearchCheck },
     ];
     if (isAnalisisRtpEnabled) {
       auditorItems.push({ name: "Analisis RTP", href: "/dashboard/mr-analisis-rtp", icon: Sparkles, badge: "Telaah" });
     }
-    auditorItems.push({ name: "Cetak Laporan", href: "/dashboard/laporan", icon: BarChart4, badge: "PDF" });
+    auditorItems.push({ name: "Cetak Laporan", href: "/dashboard/laporan", icon: BarChart4 });
 
     navGroups.push({
-      title: "Auditor",
-      items: auditorItems,
+      title: "Auditor APIP",
+      items: auditorItems
     });
   }
-
-  // Filter Navigasi Cepat (Quick Search Filter)
-  const filteredNavGroups = useMemo(() => {
-    if (!searchQuery.trim()) return navGroups;
-    const q = searchQuery.toLowerCase().trim();
-
-    return navGroups
-      .map((group) => {
-        const matchingItems = group.items
-          .map((item) => {
-            const itemMatches = item.name.toLowerCase().includes(q);
-            if (item.children) {
-              const matchingChildren = item.children.filter(
-                (c) => c.name.toLowerCase().includes(q) || itemMatches
-              );
-              if (matchingChildren.length > 0) {
-                return { ...item, children: matchingChildren };
-              }
-              if (itemMatches) {
-                return item;
-              }
-              return null;
-            }
-            return itemMatches ? item : null;
-          })
-          .filter(Boolean) as NavItem[];
-
-        return { ...group, items: matchingItems };
-      })
-      .filter((group) => group.items.length > 0);
-  }, [navGroups, searchQuery]);
-
-  // Mencari nama halaman saat ini untuk Topbar
-  let currentPageName = "Dashboard";
-  if (pathname === "/dashboard/modul") {
-    currentPageName = "Panduan Alur MR";
-  } else {
-    navGroups.forEach((group) => {
-      group.items.forEach((item) => {
-        if (item.href === pathname) currentPageName = item.name;
-        if (item.children) {
-          const child = item.children.find((c) => c.href === pathname);
-          if (child) currentPageName = child.name;
-        }
-      });
-    });
-  }
-
-  // Breadcrumbs Generator Dinamis
-  const breadcrumbs = useMemo(() => {
-    const crumbs: { label: string; href?: string }[] = [{ label: "Beranda", href: "/dashboard" }];
-    if (!pathname || pathname === "/dashboard") return crumbs;
-
-    if (pathname === "/dashboard/modul") {
-      crumbs.push({ label: "Panduan Alur MR", href: "/dashboard/modul" });
-      return crumbs;
-    }
-
-    for (const group of navGroups) {
-      for (const item of group.items) {
-        if (item.href === pathname) {
-          if (group.title !== "Overview") {
-            crumbs.push({ label: group.title });
-          }
-          crumbs.push({ label: item.name, href: item.href });
-          return crumbs;
-        }
-        if (item.children) {
-          for (const child of item.children) {
-            if (child.href === pathname) {
-              if (group.title !== "Overview") {
-                crumbs.push({ label: group.title });
-              }
-              crumbs.push({ label: item.name });
-              crumbs.push({ label: child.name, href: child.href });
-              return crumbs;
-            }
-          }
-        }
-      }
-    }
-
-    return [{ label: "Beranda", href: "/dashboard" }, { label: currentPageName }];
-  }, [pathname, navGroups, currentPageName]);
 
   // Render Navigasi Menu
   const renderNavGroups = (groups: NavGroup[], isMobile = false) => {
-    if (groups.length === 0 && searchQuery.trim()) {
-      return (
-        <div className="text-center py-10 px-3 space-y-2">
-          <Search className="w-8 h-8 text-slate-600 mx-auto" />
-          <p className="text-xs font-semibold text-slate-300">Menu tidak ditemukan</p>
-          <p className="text-[11px] text-slate-500">
-            Tidak ada menu yang sesuai kata kunci &quot;{searchQuery}&quot;
-          </p>
-          <button
-            type="button"
-            onClick={() => setSearchQuery("")}
-            className="text-xs text-emerald-400 hover:underline font-medium pt-1 cursor-pointer"
-          >
-            Bersihkan Pencarian
-          </button>
-        </div>
-      );
-    }
-
-    const collapsedView = isCollapsed && !isMobile;
-
     return groups.map((group, idx) => (
-      <div key={group.title || idx} className={idx > 0 ? (collapsedView ? "mt-4 pt-3 border-t border-slate-800/60" : "mt-5") : ""}>
-        {/* Header Kategori */}
-        {!collapsedView ? (
-          <div className="flex items-center justify-between px-3 mb-2">
-            <h3 className="text-[10px] xl:text-[11px] font-extrabold uppercase tracking-wider text-slate-400/90 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              {group.title}
-            </h3>
-            <span className="text-[9px] font-bold text-slate-500 bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-800">
-              {group.items.length}
-            </span>
-          </div>
-        ) : (
-          <div className="w-6 h-0.5 bg-slate-800/80 mx-auto mb-2" />
-        )}
+      <div key={group.title} className={idx > 0 ? "mt-5" : ""}>
+        <div className="flex items-center justify-between px-3 mb-2">
+          <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400/90 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            {group.title}
+          </h3>
+          <span className="text-[10px] font-semibold text-slate-500 bg-slate-800/80 px-1.5 py-0.5 rounded">
+            {group.items.length}
+          </span>
+        </div>
 
         <div className="space-y-1">
           {group.items.map((item) => {
@@ -445,83 +305,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             const hasChildActive = item.children?.some((c) => pathname === c.href);
             const isActive = isDirectActive || hasChildActive;
 
-            // Jika ada children (Submenu bertingkat)
+            // Submenu bertingkat (children)
             if (item.children) {
-              const isOpen =
-                searchQuery.trim().length > 0
-                  ? true
-                  : openMenus[item.name] !== undefined
-                  ? openMenus[item.name]
-                  : Boolean(isActive);
-
-              if (collapsedView) {
-                // Di mode collapsed: klik icon untuk ekspansi sidebar dan langsung buka menu
-                return (
-                  <div key={item.name} className="flex justify-center py-0.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsCollapsed(false);
-                        setOpenMenus((prev) => ({ ...prev, [item.name]: true }));
-                      }}
-                      title={`${item.name} (${item.children.length} sub-menu)`}
-                      className={cn(
-                        "p-2.5 rounded-xl transition-all relative group cursor-pointer",
-                        isActive
-                          ? "bg-emerald-600 text-white shadow-md shadow-emerald-950/40 ring-1 ring-emerald-400/40"
-                          : "text-slate-400 hover:text-white hover:bg-slate-800/80"
-                      )}
-                    >
-                      <Icon className="w-5 h-5" />
-                      {hasChildActive && (
-                        <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-slate-900 animate-pulse" />
-                      )}
-                    </button>
-                  </div>
-                );
-              }
+              const isOpen = openMenus[item.name] !== undefined ? openMenus[item.name] : Boolean(isActive);
 
               return (
                 <div key={item.name} className="flex flex-col space-y-1">
                   <button
                     type="button"
                     onClick={() => toggleMenu(item.name)}
-                    className={cn(
-                      "group flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold transition-all w-full cursor-pointer text-left",
+                    className={`group flex items-center justify-between rounded-xl px-3 py-2.5 text-[12px] xl:text-[13px] font-medium transition-all w-full cursor-pointer text-left ${
                       hasChildActive
-                        ? "bg-slate-800/90 text-emerald-300 border border-emerald-900/40 shadow-xs"
+                        ? "bg-slate-800 text-emerald-300 shadow-sm"
                         : "text-slate-300 hover:bg-slate-800/70 hover:text-white"
-                    )}
+                    }`}
                   >
-                    <span className="flex items-center flex-1 min-w-0 pr-2">
-                      <span className={cn(
-                        "w-7 h-7 rounded-lg flex items-center justify-center mr-2.5 transition-colors shrink-0",
-                        hasChildActive ? "bg-emerald-500/20 text-emerald-400" : "bg-slate-900 text-slate-400 group-hover:text-emerald-400 group-hover:bg-slate-800"
-                      )}>
+                    <div className="flex items-center flex-1 min-w-0 pr-2">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center mr-2.5 transition-colors shrink-0 ${
+                        hasChildActive ? "bg-emerald-500/20 text-emerald-400" : "bg-slate-900 text-slate-400 group-hover:text-emerald-400"
+                      }`}>
                         <Icon className="h-4 w-4" />
-                      </span>
+                      </div>
                       <span className="text-left leading-tight truncate flex-1 font-semibold">{item.name}</span>
-                    </span>
+                    </div>
 
-                    <span className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-md font-mono bg-slate-900/80 text-slate-400 border border-slate-800">
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-900 text-slate-400 border border-slate-800">
                         {item.children.length}
                       </span>
                       {isOpen ? (
-                        <ChevronDown className="h-4 w-4 text-slate-400 transition-transform" />
+                        <ChevronDown className="h-4 w-4 text-slate-400" />
                       ) : (
-                        <ChevronRight className="h-4 w-4 text-slate-400 transition-transform" />
+                        <ChevronRight className="h-4 w-4 text-slate-400" />
                       )}
-                    </span>
+                    </div>
                   </button>
 
-                  {/* Daftar Submenu Children dengan Timeline Line & Step Badge */}
-                  <div
-                    className={cn(
-                      "grid transition-all duration-200 ease-in-out",
-                      isOpen ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0"
-                    )}
-                  >
+                  {/* Submenu Item List */}
+                  <div className={`grid transition-all duration-200 ease-in-out ${isOpen ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0"}`}>
                     <div className="overflow-hidden">
                       <div className="flex flex-col space-y-1 pl-4 pr-1 pb-1 relative before:absolute before:left-6 before:top-1 before:bottom-3 before:w-px before:bg-slate-800">
                         {item.children.map((child) => {
@@ -531,32 +352,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                               key={child.name}
                               href={child.href}
                               onClick={() => isMobile && setIsSidebarOpen(false)}
-                              className={cn(
-                                "group relative flex items-center justify-between rounded-xl px-2.5 py-2 text-xs transition-all",
+                              className={`group relative flex items-center justify-between rounded-lg px-2.5 py-2 text-[12px] font-medium transition-all ${
                                 isChildActive
-                                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold shadow-md shadow-emerald-950/30"
-                                  : "text-slate-400 hover:text-emerald-200 hover:bg-slate-800/60"
-                              )}
+                                  ? "bg-emerald-600 text-white font-semibold shadow-md shadow-emerald-950/30"
+                                  : "text-slate-400 hover:bg-slate-800/60 hover:text-emerald-300"
+                              }`}
                             >
                               <div className="flex items-center min-w-0 flex-1 pr-2">
-                                {/* Step Pill atau Bullet Dot */}
                                 {child.step ? (
                                   <span
-                                    className={cn(
-                                      "text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md mr-2 shrink-0 border transition-colors",
+                                    className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded mr-2 shrink-0 border transition-colors ${
                                       isChildActive
                                         ? "bg-white/20 text-white border-white/30"
                                         : "bg-slate-900 text-emerald-400 border-slate-700/60 group-hover:border-emerald-600/50"
-                                    )}
+                                    }`}
                                   >
                                     {child.step}
                                   </span>
                                 ) : (
                                   <span
-                                    className={cn(
-                                      "w-1.5 h-1.5 rounded-full mr-2.5 shrink-0 transition-colors",
+                                    className={`w-1.5 h-1.5 rounded-full mr-2.5 shrink-0 transition-colors ${
                                       isChildActive ? "bg-white" : "bg-slate-600 group-hover:bg-emerald-400"
-                                    )}
+                                    }`}
                                   />
                                 )}
                                 <span className="truncate leading-tight">{child.name}</span>
@@ -564,19 +381,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                               {child.badge && (
                                 <span
-                                  className={cn(
-                                    "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full shrink-0",
+                                  className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full shrink-0 ${
                                     isChildActive
                                       ? "bg-white/20 text-white"
                                       : "bg-emerald-950 text-emerald-400 border border-emerald-800/40"
-                                  )}
+                                  }`}
                                 >
                                   {child.badge}
                                 </span>
                               )}
 
                               {isChildActive && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-white ml-1.5 shrink-0 animate-pulse" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-white ml-1 shrink-0" />
                               )}
                             </Link>
                           );
@@ -588,46 +404,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               );
             }
 
-            // Menu Langsung (Direct Link)
-            if (collapsedView) {
-              return (
-                <div key={item.name} className="flex justify-center py-0.5">
-                  <Link
-                    href={item.href || "/dashboard"}
-                    title={item.name}
-                    className={cn(
-                      "p-2.5 rounded-xl transition-all relative group cursor-pointer",
-                      isDirectActive
-                        ? "bg-emerald-600 text-white shadow-md shadow-emerald-950/40 ring-1 ring-emerald-400/40"
-                        : "text-slate-400 hover:text-white hover:bg-slate-800/80"
-                    )}
-                  >
-                    <Icon className="w-5 h-5" />
-                    {isDirectActive && (
-                      <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-slate-900" />
-                    )}
-                  </Link>
-                </div>
-              );
-            }
-
+            // Menu Standar (Direct Link)
             return (
               <Link
                 key={item.name}
                 href={item.href || "/dashboard"}
                 onClick={() => isMobile && setIsSidebarOpen(false)}
-                className={cn(
-                  "group flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold transition-all w-full cursor-pointer",
+                className={`group flex items-center justify-between rounded-xl px-3 py-2.5 text-[12px] xl:text-[13px] font-medium transition-all w-full cursor-pointer ${
                   isDirectActive
-                    ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-950/40 ring-1 ring-emerald-400/30 font-bold"
+                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-950/30 font-semibold"
                     : "text-slate-300 hover:bg-slate-800/70 hover:text-white"
-                )}
+                }`}
               >
                 <div className="flex items-center flex-1 min-w-0 pr-2">
-                  <div className={cn(
-                    "w-7 h-7 rounded-lg flex items-center justify-center mr-2.5 transition-colors shrink-0",
-                    isDirectActive ? "bg-white/20 text-white" : "bg-slate-900 text-slate-400 group-hover:text-emerald-400 group-hover:bg-slate-800"
-                  )}>
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center mr-2.5 transition-colors shrink-0 ${
+                    isDirectActive ? "bg-white/20 text-white" : "bg-slate-900 text-slate-400 group-hover:text-emerald-400"
+                  }`}>
                     <Icon className="h-4 w-4" />
                   </div>
                   <span className="text-left leading-tight truncate flex-1">{item.name}</span>
@@ -635,12 +427,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                 {item.badge && (
                   <span
-                    className={cn(
-                      "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full shrink-0 border",
+                    className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full shrink-0 border ${
                       isDirectActive
                         ? "bg-white/20 text-white border-white/30"
                         : "bg-slate-900 text-emerald-400 border-slate-700/60"
-                    )}
+                    }`}
                   >
                     {item.badge}
                   </span>
@@ -653,318 +444,158 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ));
   };
 
+  // Mencari nama halaman saat ini untuk Topbar
+  let currentPageName = "Dashboard";
+  if (pathname === "/dashboard/modul") {
+    currentPageName = "Panduan Alur MR";
+  } else {
+    for (const group of navGroups) {
+      for (const item of group.items) {
+        if (item.href === pathname) {
+          currentPageName = item.name;
+          break;
+        }
+        if (item.children) {
+          const child = item.children.find((c) => c.href === pathname);
+          if (child) {
+            currentPageName = child.name;
+            break;
+          }
+        }
+      }
+    }
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 print:h-auto print:min-h-0 print:block print:overflow-visible font-sans">
-      {/* ====================================================================== */}
-      {/* SIDEBAR UNTUK DESKTOP (ELEGANT DARK EMERALD THEME)                    */}
-      {/* ====================================================================== */}
-      <aside
-        className={cn(
-          "hidden md:flex flex-col border-r border-slate-800 bg-gradient-to-b from-[#090d16] via-[#0f172a] to-[#0a1120] text-slate-200 shrink-0 transition-all duration-300 ease-in-out print:hidden relative z-30",
-          isCollapsed ? "w-20" : "w-64 xl:w-72"
-        )}
-      >
+      {/* Sidebar untuk Desktop (Dark Theme) */}
+      <aside className="hidden w-64 xl:w-72 flex-col border-r border-slate-800 bg-[#0f172a] md:flex shrink-0 print:hidden">
         {/* Brand Header */}
-        <div className="flex h-16 items-center justify-between px-4 xl:px-5 border-b border-slate-800/80 shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/25 ring-1 ring-white/20 shrink-0">
-              <ShieldCheck className="h-5 w-5" />
+        <div className="flex h-16 items-center px-4 xl:px-6 border-b border-slate-800 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-sm shadow-emerald-950/40">
+              <ShieldAlert className="h-5 w-5" />
             </div>
-
-            {!isCollapsed && (
-              <div className="flex flex-col min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <h1 className="text-lg font-black text-white tracking-tight leading-none">
-                    Si<span className="text-emerald-400">-MaRi</span>
-                  </h1>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase tracking-wider">
-                    v2.0
-                  </span>
-                </div>
-                <span className="text-[10px] text-slate-400 font-medium truncate mt-0.5">
-                  Kemendes PDT
-                </span>
-              </div>
-            )}
+            <div>
+              <h1 className="text-lg font-bold text-white tracking-tight leading-none">
+                Si<span className="text-emerald-500">-MaRi</span>
+              </h1>
+              <p className="text-[10px] text-slate-400 font-medium">Kemendes PDT</p>
+            </div>
           </div>
-
-          {!isCollapsed && (
-            <button
-              type="button"
-              onClick={() => setIsCollapsed(true)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
-              title="Perkecil Sidebar"
-            >
-              <PanelLeftClose className="w-4 h-4" />
-            </button>
-          )}
         </div>
-
+        
         {/* Info Profil di Sidebar */}
-        <div className="border-b border-slate-800/80 p-3.5 xl:p-4 bg-slate-900/40 shrink-0">
-          {!isCollapsed ? (
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-700 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm ring-2 ring-emerald-500/30">
-                {getUserInitials(user.unitName || user.email)}
-              </div>
-              <div className="flex-1 min-w-0 space-y-1">
-                <p
-                  className="text-xs font-bold text-white truncate leading-tight"
-                  title={user.unitName || user.email || ""}
-                >
-                  {user.unitName || user.email}
-                </p>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-2 py-0.5 rounded-md flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    {getRoleLabel(user.role)}
-                  </span>
-                  <span className="text-[10px] font-semibold text-slate-300 bg-slate-800/60 border border-slate-700/60 px-2 py-0.5 rounded-md">
-                    TA {activeYear}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex justify-center">
-              <div
-                className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-700 flex items-center justify-center text-white font-bold text-xs shadow-sm ring-2 ring-emerald-500/30 cursor-pointer"
-                title={`${user.unitName || user.email} (${getRoleLabel(user.role)})`}
-                onClick={() => setIsCollapsed(false)}
-              >
-                {getUserInitials(user.unitName || user.email)}
-              </div>
-            </div>
-          )}
+        <div className="border-b border-slate-800 px-4 xl:px-6 py-4 bg-[#111827]/60 shrink-0">
+          <p className="text-xs xl:text-sm font-semibold text-white whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
+            {user.unitName || user.email}
+          </p>
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            <span className="text-[10px] font-medium text-emerald-400 uppercase tracking-wider border border-emerald-900/50 bg-emerald-950/40 inline-block px-2 py-0.5 rounded-md">
+              {getRoleLabel(user.role)}
+            </span>
+            <span className="text-[10px] font-medium text-slate-300 bg-slate-800/60 inline-block px-2 py-0.5 rounded-md border border-slate-700">
+              TA {activeYear}
+            </span>
+          </div>
         </div>
-
-        {/* Input Pencarian Cepat Menu Navigasi */}
-        {!isCollapsed ? (
-          <div className="px-3.5 pt-3 pb-2 shrink-0">
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Cari menu navigasi..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-8 pr-7 py-1.5 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="py-2 flex justify-center shrink-0">
-            <button
-              type="button"
-              onClick={() => setIsCollapsed(false)}
-              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-              title="Cari Menu Navigasi"
-            >
-              <Search className="w-4 h-4" />
-            </button>
-          </div>
-        )}
 
         {/* List Menu Scrollable */}
-        <nav className="flex-1 overflow-y-auto px-3.5 py-3 custom-scrollbar space-y-1">
-          {renderNavGroups(filteredNavGroups)}
+        <nav className="flex-1 overflow-y-auto px-3.5 py-4 custom-scrollbar">
+          {renderNavGroups(navGroups)}
         </nav>
-
-        {/* Sidebar Footer */}
-        <div className="border-t border-slate-800/80 p-3 shrink-0 bg-slate-950/60">
-          {!isCollapsed ? (
-            <div className="space-y-2">
-              <Link
-                href="/dashboard/modul"
-                className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-emerald-950/40 border border-slate-800/80 hover:border-emerald-800/50 text-slate-300 hover:text-emerald-300 transition-all text-xs group"
-              >
-                <div className="flex items-center gap-2">
-                  <BookMarked className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-                  <span className="font-semibold">Panduan Alur MR</span>
-                </div>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-400 transition-colors" />
-              </Link>
-              <p className="text-[10px] text-slate-500 text-center font-medium">
-                Kemendes PDT © 2026
-              </p>
+        
+        {/* Sidebar Footer dengan Pintasan Panduan Alur MR */}
+        <div className="border-t border-slate-800 p-3 shrink-0 bg-[#0f172a] space-y-2">
+          <Link
+            href="/dashboard/modul"
+            className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-emerald-950/40 border border-slate-800 hover:border-emerald-700/50 text-slate-200 hover:text-emerald-300 transition-all text-xs group"
+          >
+            <div className="flex items-center gap-2.5">
+              <BookMarked className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+              <div className="text-left">
+                <div className="font-semibold text-white group-hover:text-emerald-300">Panduan Alur MR</div>
+                <div className="text-[10px] text-slate-400">Diagram alur & petunjuk</div>
+              </div>
             </div>
-          ) : (
-            <div className="flex justify-center">
-              <button
-                type="button"
-                onClick={() => setIsCollapsed(false)}
-                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-                title="Perluas Sidebar"
-              >
-                <PanelLeft className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+            <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
+          </Link>
+          <p className="text-[10px] text-slate-500 text-center font-medium">Kemendes PDT © 2026</p>
         </div>
       </aside>
 
-      {/* ====================================================================== */}
-      {/* AREA KONTEN UTAMA & TOPBAR                                             */}
-      {/* ====================================================================== */}
+      {/* Area Konten Utama */}
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden print:block print:overflow-visible">
         {/* Header / Topbar */}
-        <header className="flex h-16 items-center justify-between border-b bg-white px-4 md:px-6 shrink-0 shadow-xs border-slate-200/80 print:hidden relative z-20">
-          {/* Sisi Kiri: Mobile Toggle & Breadcrumbs Navigasi */}
-          <div className="flex items-center gap-3 min-w-0">
-            {/* Mobile Hamburger */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsSidebarOpen(true)}
-              className="md:hidden text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl"
-            >
+        <header className="flex h-16 items-center justify-between border-b bg-white px-4 md:px-6 shrink-0 shadow-xs border-slate-200 print:hidden">
+          <div className="flex items-center md:hidden">
+            <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
               <Menu className="h-6 w-6" />
             </Button>
-
-            {/* Desktop Sidebar Toggle Button */}
-            <button
-              type="button"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="hidden md:flex p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200 cursor-pointer"
-              title={isCollapsed ? "Perluas Sidebar" : "Perkecil Sidebar"}
-            >
-              {isCollapsed ? (
-                <PanelLeft className="w-4 h-4 text-slate-600" />
-              ) : (
-                <PanelLeftClose className="w-4 h-4 text-slate-600" />
-              )}
-            </button>
-
-            {/* Mobile Brand Logo */}
-            <div className="flex items-center gap-1.5 md:hidden">
+            <div className="ml-3 flex items-center gap-1.5">
               <ShieldAlert className="h-5 w-5 text-emerald-600" />
-              <h1 className="text-base font-extrabold text-slate-900 tracking-tight">
-                Si<span className="text-emerald-600">-MaRi</span>
-              </h1>
-            </div>
-
-            {/* Desktop Breadcrumbs & Page Heading */}
-            <div className="hidden md:flex flex-col min-w-0 justify-center">
-              <nav className="flex items-center gap-1.5 text-xs text-slate-400 font-medium leading-none">
-                <Link
-                  href="/dashboard"
-                  className="flex items-center gap-1 hover:text-emerald-600 transition-colors"
-                >
-                  <Home className="w-3 h-3 text-slate-400" />
-                  <span>Beranda</span>
-                </Link>
-
-                {breadcrumbs.slice(1).map((crumb, idx) => (
-                  <div key={idx} className="flex items-center gap-1.5">
-                    <ChevronRight className="w-3 h-3 text-slate-300" />
-                    {crumb.href ? (
-                      <Link
-                        href={crumb.href}
-                        className="hover:text-emerald-600 transition-colors truncate max-w-[180px]"
-                      >
-                        {crumb.label}
-                      </Link>
-                    ) : (
-                      <span className="text-slate-600 truncate max-w-[180px]">
-                        {crumb.label}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </nav>
-
-              <h2 className="text-base xl:text-lg font-black text-slate-900 tracking-tight truncate leading-tight mt-1">
-                {currentPageName}
-              </h2>
+              <h1 className="text-lg font-bold text-slate-900">Si<span className="text-emerald-600">-MaRi</span></h1>
             </div>
           </div>
+          
+          <div className="hidden md:flex flex-col min-w-0 truncate justify-center">
+            <h2 className="text-lg font-bold text-slate-800 tracking-tight truncate leading-tight">
+              {currentPageName}
+            </h2>
+            <LiveClock />
+          </div>
 
-          {/* Sisi Kanan Topbar: Unit Kerja Pill, Panduan Shortcut, Clock, User Profile */}
           <div className="flex items-center gap-3 ml-auto">
             {/* Chip Info Unit & Tahun Anggaran */}
-            <div className="hidden lg:flex items-center gap-2 bg-slate-50 border border-slate-200/90 px-3 py-1 rounded-xl text-xs shadow-xs">
+            <div className="hidden sm:flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-xs">
               <Building2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span className="font-semibold text-slate-700 max-w-[160px] truncate" title={user.unitName || ""}>
+              <span className="font-semibold text-slate-700 max-w-[180px] truncate" title={user.unitName || ""}>
                 {user.unitName || "Semua Unit"}
               </span>
               <span className="text-slate-300">•</span>
-              <span className="font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md text-[11px]">
+              <span className="font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md text-[11px]">
                 TA {activeYear}
               </span>
             </div>
 
-            {/* Quick Link Panduan Alur */}
+            {/* Shortcut Panduan Alur */}
             <Link
               href="/dashboard/modul"
-              className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 border border-slate-200/90 hover:border-emerald-300 px-3 py-1.5 rounded-xl transition-all shadow-xs"
+              className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 px-3 py-1.5 rounded-xl transition-all"
             >
               <BookMarked className="w-3.5 h-3.5 text-emerald-600" />
               <span>Panduan</span>
             </Link>
 
-            {/* Jam Digital */}
-            <div className="hidden xl:block">
-              <LiveClock />
-            </div>
-
-            {/* Dropdown Profil Pengguna */}
+            {/* User Dropdown */}
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-2 p-1.5 rounded-full hover:bg-slate-100 transition-all border border-slate-200 cursor-pointer outline-none focus:ring-2 focus:ring-emerald-500/20">
-                <span className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-700 text-white font-bold text-xs flex items-center justify-center ring-2 ring-emerald-500/20 shadow-xs shrink-0">
-                  {getUserInitials(user.unitName || user.email)}
-                </span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-500 pr-0.5 hidden sm:block" />
+              <DropdownMenuTrigger className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 transition-colors border border-slate-200 cursor-pointer">
+                <User className="h-5 w-5 text-slate-600" />
               </DropdownMenuTrigger>
-
-              <DropdownMenuContent align="end" className="w-80 p-2.5 rounded-2xl shadow-xl border border-slate-200 max-w-[90vw]">
-                <div className="p-2 space-y-1 bg-slate-50 rounded-xl border border-slate-100">
-                  <p className="text-xs font-bold text-slate-900 truncate" title={user.unitName || user.email || ""}>
-                    {user.unitName || user.email}
-                  </p>
-                  <p className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    {getRoleLabel(user.role)}
-                  </p>
-                  <p className="text-[10px] text-slate-500 font-mono">
-                    Tahun Anggaran MR: {activeYear}
-                  </p>
+              <DropdownMenuContent align="end" className="w-80 p-2 rounded-xl max-w-[90vw]">
+                <div className="px-2 py-1.5">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-xs xl:text-sm font-semibold text-slate-800 whitespace-normal break-words" title={user.unitName || user.email || ""}>
+                      {user.unitName || user.email}
+                    </p>
+                    <p className="text-xs font-medium text-emerald-600 mt-0.5">
+                      {getRoleLabel(user.role)} • TA: {activeYear}
+                    </p>
+                  </div>
                 </div>
-
-                <DropdownMenuSeparator className="my-1.5" />
-
-                <DropdownMenuItem
-                  onClick={() => setIsPasswordModalOpen(true)}
-                  className="cursor-pointer rounded-xl text-xs py-2 text-slate-700 font-medium hover:bg-slate-100"
-                >
-                  <KeyRound className="mr-2 h-4 w-4 text-slate-500" />
-                  <span>Ubah Password Akun</span>
+                <DropdownMenuSeparator className="my-1" />
+                <DropdownMenuItem onClick={() => setIsPasswordModalOpen(true)} className="cursor-pointer rounded-lg mb-1">
+                  <KeyRound className="mr-2 h-4 w-4 text-slate-600" />
+                  <span className="font-medium text-slate-700">Ubah Password</span>
                 </DropdownMenuItem>
-
-                <DropdownMenuItem
-                  onClick={() => router.push("/dashboard/modul")}
-                  className="cursor-pointer rounded-xl text-xs py-2 text-slate-700 font-medium hover:bg-slate-100"
-                >
+                <DropdownMenuItem onClick={() => router.push("/dashboard/modul")} className="cursor-pointer rounded-lg mb-1">
                   <BookMarked className="mr-2 h-4 w-4 text-emerald-600" />
-                  <span>Buka Modul Panduan Alur</span>
+                  <span className="font-medium text-slate-700">Buka Panduan Alur MR</span>
                 </DropdownMenuItem>
-
-                <DropdownMenuSeparator className="my-1.5" />
-
-                <DropdownMenuItem
-                  onClick={handleLogout}
-                  className="cursor-pointer rounded-xl text-xs py-2 text-rose-600 font-semibold hover:bg-rose-50 hover:text-rose-700 focus:bg-rose-50 focus:text-rose-700"
-                >
+                <DropdownMenuSeparator className="my-1" />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:bg-red-50 focus:text-red-700 cursor-pointer rounded-lg">
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Keluar dari Sistem</span>
+                  <span className="font-medium">Keluar dari Sistem</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -973,98 +604,77 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Konten Halaman */}
         <ChangePasswordModal isOpen={isPasswordModalOpen} onClose={() => setIsPasswordModalOpen(false)} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-[#f8fafc] relative print:overflow-visible print:bg-white print:p-0 print:m-0">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#f8fafc] relative print:overflow-visible print:bg-white print:p-0 print:m-0">
           <div className="mx-auto max-w-7xl print:max-w-none print:w-full">
             {children}
           </div>
         </main>
       </div>
 
-      {/* ====================================================================== */}
-      {/* OVERLAY & SIDEBAR MOBILE                                               */}
-      {/* ====================================================================== */}
+      {/* Overlay Sidebar Mobile */}
       {isSidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm md:hidden animate-in fade-in duration-200"
+        <div 
+          className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm md:hidden" 
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
-
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 w-72 transform bg-gradient-to-b from-[#090d16] via-[#0f172a] to-[#0a1120] text-slate-200 shadow-2xl transition-transform duration-300 ease-in-out md:hidden flex flex-col",
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <div className="flex h-16 items-center justify-between border-b border-slate-800/80 px-4 shrink-0">
+      
+      {/* Sidebar Mobile (Dark Theme) */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 xl:w-72 transform bg-[#0f172a] shadow-2xl transition-transform duration-300 ease-in-out md:hidden flex flex-col ${
+        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+      }`}>
+        <div className="flex h-16 items-center justify-between border-b border-slate-800 px-4 xl:px-6 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-md">
-              <ShieldCheck className="h-4.5 w-4.5" />
+            <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white">
+              <ShieldAlert className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-lg font-black text-white tracking-tight leading-none">
-                Si<span className="text-emerald-400">-MaRi</span>
+              <h1 className="text-lg font-bold text-white tracking-tight leading-none">
+                Si<span className="text-emerald-500">-MaRi</span>
               </h1>
-              <span className="text-[10px] text-slate-400 font-medium">Kemendes PDT</span>
+              <p className="text-[10px] text-slate-400 font-medium">Kemendes PDT</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsSidebarOpen(false)}
-            className="text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl"
-          >
-            <X className="h-5 w-5" />
+          <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)} className="text-slate-400 hover:text-white hover:bg-slate-800">
+            <Menu className="h-5 w-5" />
           </Button>
         </div>
-
-        <div className="border-b border-slate-800/80 p-4 bg-slate-900/40 shrink-0">
-          <p className="text-xs font-bold text-white truncate" title={user.unitName || user.email || ""}>
+        <div className="border-b border-slate-800 px-4 xl:px-6 py-4 bg-[#111827]/60 shrink-0">
+          <p className="text-xs xl:text-sm font-semibold text-white whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
             {user.unitName || user.email}
           </p>
-          <div className="flex items-center gap-1.5 mt-1.5">
-            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-2 py-0.5 rounded-md">
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            <span className="text-[10px] font-medium text-emerald-400 uppercase tracking-wider border border-emerald-900/50 bg-emerald-950/40 inline-block px-2 py-0.5 rounded-md">
               {getRoleLabel(user.role)}
             </span>
-            <span className="text-[10px] font-semibold text-slate-300 bg-slate-800/60 border border-slate-700/60 px-2 py-0.5 rounded-md">
+            <span className="text-[10px] font-medium text-slate-300 bg-slate-800/60 inline-block px-2 py-0.5 rounded-md border border-slate-700">
               TA {activeYear}
             </span>
           </div>
         </div>
-
-        {/* Mobile Search */}
-        <div className="px-4 pt-3 pb-2 shrink-0">
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Cari menu..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-8 pr-7 py-2 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        <nav className="flex-1 overflow-y-auto px-4 py-3 custom-scrollbar space-y-1">
-          {renderNavGroups(filteredNavGroups, true)}
+        <nav className="flex-1 overflow-y-auto px-3.5 py-4 custom-scrollbar">
+          {renderNavGroups(navGroups, true)}
         </nav>
-
-        <div className="border-t border-slate-800/80 p-3 shrink-0 bg-slate-950/60 text-center">
-          <p className="text-[11px] text-slate-500 font-medium">Kemendes PDT © 2026</p>
+        <div className="border-t border-slate-800 p-3 shrink-0 bg-[#0f172a] space-y-2">
+          <Link
+            href="/dashboard/modul"
+            onClick={() => setIsSidebarOpen(false)}
+            className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-emerald-950/40 border border-slate-800 hover:border-emerald-700/50 text-slate-200 hover:text-emerald-300 transition-all text-xs group"
+          >
+            <div className="flex items-center gap-2.5">
+              <BookMarked className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+              <div className="text-left">
+                <div className="font-semibold text-white group-hover:text-emerald-300">Panduan Alur MR</div>
+                <div className="text-[10px] text-slate-400">Diagram alur & petunjuk</div>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 transition-all" />
+          </Link>
+          <p className="text-[10px] text-slate-500 text-center font-medium">Kemendes PDT © 2026</p>
         </div>
       </aside>
 
-      {/* Floating AI Chatbox Assistant (Bawah Kanan) */}
+      {/* Floating AI Chatbox Assistant */}
       <AIChatBox />
     </div>
   );
