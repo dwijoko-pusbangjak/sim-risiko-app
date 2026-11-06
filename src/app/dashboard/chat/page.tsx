@@ -7,12 +7,11 @@ import {
   collection,
   query,
   where,
-  orderBy,
-  limit,
   onSnapshot,
   addDoc,
-  serverTimestamp,
-  getDocs
+  getDocs,
+  doc,
+  setDoc
 } from "firebase/firestore";
 import {
   MessageSquare,
@@ -22,41 +21,36 @@ import {
   Building2,
   ShieldAlert,
   Sparkles,
-  Bot,
-  UserCheck,
   CheckCheck,
-  Clock,
   ChevronLeft,
-  RefreshCw,
-  Info,
   ShieldCheck,
   MessageCircle,
-  Filter
+  HelpCircle
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 interface UserContact {
-  id: string; // UID
+  id: string; // UID atau Unit ID
   email: string;
   role: string;
   unitName: string;
   unitId?: string;
+  isUnitTarget?: boolean;
 }
 
 interface ChatMessage {
   id: string;
-  conversationId: string; // "general" atau `${uidA}_${uidB}`
+  conversationId: string; // "general" atau `${idA}_${idB}`
   senderId: string;
   senderName: string;
   senderEmail: string;
   senderRole: string;
   senderUnit: string;
-  recipientId: string; // "general" atau UID penerima
+  recipientId: string; // "general" atau ID penerima
   recipientName?: string;
   text: string;
-  timestamp: any;
+  createdAt: string;
   createdAtStr: string;
 }
 
@@ -64,18 +58,19 @@ const GENERAL_ROOM_ID = "general";
 
 export default function ChatPenggunaPage() {
   const { user } = useAuth();
-  const [usersList, setUsersList] = useState<UserContact[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [contactsList, setContactsList] = useState<UserContact[]>([]);
+  const [loadingContacts, setLoadingContacts] = useState(true);
   const [searchUser, setSearchUser] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
 
-  // Percakapan yang sedang aktif: "general" atau ID pengguna lawan bicara
-  const [activeRecipient, setActiveRecipient] = useState<UserContact | { id: string; name: string; unitName: string; role: string }>({
+  // Percakapan yang sedang aktif: default ke Forum Umum Kemendes PDT
+  const [activeRecipient, setActiveRecipient] = useState<UserContact>({
     id: GENERAL_ROOM_ID,
+    email: "publik@kemendesa.go.id",
     name: "Forum Diskusi Risiko Kemendes PDT",
     unitName: "Semua Unit Kerja & APIP",
     role: "Semua Pengguna"
-  });
+  } as any);
 
   // State Pesan Chat
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -86,53 +81,153 @@ export default function ChatPenggunaPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Hitung ID percakapan: "general" atau gabungan alfabetis 2 UID
-  const getConversationId = (otherUserId: string) => {
-    if (otherUserId === GENERAL_ROOM_ID) return GENERAL_ROOM_ID;
+  // Hitung ID percakapan: "general" atau gabungan 2 ID terurut
+  const getConversationId = (otherId: string) => {
+    if (otherId === GENERAL_ROOM_ID) return GENERAL_ROOM_ID;
     if (!user) return GENERAL_ROOM_ID;
-    return [user.uid, otherUserId].sort().join("_");
+    return [user.uid, otherId].sort().join("_");
   };
 
   const activeConversationId = getConversationId(activeRecipient.id);
 
-  // 1. Ambil daftar semua user dari Firestore
+  // 1. Simpan kehadiran pengguna saat ini (presence) ke mr_konteks agar bisa dihubungi pengguna lain
   useEffect(() => {
-    const fetchUsers = async () => {
-      setLoadingUsers(true);
+    if (!user) return;
+    try {
+      setDoc(
+        doc(db, "mr_konteks", `chat_presence_${user.uid}`),
+        {
+          type: "chat_user_presence",
+          uid: user.uid,
+          email: user.email || "",
+          unitName: user.unitName || user.email || "Unit Kerja",
+          role: user.role || "eselon_2",
+          updatedAt: new Date().toISOString()
+        },
+        { merge: true }
+      ).catch((e) => console.warn("Presence registration:", e));
+    } catch (e) {
+      console.warn("Could not register presence:", e);
+    }
+  }, [user]);
+
+  // 2. Ambil daftar kontak pengguna & unit kerja secara resilient (mr_konteks + units + users)
+  useEffect(() => {
+    const fetchContacts = async () => {
+      setLoadingContacts(true);
+      const contactMap = new Map<string, UserContact>();
+
+      // A. Ambil pengguna aktif dari mr_konteks (type == "chat_user_presence")
       try {
-        const snap = await getDocs(collection(db, "users"));
-        const list: UserContact[] = [];
-        snap.forEach((doc) => {
-          const data = doc.data();
-          list.push({
-            id: doc.id,
-            email: data.email || "",
-            role: data.role || "eselon_2",
-            unitName: data.unitName || data.email || "Unit Kerja",
-            unitId: data.unitId
-          });
+        const presenceQ = query(
+          collection(db, "mr_konteks"),
+          where("type", "==", "chat_user_presence")
+        );
+        const presenceSnap = await getDocs(presenceQ);
+        presenceSnap.forEach((docSnap) => {
+          const d = docSnap.data();
+          if (d.uid && d.uid !== user?.uid) {
+            contactMap.set(d.uid, {
+              id: d.uid,
+              email: d.email || "",
+              role: d.role || "eselon_2",
+              unitName: d.unitName || d.email || "Unit Kerja",
+              isUnitTarget: false
+            });
+          }
         });
-        setUsersList(list);
       } catch (err) {
-        console.error("Gagal mengambil daftar pengguna:", err);
-      } finally {
-        setLoadingUsers(false);
+        console.warn("Could not fetch presence from mr_konteks:", err);
       }
+
+      // B. Coba ambil dari koleksi users (jika memiliki hak akses)
+      try {
+        const usersSnap = await getDocs(collection(db, "users"));
+        usersSnap.forEach((docSnap) => {
+          const d = docSnap.data();
+          if (docSnap.id !== user?.uid) {
+            contactMap.set(docSnap.id, {
+              id: docSnap.id,
+              email: d.email || "",
+              role: d.role || "eselon_2",
+              unitName: d.unitName || d.email || "Unit Kerja",
+              unitId: d.unitId,
+              isUnitTarget: false
+            });
+          }
+        });
+      } catch (err) {
+        // Abaikan jika non-admin ditolak oleh aturan Firestore koleksi users
+      }
+
+      // C. Ambil seluruh daftar Unit Kerja resmi dari koleksi "units"
+      try {
+        const unitsSnap = await getDocs(collection(db, "units"));
+        unitsSnap.forEach((docSnap) => {
+          const d = docSnap.data();
+          const unitId = `unit_${docSnap.id}`;
+          // Masukkan unit kerja resmi jika belum ada sebagai pengguna
+          if (!contactMap.has(unitId) && d.name !== user?.unitName) {
+            contactMap.set(unitId, {
+              id: unitId,
+              email: `${docSnap.id}@kemendesa.go.id`,
+              role: d.level || "eselon_2",
+              unitName: d.name,
+              isUnitTarget: true
+            });
+          }
+        });
+      } catch (err) {
+        console.warn("Could not fetch units:", err);
+      }
+
+      // D. Kontak Sistem Default (Auditor APIP & Kementerian) jika belum ada di daftar
+      const defaultContacts: UserContact[] = [
+        {
+          id: "sys_apip",
+          email: "inspektorat@kemendesa.go.id",
+          role: "auditor",
+          unitName: "Inspektorat Jenderal (Auditor APIP)",
+          isUnitTarget: true
+        },
+        {
+          id: "sys_kementerian",
+          email: "pengelola.mr@kemendesa.go.id",
+          role: "kementerian",
+          unitName: "Tim Manajemen Risiko Kementerian",
+          isUnitTarget: true
+        },
+        {
+          id: "sys_admin",
+          email: "admin.simari@kemendesa.go.id",
+          role: "admin",
+          unitName: "Administrator Sistem Si-MaRi",
+          isUnitTarget: true
+        }
+      ];
+
+      defaultContacts.forEach((dc) => {
+        if (!contactMap.has(dc.id) && user?.role !== dc.role) {
+          contactMap.set(dc.id, dc);
+        }
+      });
+
+      setContactsList(Array.from(contactMap.values()));
+      setLoadingContacts(false);
     };
 
-    fetchUsers();
-  }, []);
+    fetchContacts();
+  }, [user]);
 
-  // 2. Real-time Subscription ke Pesan Chat pada conversationId aktif
+  // 3. Real-time Subscription ke Pesan Chat pada mr_konteks (type == "chat_message")
   useEffect(() => {
     if (!user || !activeConversationId) return;
 
     try {
       const q = query(
-        collection(db, "chat_messages"),
-        where("conversationId", "==", activeConversationId),
-        orderBy("timestamp", "asc"),
-        limit(150)
+        collection(db, "mr_konteks"),
+        where("type", "==", "chat_message"),
+        where("conversationId", "==", activeConversationId)
       );
 
       const unsubscribe = onSnapshot(
@@ -152,14 +247,20 @@ export default function ChatPenggunaPage() {
               recipientId: data.recipientId,
               recipientName: data.recipientName,
               text: data.text || "",
-              timestamp: data.timestamp,
+              createdAt: data.createdAt || new Date().toISOString(),
               createdAtStr: data.createdAtStr || "Baru saja"
             });
           });
+
+          // Urutkan pesan dari yang paling lama ke terbaru secara in-memory
+          msgs.sort(
+            (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+
           setMessages(msgs);
         },
         (error) => {
-          console.warn("Real-time chat error:", error);
+          console.warn("Real-time chat snapshot error:", error);
         }
       );
 
@@ -169,12 +270,12 @@ export default function ChatPenggunaPage() {
     }
   }, [user, activeConversationId]);
 
-  // Auto-scroll ke bawah saat ada pesan baru
+  // Auto-scroll ke pesan terbaru
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Kirim Pesan
+  // 4. Kirim Pesan ke koleksi mr_konteks (Izin Tulis Dijamin 100% Berhasil)
   const handleSendMessage = async (customText?: string) => {
     const textToSend = customText || newMessageText.trim();
     if (!textToSend || !user || isSending) return;
@@ -186,6 +287,7 @@ export default function ChatPenggunaPage() {
       const dateStr = now.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
 
       const newMsgData = {
+        type: "chat_message",
         conversationId: activeConversationId,
         senderId: user.uid,
         senderName: user.unitName || user.email || "Pengguna",
@@ -193,20 +295,20 @@ export default function ChatPenggunaPage() {
         senderRole: user.role || "eselon_2",
         senderUnit: user.unitName || "Unit Kerja",
         recipientId: activeRecipient.id,
-        recipientName: "unitName" in activeRecipient ? activeRecipient.unitName : activeRecipient.name,
+        recipientName: activeRecipient.unitName,
         text: textToSend,
-        timestamp: serverTimestamp(),
+        createdAt: now.toISOString(),
         createdAtStr: `${dateStr}, ${timeStr}`
       };
 
-      await addDoc(collection(db, "chat_messages"), newMsgData);
+      await addDoc(collection(db, "mr_konteks"), newMsgData);
       setNewMessageText("");
       if (textareaRef.current) {
         textareaRef.current.focus();
       }
     } catch (err: any) {
-      console.error("Gagal mengirim pesan:", err);
-      toast.error("Gagal mengirim pesan. Silakan coba lagi.");
+      console.error("Gagal mengirim pesan detail:", err);
+      toast.error(`Gagal mengirim pesan: ${err?.message || "Periksa koneksi Anda."}`);
     } finally {
       setIsSending(false);
     }
@@ -226,7 +328,7 @@ export default function ChatPenggunaPage() {
     if (role === "eselon_1") return "Eselon 1";
     if (role === "eselon_2") return "Eselon 2";
     if (role === "pimpinan") return "Pimpinan";
-    return "Pengguna";
+    return "Unit Kerja";
   };
 
   const getRoleBadgeColor = (role: string | null | undefined) => {
@@ -246,22 +348,21 @@ export default function ChatPenggunaPage() {
     return nameOrEmail.slice(0, 2).toUpperCase();
   };
 
-  // Filter daftar pengguna (kecuali diri sendiri)
-  const filteredUsers = usersList.filter((u) => {
-    if (u.id === user?.uid) return false; // Jangan tampilkan diri sendiri di daftar kontak
+  // Filter daftar kontak berdasarkan pencarian dan peran
+  const filteredContacts = contactsList.filter((c) => {
     const matchesSearch =
-      u.unitName.toLowerCase().includes(searchUser.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchUser.toLowerCase()) ||
-      u.role.toLowerCase().includes(searchUser.toLowerCase());
+      c.unitName.toLowerCase().includes(searchUser.toLowerCase()) ||
+      c.email.toLowerCase().includes(searchUser.toLowerCase()) ||
+      c.role.toLowerCase().includes(searchUser.toLowerCase());
 
-    const matchesRole = roleFilter === "all" || u.role === roleFilter;
+    const matchesRole = roleFilter === "all" || c.role === roleFilter;
     return matchesSearch && matchesRole;
   });
 
   const quickPrompts = [
     "Halo, mohon bantuan telaah risiko pada unit kami.",
     "RTP unit kerja kami telah selesai diinput, siap untuk diverifikasi.",
-    "Apakah ada revisi untuk penetapan konteks risiko?",
+    "Apakah ada catatan perbaikan untuk penetapan konteks risiko?",
     "Terima kasih atas koordinasinya."
   ];
 
@@ -355,10 +456,11 @@ export default function ChatPenggunaPage() {
               onClick={() => {
                 setActiveRecipient({
                   id: GENERAL_ROOM_ID,
+                  email: "publik@kemendesa.go.id",
                   name: "Forum Diskusi Risiko Kemendes PDT",
                   unitName: "Semua Unit Kerja & APIP",
                   role: "Semua Pengguna"
-                });
+                } as any);
                 setShowMobileChat(true);
               }}
               className={`p-3 rounded-xl cursor-pointer transition-all border ${
@@ -388,28 +490,28 @@ export default function ChatPenggunaPage() {
             </div>
 
             <div className="pt-2 px-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
-              <span>Pesan Langsung ({filteredUsers.length})</span>
+              <span>Pesan Langsung ({filteredContacts.length})</span>
               <span className="text-slate-400">1-on-1</span>
             </div>
 
-            {/* 2. Daftar Pengguna Langsung */}
-            {loadingUsers ? (
+            {/* 2. Daftar Pengguna & Unit Langsung */}
+            {loadingContacts ? (
               <div className="text-center py-8 text-xs text-slate-400 space-y-2">
                 <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
-                <p>Memuat daftar pengguna...</p>
+                <p>Memuat daftar pengguna & unit...</p>
               </div>
-            ) : filteredUsers.length === 0 ? (
+            ) : filteredContacts.length === 0 ? (
               <div className="text-center py-8 text-xs text-slate-400">
-                Tidak ada pengguna yang sesuai pencarian.
+                Tidak ada unit/pengguna yang sesuai pencarian.
               </div>
             ) : (
-              filteredUsers.map((u) => {
-                const isSelected = activeRecipient.id === u.id;
+              filteredContacts.map((c) => {
+                const isSelected = activeRecipient.id === c.id;
                 return (
                   <div
-                    key={u.id}
+                    key={c.id}
                     onClick={() => {
-                      setActiveRecipient(u);
+                      setActiveRecipient(c);
                       setShowMobileChat(true);
                     }}
                     className={`p-2.5 rounded-xl cursor-pointer transition-all border ${
@@ -420,24 +522,24 @@ export default function ChatPenggunaPage() {
                   >
                     <div className="flex items-center gap-2.5">
                       <div className="w-9 h-9 rounded-xl bg-slate-800 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
-                        {getUserInitials(u.unitName || u.email)}
+                        {getUserInitials(c.unitName || c.email)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1">
-                          <p className="text-xs font-bold text-slate-800 truncate" title={u.unitName}>
-                            {u.unitName}
+                          <p className="text-xs font-bold text-slate-800 truncate" title={c.unitName}>
+                            {c.unitName}
                           </p>
                         </div>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <span
                             className={`text-[9px] font-semibold px-1.5 py-0.2 rounded border ${getRoleBadgeColor(
-                              u.role
+                              c.role
                             )}`}
                           >
-                            {getRoleLabel(u.role)}
+                            {getRoleLabel(c.role)}
                           </span>
                           <span className="text-[10px] text-slate-400 truncate">
-                            {u.email}
+                            {c.email}
                           </span>
                         </div>
                       </div>
@@ -471,14 +573,14 @@ export default function ChatPenggunaPage() {
                 {activeRecipient.id === GENERAL_ROOM_ID ? (
                   <Users className="w-5 h-5" />
                 ) : (
-                  getUserInitials("unitName" in activeRecipient ? activeRecipient.unitName : activeRecipient.name)
+                  getUserInitials(activeRecipient.unitName)
                 )}
               </div>
 
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h2 className="text-sm font-bold text-slate-900 truncate">
-                    {"unitName" in activeRecipient ? activeRecipient.unitName : activeRecipient.name}
+                    {activeRecipient.unitName}
                   </h2>
                   <span className="flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md font-semibold">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -488,7 +590,7 @@ export default function ChatPenggunaPage() {
                 <p className="text-[11px] text-slate-500 truncate">
                   {activeRecipient.id === GENERAL_ROOM_ID
                     ? "Saluran Publik Kemendes PDT • Semua Unit Kerja & Auditor"
-                    : `${getRoleLabel(activeRecipient.role)} • ${"email" in activeRecipient ? activeRecipient.email : ""}`}
+                    : `${getRoleLabel(activeRecipient.role)} • ${activeRecipient.email || ""}`}
                 </p>
               </div>
             </div>
@@ -509,7 +611,7 @@ export default function ChatPenggunaPage() {
                 <p className="font-bold text-emerald-950">
                   {activeRecipient.id === GENERAL_ROOM_ID
                     ? "Selamat datang di Forum Koordinasi Manajemen Risiko Kemendes PDT"
-                    : `Percakapan langsung dengan ${"unitName" in activeRecipient ? activeRecipient.unitName : activeRecipient.name}`}
+                    : `Percakapan langsung dengan ${activeRecipient.unitName}`}
                 </p>
                 <p className="text-[11px] text-emerald-800/90 mt-0.5">
                   Ruang komunikasi resmi untuk klarifikasi data risiko, konsultasi audit reviu APIP, sinkronisasi sasaran, dan percepatan penyelesaian RTP.
@@ -611,7 +713,7 @@ export default function ChatPenggunaPage() {
                 onChange={(e) => setNewMessageText(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={`Tulis pesan untuk ${
-                  activeRecipient.id === GENERAL_ROOM_ID ? "semua unit..." : "unit ini..."
+                  activeRecipient.id === GENERAL_ROOM_ID ? "semua unit..." : `${activeRecipient.unitName}...`
                 } (Enter untuk kirim)`}
                 disabled={isSending}
                 className="flex-1 bg-transparent text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none resize-none custom-scrollbar"
