@@ -121,15 +121,61 @@ export default function PenetapanKonteksPage() {
         setIsListLoading(false);
         return;
       }
+      
       const q = query(collection(db, "mr_konteks"), where("unitName", "==", user.unitName));
       const snap = await getDocs(q);
-      const data = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as KonteksData));
-      // Urutkan tahun terbaru di atas
-      data.sort((a, b) => b.tahun.localeCompare(a.tahun));
+      
+      const data: KonteksData[] = [];
+      snap.docs.forEach((docSnap) => {
+        const d = docSnap.data();
+        // Lewati dokumen yang bukan penetapan konteks (misal chat message jika pernah tercatat)
+        if ((d as any).type === "chat_message") return;
+
+        data.push({
+          ...d,
+          id: docSnap.id,
+          tahun: String(d.tahun || ""),
+          sumberData: d.sumberData || "",
+          tujuanKL: d.tujuanKL || "",
+          kebijakanList: Array.isArray(d.kebijakanList) ? d.kebijakanList : [],
+          insidenList: Array.isArray(d.insidenList) ? d.insidenList : []
+        } as KonteksData);
+      });
+
+      // Urutkan tahun terbaru di atas secara aman (menghindari error jika tahun bernilai number / undefined)
+      data.sort((a, b) => {
+        const valA = String(a.tahun || "");
+        const valB = String(b.tahun || "");
+        return valB.localeCompare(valA);
+      });
+
+      // Jika kosong lewat query unitName, coba cek direct document ID sebagai fallback
+      if (data.length === 0) {
+        try {
+          const currentYear = new Date().getFullYear().toString();
+          const docId = `${user.unitName}-${currentYear}`.replace(/\s+/g, '-').toLowerCase();
+          const directSnap = await getDoc(doc(db, "mr_konteks", docId));
+          if (directSnap.exists()) {
+            const d = directSnap.data();
+            data.push({
+              ...d,
+              id: directSnap.id,
+              tahun: String(d.tahun || currentYear),
+              sumberData: d.sumberData || "",
+              tujuanKL: d.tujuanKL || "",
+              kebijakanList: Array.isArray(d.kebijakanList) ? d.kebijakanList : [],
+              insidenList: Array.isArray(d.insidenList) ? d.insidenList : []
+            } as KonteksData);
+          }
+        } catch (e) {
+          console.warn("Fallback direct doc check note:", e);
+        }
+      }
+
       setKonteksList(data);
-    } catch (error) {
-      console.error("Error fetching list:", error);
-      toast.error("Gagal memuat daftar penetapan konteks.");
+    } catch (error: any) {
+      console.error("Error fetching konteks list:", error);
+      toast.error(`Gagal memuat daftar penetapan konteks: ${error?.message || "Periksa koneksi Anda"}`);
     } finally {
       setIsListLoading(false);
     }
