@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase";
 import {
@@ -18,17 +18,24 @@ import {
   Search,
   Users,
   Building2,
-  ShieldAlert,
   Sparkles,
   CheckCheck,
   ChevronLeft,
   ShieldCheck,
   MessageCircle,
-  HelpCircle,
-  Loader2
+  Loader2,
+  UserPlus
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import {
+  CHAT_COLLECTION,
+  GENERAL_ROOM_ID,
+  getConversationId,
+  markConversationAsRead,
+  computeUnreadStats,
+  ChatMessageData
+} from "@/lib/chat-utils";
 
 interface UserContact {
   id: string; // UID atau Unit ID
@@ -54,13 +61,10 @@ interface ChatMessage {
   createdAtStr: string;
 }
 
-const GENERAL_ROOM_ID = "general";
-
-// Koleksi Firestore yang telah terbukti 100% memiliki izin tulis untuk seluruh user
-const CHAT_COLLECTION = "mr_identifikasi";
-
 export default function ChatPenggunaPage() {
   const { user } = useAuth();
+  const currentUid = auth.currentUser?.uid || user?.uid || "";
+
   const [contactsList, setContactsList] = useState<UserContact[]>([]);
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [searchUser, setSearchUser] = useState("");
@@ -74,8 +78,11 @@ export default function ChatPenggunaPage() {
     unitName: "Semua Unit Kerja & APIP"
   });
 
-  // State Pesan Chat
+  // State Pesan Chat Ruangan Aktif
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // State Seluruh Pesan Chat untuk Kalkulasi Unread & Riwayat Chat Kontak
+  const [allMessages, setAllMessages] = useState<ChatMessageData[]>([]);
+
   const [newMessageText, setNewMessageText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(false);
@@ -83,19 +90,13 @@ export default function ChatPenggunaPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Hitung ID percakapan: "general" atau gabungan 2 ID terurut
-  const getConversationId = (otherId: string) => {
-    if (otherId === GENERAL_ROOM_ID) return GENERAL_ROOM_ID;
-    const currentUid = auth.currentUser?.uid || user?.uid;
-    if (!currentUid) return GENERAL_ROOM_ID;
-    return [currentUid, otherId].sort().join("_");
-  };
-
-  const activeConversationId = getConversationId(activeRecipient.id);
+  // Hitung ID percakapan aktif
+  const activeConversationId = useMemo(() => {
+    return getConversationId(currentUid, activeRecipient.id);
+  }, [currentUid, activeRecipient.id]);
 
   // 1. Daftarkan kehadiran pengguna saat ini (presence) ke Firestore
   useEffect(() => {
-    const currentUid = auth.currentUser?.uid || user?.uid;
     if (!currentUid) return;
 
     try {
@@ -118,14 +119,13 @@ export default function ChatPenggunaPage() {
     } catch (e) {
       console.warn("Could not register presence:", e);
     }
-  }, [user]);
+  }, [currentUid, user]);
 
-  // 2. Ambil daftar kontak (kombinasi Units + Presence + Users)
+  // 2. Ambil master seluruh daftar kontak (Units + Presence + Users + Sistem)
   useEffect(() => {
     const fetchContacts = async () => {
       setLoadingContacts(true);
       const contactMap = new Map<string, UserContact>();
-      const currentUid = auth.currentUser?.uid || user?.uid;
 
       // A. Ambil pengguna aktif dari presence
       try {
@@ -226,9 +226,51 @@ export default function ChatPenggunaPage() {
     };
 
     fetchContacts();
-  }, [user]);
+  }, [currentUid, user]);
 
-  // 3. Real-time Subscription ke Pesan Chat
+  // 3. Real-time Subscription ke SELURUH Pesan Chat (untuk Hitung Unread & Riwayat Chat Kontak)
+  useEffect(() => {
+    try {
+      const q = query(
+        collection(db, CHAT_COLLECTION),
+        where("type", "==", "chat_message")
+      );
+
+      const unsub = onSnapshot(
+        q,
+        (snapshot) => {
+          const msgs: ChatMessageData[] = [];
+          snapshot.forEach((d) => {
+            const data = d.data();
+            msgs.push({
+              id: d.id,
+              conversationId: data.conversationId,
+              senderId: data.senderId,
+              senderName: data.senderName,
+              senderEmail: data.senderEmail,
+              senderRole: data.senderRole,
+              senderUnit: data.senderUnit,
+              recipientId: data.recipientId,
+              recipientName: data.recipientName,
+              text: data.text || "",
+              createdAt: data.createdAt || "",
+              createdAtStr: data.createdAtStr || ""
+            });
+          });
+          setAllMessages(msgs);
+        },
+        (err) => {
+          console.warn("Global chat listener warning:", err);
+        }
+      );
+
+      return () => unsub();
+    } catch (e) {
+      console.warn("Could not listen to all chat messages:", e);
+    }
+  }, []);
+
+  // 4. Real-time Subscription ke Pesan Ruangan yang Aktif
   useEffect(() => {
     if (!activeConversationId) return;
 
@@ -279,15 +321,121 @@ export default function ChatPenggunaPage() {
     }
   }, [activeConversationId]);
 
+  // 5. Tandai pesan sebagai telah dibaca (Mark as read) saat ruangan aktif dibuka / pesan masuk
+  useEffect(() => {
+    if (!currentUid || !activeConversationId) return;
+    markConversationAsRead(currentUid, activeConversationId);
+  }, [currentUid, activeConversationId, messages.length]);
+
   // Auto-scroll ke pesan terbaru
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // 4. Kirim Pesan dengan jaminan izin tulis lengkap
+  // 6. Analisis data pesan: kontak yang pernah chat & pesan terakhir tiap kontak
+  const { chattedContactIds, lastMessageMap } = useMemo(() => {
+    const ids = new Set<string>();
+    const lastMsg: Record<
+      string,
+      { text: string; createdAtStr: string; createdAt: string; senderName: string }
+    > = {};
+
+    allMessages.forEach((msg) => {
+      // Forum Umum
+      if (msg.conversationId === GENERAL_ROOM_ID || msg.recipientId === GENERAL_ROOM_ID) {
+        if (
+          !lastMsg[GENERAL_ROOM_ID] ||
+          new Date(msg.createdAt).getTime() > new Date(lastMsg[GENERAL_ROOM_ID].createdAt).getTime()
+        ) {
+          lastMsg[GENERAL_ROOM_ID] = {
+            text: msg.text,
+            createdAtStr: msg.createdAtStr || "",
+            createdAt: msg.createdAt,
+            senderName: msg.senderName || "Pengguna"
+          };
+        }
+        return;
+      }
+
+      // Pesan 1-on-1: tentukan ID lawan bicara
+      let otherId = "";
+      if (msg.senderId === currentUid) {
+        otherId = msg.recipientId || "";
+      } else if (msg.recipientId === currentUid) {
+        otherId = msg.senderId;
+      } else if (msg.conversationId && msg.conversationId.includes(currentUid)) {
+        const parts = msg.conversationId.split("_");
+        otherId = parts.find((p) => p !== currentUid) || "";
+      }
+
+      if (otherId && otherId !== currentUid) {
+        ids.add(otherId);
+        if (
+          !lastMsg[otherId] ||
+          new Date(msg.createdAt).getTime() > new Date(lastMsg[otherId].createdAt).getTime()
+        ) {
+          lastMsg[otherId] = {
+            text: msg.text,
+            createdAtStr: msg.createdAtStr || "",
+            createdAt: msg.createdAt,
+            senderName: msg.senderName || "Pengguna"
+          };
+        }
+      }
+    });
+
+    return { chattedContactIds: ids, lastMessageMap: lastMsg };
+  }, [allMessages, currentUid]);
+
+  // 7. Hitung jumlah unread badge per percakapan
+  const unreadStats = useMemo(() => {
+    return computeUnreadStats(currentUid, allMessages, activeConversationId);
+  }, [currentUid, allMessages, activeConversationId]);
+
+  // 8. Tampilkan Kontak Sesuai Aturan:
+  // - Default (tanpa pencarian): HANYA kontak yang SUDAH PERNAH melakukan chat
+  // - Sedang mencari: Cari di SEMUA kontak master (termasuk yang belum pernah chat)
+  const searchQuery = searchUser.trim().toLowerCase();
+
+  const displayedContacts = useMemo(() => {
+    if (searchQuery) {
+      // PENCARIAN AKTIF: Tampilkan seluruh kontak master yang cocok dengan kata kunci
+      return contactsList.filter((c) => {
+        if (c.id === currentUid) return false;
+        const matchSearch =
+          c.unitName.toLowerCase().includes(searchQuery) ||
+          c.email.toLowerCase().includes(searchQuery) ||
+          (c.role && c.role.toLowerCase().includes(searchQuery));
+        const matchRole = roleFilter === "all" || c.role === roleFilter;
+        return matchSearch && matchRole;
+      });
+    }
+
+    // DEFAULT (KOLOM PENCARIAN KOSONG): HANYA kontak yang SUDAH PERNAH chat!
+    const recentList = contactsList.filter((c) => {
+      if (c.id === currentUid) return false;
+      const hasChatted = chattedContactIds.has(c.id);
+      const matchRole = roleFilter === "all" || c.role === roleFilter;
+      return hasChatted && matchRole;
+    });
+
+    // Urutkan kontak dengan percakapan paling baru di atas
+    recentList.sort((a, b) => {
+      const timeA = lastMessageMap[a.id]?.createdAt
+        ? new Date(lastMessageMap[a.id].createdAt).getTime()
+        : 0;
+      const timeB = lastMessageMap[b.id]?.createdAt
+        ? new Date(lastMessageMap[b.id].createdAt).getTime()
+        : 0;
+      return timeB - timeA;
+    });
+
+    return recentList;
+  }, [contactsList, currentUid, searchQuery, roleFilter, chattedContactIds, lastMessageMap]);
+
+  // 9. Kirim Pesan dengan jaminan izin tulis lengkap
   const handleSendMessage = async (customText?: string) => {
     const textToSend = customText || newMessageText.trim();
-    const currentUid = auth.currentUser?.uid || user?.uid;
 
     if (!textToSend || !currentUid || isSending) return;
 
@@ -297,7 +445,6 @@ export default function ChatPenggunaPage() {
       const timeStr = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
       const dateStr = now.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
 
-      // Gunakan doc reference mandiri dengan ID acak
       const msgDocRef = doc(collection(db, CHAT_COLLECTION));
 
       const rawMsgData = {
@@ -306,7 +453,7 @@ export default function ChatPenggunaPage() {
         conversationId: activeConversationId,
         text: textToSend,
 
-        // Field identitas autentikasi & kepemilikan (memenuhi seluruh syarat aturan Firestore)
+        // Field identitas autentikasi & kepemilikan
         ownerId: currentUid,
         senderId: currentUid,
         senderName: user?.unitName || user?.email || auth.currentUser?.email || "Pengguna",
@@ -334,8 +481,10 @@ export default function ChatPenggunaPage() {
         }
       });
 
-      // Simpan dokumen menggunakan setDoc merge
       await setDoc(msgDocRef, cleanData, { merge: true });
+
+      // Tandai percakapan sendiri langsung terbaca
+      markConversationAsRead(currentUid, activeConversationId);
 
       setNewMessageText("");
       if (textareaRef.current) {
@@ -383,40 +532,28 @@ export default function ChatPenggunaPage() {
     return nameOrEmail.slice(0, 2).toUpperCase();
   };
 
-  // Filter daftar kontak berdasarkan pencarian dan peran
-  const filteredContacts = contactsList.filter((c) => {
-    const matchesSearch =
-      c.unitName.toLowerCase().includes(searchUser.toLowerCase()) ||
-      c.email.toLowerCase().includes(searchUser.toLowerCase()) ||
-      c.role.toLowerCase().includes(searchUser.toLowerCase());
-
-    const matchesRole = roleFilter === "all" || c.role === roleFilter;
-    return matchesSearch && matchesRole;
-  });
-
+  // Saran pesan cepat
   const quickPrompts = [
-    "Halo, mohon bantuan telaah risiko pada unit kami.",
-    "RTP unit kerja kami telah selesai diinput, siap untuk diverifikasi.",
-    "Apakah ada catatan perbaikan untuk penetapan konteks risiko?",
+    "Mohon konfirmasi status verifikasi risiko unit kami.",
+    "Data Rencana Tindak Pengendalian (RTP) sudah kami perbarui.",
+    "Apakah ada catatan audit dari tim APIP untuk periode ini?",
     "Terima kasih atas koordinasinya."
   ];
-
-  const currentUid = auth.currentUser?.uid || user?.uid;
 
   return (
     <div className="h-[calc(100vh-8.5rem)] flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden font-sans">
       {/* ====================================================================== */}
-      {/* HEADER UTAMA CHAT                                                      */}
+      {/* HEADER TOPBAR CHAT                                                    */}
       {/* ====================================================================== */}
-      <div className="bg-gradient-to-r from-slate-900 via-[#0f172a] to-emerald-950 text-white px-4 md:px-6 py-3.5 flex items-center justify-between border-b border-slate-800 shrink-0">
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white px-4 md:px-6 py-3 flex items-center justify-between border-b border-slate-700/80 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-600/30 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-sm">
+          <div className="w-10 h-10 rounded-xl bg-emerald-600/30 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shadow-xs">
             <MessageSquare className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base sm:text-lg font-bold tracking-tight">
-                Pusat Komunikasi & Chat Pengguna
+              <h1 className="text-sm md:text-base font-bold text-white tracking-wide">
+                Pusat Koordinasi & Chat Pengguna
               </h1>
               <span className="hidden sm:inline-flex text-[10px] bg-emerald-500/20 text-emerald-300 font-semibold px-2 py-0.5 rounded-full border border-emerald-500/30">
                 Real-time
@@ -453,11 +590,20 @@ export default function ChatPenggunaPage() {
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <Input
                 type="text"
-                placeholder="Cari unit atau pengguna..."
+                placeholder="Cari unit atau nama pengguna..."
                 value={searchUser}
                 onChange={(e) => setSearchUser(e.target.value)}
                 className="pl-9 h-9 text-xs bg-slate-50 border-slate-200 focus:bg-white rounded-xl"
               />
+              {searchUser && (
+                <button
+                  type="button"
+                  onClick={() => setSearchUser("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-[11px] font-bold px-1"
+                >
+                  ✕
+                </button>
+              )}
             </div>
 
             {/* Filter Peran Pill */}
@@ -498,6 +644,7 @@ export default function ChatPenggunaPage() {
                   unitName: "Semua Unit Kerja & APIP"
                 });
                 setShowMobileChat(true);
+                markConversationAsRead(currentUid, GENERAL_ROOM_ID);
               }}
               className={`p-3 rounded-xl cursor-pointer transition-all border ${
                 activeRecipient.id === GENERAL_ROOM_ID
@@ -510,45 +657,88 @@ export default function ChatPenggunaPage() {
                   <Users className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-1">
                     <h3 className="text-xs font-bold text-slate-900 truncate">
                       Forum Diskusi Risiko
                     </h3>
-                    <span className="text-[9px] bg-emerald-600 text-white font-bold px-1.5 py-0.2 rounded-md">
-                      Publik
-                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {/* Unread badge untuk forum publik */}
+                      {unreadStats.perConversation[GENERAL_ROOM_ID] > 0 &&
+                        activeRecipient.id !== GENERAL_ROOM_ID && (
+                          <span className="bg-rose-500 text-white font-extrabold text-[10px] px-1.5 py-0.2 rounded-full shadow-xs animate-pulse">
+                            {unreadStats.perConversation[GENERAL_ROOM_ID]}
+                          </span>
+                        )}
+                      <span className="text-[9px] bg-emerald-600 text-white font-bold px-1.5 py-0.2 rounded-md">
+                        Publik
+                      </span>
+                    </div>
                   </div>
                   <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                    Saluran terbuka untuk seluruh unit kerja Kemendes PDT
+                    {lastMessageMap[GENERAL_ROOM_ID]
+                      ? `${lastMessageMap[GENERAL_ROOM_ID].senderName.split(" ")[0]}: ${lastMessageMap[GENERAL_ROOM_ID].text}`
+                      : "Saluran terbuka untuk seluruh unit kerja Kemendes PDT"}
                   </p>
                 </div>
               </div>
             </div>
 
+            {/* Header Kategori Kontak */}
             <div className="pt-2 px-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
-              <span>Pesan Langsung ({filteredContacts.length})</span>
-              <span className="text-slate-400">1-on-1</span>
+              <span>
+                {searchQuery
+                  ? `Hasil Pencarian (${displayedContacts.length})`
+                  : `Riwayat Percakapan (${displayedContacts.length})`}
+              </span>
+              <span className="text-slate-400">
+                {searchQuery ? "Semua Kontak" : "Pernah Chat"}
+              </span>
             </div>
 
             {/* 2. Daftar Pengguna & Unit Langsung */}
             {loadingContacts ? (
               <div className="text-center py-8 text-xs text-slate-400 space-y-2">
                 <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
-                <p>Memuat daftar pengguna & unit...</p>
+                <p>Memuat daftar percakapan...</p>
               </div>
-            ) : filteredContacts.length === 0 ? (
-              <div className="text-center py-8 text-xs text-slate-400">
-                Tidak ada unit/pengguna yang sesuai pencarian.
-              </div>
+            ) : displayedContacts.length === 0 ? (
+              searchQuery ? (
+                <div className="text-center py-10 px-3 text-slate-400 space-y-2 bg-white rounded-xl border border-slate-200/80">
+                  <Search className="w-7 h-7 mx-auto text-slate-300" />
+                  <p className="text-xs font-semibold text-slate-600">Kontak Tidak Ditemukan</p>
+                  <p className="text-[11px] text-slate-400">
+                    Tidak ada unit kerja atau pengguna dengan nama &quot;{searchUser}&quot;.
+                  </p>
+                </div>
+              ) : (
+                /* Card panduan ketika belum ada riwayat chat 1-on-1 */
+                <div className="text-center py-8 px-4 text-slate-400 space-y-2.5 bg-white rounded-xl border border-slate-200/80">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+                    <UserPlus className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-slate-700">Belum Ada Percakapan Langsung</p>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      Kontak yang belum pernah chat tidak ditampilkan di sini. Ketik nama unit kerja atau pejabat pada kolom pencarian di atas untuk memulai chat baru.
+                    </p>
+                  </div>
+                </div>
+              )
             ) : (
-              filteredContacts.map((c) => {
+              displayedContacts.map((c) => {
                 const isSelected = activeRecipient.id === c.id;
+                const convId = getConversationId(currentUid, c.id);
+                const unreadCount = unreadStats.perConversation[convId] || 0;
+                const lastMsg = lastMessageMap[c.id];
+                const hasChatted = chattedContactIds.has(c.id);
+
                 return (
                   <div
                     key={c.id}
                     onClick={() => {
                       setActiveRecipient(c);
                       setShowMobileChat(true);
+                      markConversationAsRead(currentUid, convId);
                     }}
                     className={`p-2.5 rounded-xl cursor-pointer transition-all border ${
                       isSelected
@@ -565,18 +755,37 @@ export default function ChatPenggunaPage() {
                           <p className="text-xs font-bold text-slate-800 truncate" title={c.unitName}>
                             {c.unitName}
                           </p>
+                          {/* Jam pesan terakhir atau Badge Mulai Chat */}
+                          {lastMsg ? (
+                            <span className="text-[10px] text-slate-400 shrink-0 font-medium">
+                              {lastMsg.createdAtStr?.includes(",")
+                                ? lastMsg.createdAtStr.split(",")[1].trim()
+                                : lastMsg.createdAtStr}
+                            </span>
+                          ) : searchQuery && !hasChatted ? (
+                            <span className="text-[9px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded shrink-0">
+                              Mulai Chat
+                            </span>
+                          ) : null}
                         </div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span
-                            className={`text-[9px] font-semibold px-1.5 py-0.2 rounded border ${getRoleBadgeColor(
-                              c.role
-                            )}`}
-                          >
-                            {getRoleLabel(c.role)}
-                          </span>
-                          <span className="text-[10px] text-slate-400 truncate">
-                            {c.email}
-                          </span>
+
+                        <div className="flex items-center justify-between gap-2 mt-0.5">
+                          <p className="text-[11px] text-slate-500 truncate flex-1">
+                            {lastMsg ? (
+                              <span className="text-slate-600">{lastMsg.text}</span>
+                            ) : (
+                              <span className="text-slate-400">
+                                {getRoleLabel(c.role)} • {c.email || "Unit Resmi"}
+                              </span>
+                            )}
+                          </p>
+
+                          {/* Unread message count badge */}
+                          {unreadCount > 0 && activeRecipient.id !== c.id && (
+                            <span className="bg-rose-500 text-white font-extrabold text-[10px] px-1.5 py-0.2 rounded-full shadow-xs shrink-0 animate-pulse">
+                              {unreadCount}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

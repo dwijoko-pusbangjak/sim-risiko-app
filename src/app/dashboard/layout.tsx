@@ -32,7 +32,8 @@ import {
 } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { doc, onSnapshot } from "firebase/firestore";
+import { collection, query, where, doc, onSnapshot } from "firebase/firestore";
+import { computeUnreadStats, CHAT_COLLECTION, ChatMessageData } from "@/lib/chat-utils";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -107,6 +108,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const { user, loading, activeYear } = useAuth();
   const [isAnalisisRtpEnabled, setIsAnalisisRtpEnabled] = useState<boolean>(true);
+  const [unreadChatCount, setUnreadChatCount] = useState<number>(0);
+  const [allChatMessages, setAllChatMessages] = useState<ChatMessageData[]>([]);
 
   // Ambil preferensi posisi menu pengguna dari localStorage setelah mount (default posisi "top" / atas)
   useEffect(() => {
@@ -131,6 +134,64 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       console.warn("Could not save menu position preference:", e);
     }
   };
+
+  // Subscribe ke pesan chat real-time untuk menghitung pesan belum dibaca (unread count badge)
+  useEffect(() => {
+    if (!user?.uid) {
+      setUnreadChatCount(0);
+      return;
+    }
+
+    let unsub = () => {};
+    try {
+      const q = query(
+        collection(db, CHAT_COLLECTION),
+        where("type", "==", "chat_message")
+      );
+
+      unsub = onSnapshot(
+        q,
+        (snapshot) => {
+          const msgs: ChatMessageData[] = [];
+          snapshot.forEach((d) => {
+            const data = d.data();
+            msgs.push({
+              id: d.id,
+              conversationId: data.conversationId,
+              senderId: data.senderId,
+              recipientId: data.recipientId,
+              text: data.text || "",
+              createdAt: data.createdAt || ""
+            });
+          });
+          setAllChatMessages(msgs);
+          const stats = computeUnreadStats(user.uid, msgs);
+          setUnreadChatCount(stats.totalUnread);
+        },
+        (err) => {
+          console.warn("Unread chat subscription error:", err);
+        }
+      );
+    } catch (err) {
+      console.warn("Could not setup unread chat listener:", err);
+    }
+
+    const handleReadUpdated = () => {
+      setAllChatMessages((prevMsgs) => {
+        if (!user?.uid) return prevMsgs;
+        const stats = computeUnreadStats(user.uid, prevMsgs);
+        setUnreadChatCount(stats.totalUnread);
+        return prevMsgs;
+      });
+    };
+
+    window.addEventListener("sim_risiko_chat_read_updated", handleReadUpdated);
+
+    return () => {
+      unsub();
+      window.removeEventListener("sim_risiko_chat_read_updated", handleReadUpdated);
+    };
+  }, [user?.uid]);
 
   // Subscribe ke pengaturan sistem real-time untuk status aktif menu Analisis RTP
   useEffect(() => {
@@ -215,7 +276,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     items: [
       { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { name: "Katalog Peraturan", href: "/dashboard/katalog-peraturan", icon: BookOpen },
-      { name: "Chat Pengguna", href: "/dashboard/chat", icon: MessageSquare, badge: "Live" }
+      { 
+        name: "Chat Pengguna", 
+        href: "/dashboard/chat", 
+        icon: MessageSquare, 
+        badge: unreadChatCount > 0 ? String(unreadChatCount) : undefined 
+      }
     ]
   });
 
@@ -457,10 +523,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                 {item.badge && (
                   <span
-                    className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full shrink-0 border ${
-                      isDirectActive
-                        ? "bg-white/20 text-white border-white/30"
-                        : "bg-slate-900 text-emerald-400 border-slate-700/60"
+                    className={`font-bold px-2 py-0.5 rounded-full shrink-0 shadow-xs ${
+                      item.name === "Chat Pengguna" && unreadChatCount > 0
+                        ? "bg-rose-500 text-white border border-rose-400 text-[10px] animate-pulse"
+                        : isDirectActive
+                        ? "bg-white/20 text-white border border-white/30 text-[9px] uppercase tracking-wider"
+                        : "bg-slate-900 text-emerald-400 border border-slate-700/60 text-[9px] uppercase tracking-wider"
                     }`}
                   >
                     {item.badge}
@@ -653,16 +721,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Tombol Pintasan Chat Pengguna */}
             <Link
               href="/dashboard/chat"
-              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all ${
+              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all relative ${
                 pathname === "/dashboard/chat"
                   ? "bg-emerald-600 text-white shadow-xs font-bold"
                   : "text-slate-600 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300"
               }`}
               title="Pusat Chat Antar Pengguna"
             >
-              <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+              <div className="relative flex items-center">
+                <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                {unreadChatCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-xs">
+                    {unreadChatCount > 99 ? "99+" : unreadChatCount}
+                  </span>
+                )}
+              </div>
               <span className="hidden sm:inline">Chat</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              {unreadChatCount > 0 ? (
+                <span className="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full animate-pulse shadow-xs">
+                  {unreadChatCount}
+                </span>
+              ) : (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              )}
             </Link>
 
             {/* Tombol Pintasan Panduan (Khusus jika mode sidebar) */}
@@ -774,17 +855,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
               <Link
                 href="/dashboard/chat"
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 relative ${
                   pathname === "/dashboard/chat"
                     ? "bg-emerald-600 text-white shadow-sm font-bold"
                     : "text-slate-300 hover:text-white hover:bg-slate-800"
                 }`}
               >
-                <MessageSquare className="h-3.5 w-3.5 text-emerald-400" />
+                <div className="relative flex items-center">
+                  <MessageSquare className="h-3.5 w-3.5 text-emerald-400" />
+                  {unreadChatCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
+                      {unreadChatCount > 99 ? "99+" : unreadChatCount}
+                    </span>
+                  )}
+                </div>
                 <span>Chat Pengguna</span>
-                <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1 rounded font-bold">
-                  Live
-                </span>
+                {unreadChatCount > 0 ? (
+                  <span className="text-[10px] bg-rose-500 text-white px-2 py-0.5 rounded-full font-bold animate-pulse shadow-xs">
+                    {unreadChatCount}
+                  </span>
+                ) : (
+                  <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1 rounded font-bold">
+                    Live
+                  </span>
+                )}
               </Link>
 
               <div className="h-4 w-px bg-slate-700/80 mx-1 shrink-0" />
