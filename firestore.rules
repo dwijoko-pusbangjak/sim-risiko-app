@@ -15,7 +15,7 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
 
@@ -75,6 +75,11 @@ service cloud.firestore {
     }
 
     match /dokumen_chunks/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    match /chat_messages/{docId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated();
     }

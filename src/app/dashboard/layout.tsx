@@ -27,7 +27,8 @@ import {
   FileText,
   PanelLeft,
   PanelTop,
-  Check
+  Check,
+  MessageSquare
 } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -208,12 +209,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Struktur Group Navigasi
   const navGroups: NavGroup[] = [];
 
-  // Group 1: Overview (Modul Aplikasi dipindahkan ke pintasan khusus Panduan Alur MR)
+  // Group 1: Overview
   navGroups.push({
     title: "Overview",
     items: [
       { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { name: "Katalog Peraturan", href: "/dashboard/katalog-peraturan", icon: BookOpen }
+      { name: "Katalog Peraturan", href: "/dashboard/katalog-peraturan", icon: BookOpen },
+      { name: "Chat Pengguna", href: "/dashboard/chat", icon: MessageSquare, badge: "Live" }
     ]
   });
 
@@ -648,6 +650,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </button>
             </div>
 
+            {/* Tombol Pintasan Chat Pengguna */}
+            <Link
+              href="/dashboard/chat"
+              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all ${
+                pathname === "/dashboard/chat"
+                  ? "bg-emerald-600 text-white shadow-xs font-bold"
+                  : "text-slate-600 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300"
+              }`}
+              title="Pusat Chat Antar Pengguna"
+            >
+              <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="hidden sm:inline">Chat</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            </Link>
+
             {/* Tombol Pintasan Panduan (Khusus jika mode sidebar) */}
             {menuPosition === "sidebar" && (
               <Link
@@ -702,6 +719,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator className="my-1.5" />
+                <DropdownMenuItem onClick={() => router.push("/dashboard/chat")} className="cursor-pointer rounded-lg text-xs py-2">
+                  <MessageSquare className="mr-2 h-4 w-4 text-emerald-600" />
+                  <span className="font-medium text-slate-700">Buka Chat Pengguna</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setIsPasswordModalOpen(true)} className="cursor-pointer rounded-lg text-xs py-2">
                   <KeyRound className="mr-2 h-4 w-4 text-slate-600" />
                   <span className="font-medium text-slate-700">Ubah Password Akun</span>
@@ -749,6 +770,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >
                 <BookOpen className="h-3.5 w-3.5 text-emerald-400" />
                 <span>Katalog Peraturan</span>
+              </Link>
+
+              <Link
+                href="/dashboard/chat"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
+                  pathname === "/dashboard/chat"
+                    ? "bg-emerald-600 text-white shadow-sm font-bold"
+                    : "text-slate-300 hover:text-white hover:bg-slate-800"
+                }`}
+              >
+                <MessageSquare className="h-3.5 w-3.5 text-emerald-400" />
+                <span>Chat Pengguna</span>
+                <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1 rounded font-bold">
+                  Live
+                </span>
               </Link>
 
               <div className="h-4 w-px bg-slate-700/80 mx-1 shrink-0" />
