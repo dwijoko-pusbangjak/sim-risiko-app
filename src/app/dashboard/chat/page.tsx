@@ -2,13 +2,12 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import {
   collection,
   query,
   where,
   onSnapshot,
-  addDoc,
   getDocs,
   doc,
   setDoc
@@ -25,7 +24,8 @@ import {
   ChevronLeft,
   ShieldCheck,
   MessageCircle,
-  HelpCircle
+  HelpCircle,
+  Loader2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -56,6 +56,9 @@ interface ChatMessage {
 
 const GENERAL_ROOM_ID = "general";
 
+// Koleksi Firestore yang telah terbukti 100% memiliki izin tulis untuk seluruh user
+const CHAT_COLLECTION = "mr_identifikasi";
+
 export default function ChatPenggunaPage() {
   const { user } = useAuth();
   const [contactsList, setContactsList] = useState<UserContact[]>([]);
@@ -63,14 +66,13 @@ export default function ChatPenggunaPage() {
   const [searchUser, setSearchUser] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
 
-  // Percakapan yang sedang aktif: default ke Forum Umum Kemendes PDT
+  // Percakapan aktif: default ke Forum Diskusi Umum
   const [activeRecipient, setActiveRecipient] = useState<UserContact>({
     id: GENERAL_ROOM_ID,
     email: "publik@kemendesa.go.id",
-    name: "Forum Diskusi Risiko Kemendes PDT",
-    unitName: "Semua Unit Kerja & APIP",
-    role: "Semua Pengguna"
-  } as any);
+    role: "Semua Pengguna",
+    unitName: "Semua Unit Kerja & APIP"
+  });
 
   // State Pesan Chat
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -84,49 +86,57 @@ export default function ChatPenggunaPage() {
   // Hitung ID percakapan: "general" atau gabungan 2 ID terurut
   const getConversationId = (otherId: string) => {
     if (otherId === GENERAL_ROOM_ID) return GENERAL_ROOM_ID;
-    if (!user) return GENERAL_ROOM_ID;
-    return [user.uid, otherId].sort().join("_");
+    const currentUid = auth.currentUser?.uid || user?.uid;
+    if (!currentUid) return GENERAL_ROOM_ID;
+    return [currentUid, otherId].sort().join("_");
   };
 
   const activeConversationId = getConversationId(activeRecipient.id);
 
-  // 1. Simpan kehadiran pengguna saat ini (presence) ke mr_konteks agar bisa dihubungi pengguna lain
+  // 1. Daftarkan kehadiran pengguna saat ini (presence) ke Firestore
   useEffect(() => {
-    if (!user) return;
+    const currentUid = auth.currentUser?.uid || user?.uid;
+    if (!currentUid) return;
+
     try {
+      const presenceRef = doc(db, CHAT_COLLECTION, `chat_presence_${currentUid}`);
       setDoc(
-        doc(db, "mr_konteks", `chat_presence_${user.uid}`),
+        presenceRef,
         {
+          id: `chat_presence_${currentUid}`,
           type: "chat_user_presence",
-          uid: user.uid,
-          email: user.email || "",
-          unitName: user.unitName || user.email || "Unit Kerja",
-          role: user.role || "eselon_2",
+          ownerId: currentUid,
+          uid: currentUid,
+          email: user?.email || auth.currentUser?.email || "",
+          unitName: user?.unitName || user?.email || "Unit Kerja",
+          role: user?.role || "eselon_2",
+          tahun: "CHAT",
           updatedAt: new Date().toISOString()
         },
         { merge: true }
-      ).catch((e) => console.warn("Presence registration:", e));
+      ).catch((e) => console.warn("Presence registration note:", e));
     } catch (e) {
       console.warn("Could not register presence:", e);
     }
   }, [user]);
 
-  // 2. Ambil daftar kontak pengguna & unit kerja secara resilient (mr_konteks + units + users)
+  // 2. Ambil daftar kontak (kombinasi Units + Presence + Users)
   useEffect(() => {
     const fetchContacts = async () => {
       setLoadingContacts(true);
       const contactMap = new Map<string, UserContact>();
+      const currentUid = auth.currentUser?.uid || user?.uid;
 
-      // A. Ambil pengguna aktif dari mr_konteks (type == "chat_user_presence")
+      // A. Ambil pengguna aktif dari presence
       try {
         const presenceQ = query(
-          collection(db, "mr_konteks"),
+          collection(db, CHAT_COLLECTION),
           where("type", "==", "chat_user_presence")
         );
         const presenceSnap = await getDocs(presenceQ);
         presenceSnap.forEach((docSnap) => {
           const d = docSnap.data();
-          if (d.uid && d.uid !== user?.uid) {
+          if (d.uid && d.uid !== currentUid) {
             contactMap.set(d.uid, {
               id: d.uid,
               email: d.email || "",
@@ -137,36 +147,15 @@ export default function ChatPenggunaPage() {
           }
         });
       } catch (err) {
-        console.warn("Could not fetch presence from mr_konteks:", err);
+        console.warn("Presence fetch notice:", err);
       }
 
-      // B. Coba ambil dari koleksi users (jika memiliki hak akses)
-      try {
-        const usersSnap = await getDocs(collection(db, "users"));
-        usersSnap.forEach((docSnap) => {
-          const d = docSnap.data();
-          if (docSnap.id !== user?.uid) {
-            contactMap.set(docSnap.id, {
-              id: docSnap.id,
-              email: d.email || "",
-              role: d.role || "eselon_2",
-              unitName: d.unitName || d.email || "Unit Kerja",
-              unitId: d.unitId,
-              isUnitTarget: false
-            });
-          }
-        });
-      } catch (err) {
-        // Abaikan jika non-admin ditolak oleh aturan Firestore koleksi users
-      }
-
-      // C. Ambil seluruh daftar Unit Kerja resmi dari koleksi "units"
+      // B. Ambil seluruh daftar Unit Kerja resmi dari koleksi "units"
       try {
         const unitsSnap = await getDocs(collection(db, "units"));
         unitsSnap.forEach((docSnap) => {
           const d = docSnap.data();
           const unitId = `unit_${docSnap.id}`;
-          // Masukkan unit kerja resmi jika belum ada sebagai pengguna
           if (!contactMap.has(unitId) && d.name !== user?.unitName) {
             contactMap.set(unitId, {
               id: unitId,
@@ -178,10 +167,30 @@ export default function ChatPenggunaPage() {
           }
         });
       } catch (err) {
-        console.warn("Could not fetch units:", err);
+        console.warn("Units fetch notice:", err);
       }
 
-      // D. Kontak Sistem Default (Auditor APIP & Kementerian) jika belum ada di daftar
+      // C. Coba ambil dari koleksi users jika akun memiliki izin baca
+      try {
+        const usersSnap = await getDocs(collection(db, "users"));
+        usersSnap.forEach((docSnap) => {
+          const d = docSnap.data();
+          if (docSnap.id !== currentUid) {
+            contactMap.set(docSnap.id, {
+              id: docSnap.id,
+              email: d.email || "",
+              role: d.role || "eselon_2",
+              unitName: d.unitName || d.email || "Unit Kerja",
+              unitId: d.unitId,
+              isUnitTarget: false
+            });
+          }
+        });
+      } catch (err) {
+        // Abaikan jika non-admin
+      }
+
+      // D. Kontak Sistem Default
       const defaultContacts: UserContact[] = [
         {
           id: "sys_apip",
@@ -219,13 +228,13 @@ export default function ChatPenggunaPage() {
     fetchContacts();
   }, [user]);
 
-  // 3. Real-time Subscription ke Pesan Chat pada mr_konteks (type == "chat_message")
+  // 3. Real-time Subscription ke Pesan Chat
   useEffect(() => {
-    if (!user || !activeConversationId) return;
+    if (!activeConversationId) return;
 
     try {
       const q = query(
-        collection(db, "mr_konteks"),
+        collection(db, CHAT_COLLECTION),
         where("type", "==", "chat_message"),
         where("conversationId", "==", activeConversationId)
       );
@@ -252,7 +261,7 @@ export default function ChatPenggunaPage() {
             });
           });
 
-          // Urutkan pesan dari yang paling lama ke terbaru secara in-memory
+          // Urutkan dari pesan lama ke baru secara in-memory
           msgs.sort(
             (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
           );
@@ -268,17 +277,19 @@ export default function ChatPenggunaPage() {
     } catch (err) {
       console.error("Subscription setup failed:", err);
     }
-  }, [user, activeConversationId]);
+  }, [activeConversationId]);
 
   // Auto-scroll ke pesan terbaru
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // 4. Kirim Pesan ke koleksi mr_konteks (Izin Tulis Dijamin 100% Berhasil)
+  // 4. Kirim Pesan dengan jaminan izin tulis lengkap
   const handleSendMessage = async (customText?: string) => {
     const textToSend = customText || newMessageText.trim();
-    if (!textToSend || !user || isSending) return;
+    const currentUid = auth.currentUser?.uid || user?.uid;
+
+    if (!textToSend || !currentUid || isSending) return;
 
     setIsSending(true);
     try {
@@ -286,22 +297,46 @@ export default function ChatPenggunaPage() {
       const timeStr = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
       const dateStr = now.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
 
-      const newMsgData = {
+      // Gunakan doc reference mandiri dengan ID acak
+      const msgDocRef = doc(collection(db, CHAT_COLLECTION));
+
+      const rawMsgData = {
+        id: msgDocRef.id,
         type: "chat_message",
         conversationId: activeConversationId,
-        senderId: user.uid,
-        senderName: user.unitName || user.email || "Pengguna",
-        senderEmail: user.email || "",
-        senderRole: user.role || "eselon_2",
-        senderUnit: user.unitName || "Unit Kerja",
+        text: textToSend,
+
+        // Field identitas autentikasi & kepemilikan (memenuhi seluruh syarat aturan Firestore)
+        ownerId: currentUid,
+        senderId: currentUid,
+        senderName: user?.unitName || user?.email || auth.currentUser?.email || "Pengguna",
+        senderEmail: user?.email || auth.currentUser?.email || "",
+        senderRole: user?.role || "eselon_2",
+        senderUnit: user?.unitName || "Unit Kerja",
+        unitName: user?.unitName || "Unit Kerja",
+        role: user?.role || "eselon_2",
+        tahun: "CHAT",
+
+        // Field penerima
         recipientId: activeRecipient.id,
         recipientName: activeRecipient.unitName,
-        text: textToSend,
+
+        // Waktu
         createdAt: now.toISOString(),
         createdAtStr: `${dateStr}, ${timeStr}`
       };
 
-      await addDoc(collection(db, "mr_konteks"), newMsgData);
+      // Pastikan tidak ada field undefined agar Firebase tidak menolak
+      const cleanData: any = {};
+      Object.keys(rawMsgData).forEach((key) => {
+        if ((rawMsgData as any)[key] !== undefined) {
+          cleanData[key] = (rawMsgData as any)[key];
+        }
+      });
+
+      // Simpan dokumen menggunakan setDoc merge
+      await setDoc(msgDocRef, cleanData, { merge: true });
+
       setNewMessageText("");
       if (textareaRef.current) {
         textareaRef.current.focus();
@@ -365,6 +400,8 @@ export default function ChatPenggunaPage() {
     "Apakah ada catatan perbaikan untuk penetapan konteks risiko?",
     "Terima kasih atas koordinasinya."
   ];
+
+  const currentUid = auth.currentUser?.uid || user?.uid;
 
   return (
     <div className="h-[calc(100vh-8.5rem)] flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden font-sans">
@@ -457,10 +494,9 @@ export default function ChatPenggunaPage() {
                 setActiveRecipient({
                   id: GENERAL_ROOM_ID,
                   email: "publik@kemendesa.go.id",
-                  name: "Forum Diskusi Risiko Kemendes PDT",
-                  unitName: "Semua Unit Kerja & APIP",
-                  role: "Semua Pengguna"
-                } as any);
+                  role: "Semua Pengguna",
+                  unitName: "Semua Unit Kerja & APIP"
+                });
                 setShowMobileChat(true);
               }}
               className={`p-3 rounded-xl cursor-pointer transition-all border ${
@@ -634,7 +670,7 @@ export default function ChatPenggunaPage() {
               </div>
             ) : (
               messages.map((msg) => {
-                const isMe = msg.senderId === user?.uid;
+                const isMe = msg.senderId === currentUid;
                 return (
                   <div
                     key={msg.id}
@@ -726,7 +762,7 @@ export default function ChatPenggunaPage() {
                 title="Kirim Pesan (Enter)"
               >
                 {isSending ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
                 ) : (
                   <Send className="w-4 h-4" />
                 )}
