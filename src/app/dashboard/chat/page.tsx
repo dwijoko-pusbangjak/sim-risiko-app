@@ -34,31 +34,18 @@ import {
   getConversationId,
   markConversationAsRead,
   computeUnreadStats,
+  normalizeUnitName,
   ChatMessageData
 } from "@/lib/chat-utils";
 
-interface UserContact {
-  id: string; // UID atau Unit ID
+export interface UserContact {
+  id: string; // Canonical ID (prefers Auth UID jika diketahui, else unit_xxx atau sys_xxx)
   email: string;
   role: string;
   unitName: string;
   unitId?: string;
   isUnitTarget?: boolean;
-}
-
-interface ChatMessage {
-  id: string;
-  conversationId: string; // "general" atau `${idA}_${idB}`
-  senderId: string;
-  senderName: string;
-  senderEmail: string;
-  senderRole: string;
-  senderUnit: string;
-  recipientId: string; // "general" atau ID penerima
-  recipientName?: string;
-  text: string;
-  createdAt: string;
-  createdAtStr: string;
+  aliases: string[]; // Seluruh ID alias yang terhubung ke kontak/unit ini
 }
 
 export default function ChatPenggunaPage() {
@@ -75,12 +62,11 @@ export default function ChatPenggunaPage() {
     id: GENERAL_ROOM_ID,
     email: "publik@kemendesa.go.id",
     role: "Semua Pengguna",
-    unitName: "Semua Unit Kerja & APIP"
+    unitName: "Semua Unit Kerja & APIP",
+    aliases: [GENERAL_ROOM_ID]
   });
 
-  // State Pesan Chat Ruangan Aktif
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  // State Seluruh Pesan Chat untuk Kalkulasi Unread & Riwayat Chat Kontak
+  // State Seluruh Pesan Chat Real-time
   const [allMessages, setAllMessages] = useState<ChatMessageData[]>([]);
 
   const [newMessageText, setNewMessageText] = useState("");
@@ -89,11 +75,6 @@ export default function ChatPenggunaPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Hitung ID percakapan aktif
-  const activeConversationId = useMemo(() => {
-    return getConversationId(currentUid, activeRecipient.id);
-  }, [currentUid, activeRecipient.id]);
 
   // 1. Daftarkan kehadiran pengguna saat ini (presence) ke Firestore
   useEffect(() => {
@@ -121,11 +102,50 @@ export default function ChatPenggunaPage() {
     }
   }, [currentUid, user]);
 
-  // 2. Ambil master seluruh daftar kontak (Units + Presence + Users + Sistem)
+  // 2. Ambil master seluruh daftar kontak dan DEDUPLIKASI BERDASARKAN UNIT KERJA RESMI
   useEffect(() => {
     const fetchContacts = async () => {
       setLoadingContacts(true);
-      const contactMap = new Map<string, UserContact>();
+      // Gunakan map dengan KEY = normalized unitName agar kontak yang sama tidak pernah ganda
+      const unitMap = new Map<string, UserContact>();
+
+      const addOrMergeContact = (c: {
+        id: string;
+        email: string;
+        role: string;
+        unitName: string;
+        unitId?: string;
+        isUnitTarget?: boolean;
+      }) => {
+        if (!c.unitName && !c.email) return;
+        const normKey = normalizeUnitName(c.unitName || c.email);
+        const existing = unitMap.get(normKey);
+
+        if (!existing) {
+          unitMap.set(normKey, {
+            ...c,
+            aliases: [c.id, ...(c.unitId ? [c.unitId, `unit_${c.unitId}`] : [])]
+          });
+        } else {
+          // Jika entitas unit sudah ada, gabungkan semua alias ID
+          if (!existing.aliases.includes(c.id)) {
+            existing.aliases.push(c.id);
+          }
+          if (c.unitId) {
+            if (!existing.aliases.includes(c.unitId)) existing.aliases.push(c.unitId);
+            if (!existing.aliases.includes(`unit_${c.unitId}`)) {
+              existing.aliases.push(`unit_${c.unitId}`);
+            }
+          }
+          // Jika ID sebelumnya adalah ID unit mentah (misal "unit_10") dan kini ada Auth UID asli pengguna yang login,
+          // tingkatkan canonical ID menjadi Auth UID asli pengguna!
+          if (existing.id.startsWith("unit_") && !c.id.startsWith("unit_")) {
+            existing.id = c.id;
+            existing.email = c.email || existing.email;
+            existing.role = c.role || existing.role;
+          }
+        }
+      };
 
       // A. Ambil pengguna aktif dari presence
       try {
@@ -137,7 +157,7 @@ export default function ChatPenggunaPage() {
         presenceSnap.forEach((docSnap) => {
           const d = docSnap.data();
           if (d.uid && d.uid !== currentUid) {
-            contactMap.set(d.uid, {
+            addOrMergeContact({
               id: d.uid,
               email: d.email || "",
               role: d.role || "eselon_2",
@@ -150,33 +170,13 @@ export default function ChatPenggunaPage() {
         console.warn("Presence fetch notice:", err);
       }
 
-      // B. Ambil seluruh daftar Unit Kerja resmi dari koleksi "units"
-      try {
-        const unitsSnap = await getDocs(collection(db, "units"));
-        unitsSnap.forEach((docSnap) => {
-          const d = docSnap.data();
-          const unitId = `unit_${docSnap.id}`;
-          if (!contactMap.has(unitId) && d.name !== user?.unitName) {
-            contactMap.set(unitId, {
-              id: unitId,
-              email: `${docSnap.id}@kemendesa.go.id`,
-              role: d.level || "eselon_2",
-              unitName: d.name,
-              isUnitTarget: true
-            });
-          }
-        });
-      } catch (err) {
-        console.warn("Units fetch notice:", err);
-      }
-
-      // C. Coba ambil dari koleksi users jika akun memiliki izin baca
+      // B. Ambil dari koleksi users jika akun memiliki izin baca
       try {
         const usersSnap = await getDocs(collection(db, "users"));
         usersSnap.forEach((docSnap) => {
           const d = docSnap.data();
           if (docSnap.id !== currentUid) {
-            contactMap.set(docSnap.id, {
+            addOrMergeContact({
               id: docSnap.id,
               email: d.email || "",
               role: d.role || "eselon_2",
@@ -190,6 +190,27 @@ export default function ChatPenggunaPage() {
         // Abaikan jika non-admin
       }
 
+      // C. Ambil seluruh daftar Unit Kerja resmi dari koleksi "units"
+      try {
+        const unitsSnap = await getDocs(collection(db, "units"));
+        unitsSnap.forEach((docSnap) => {
+          const d = docSnap.data();
+          const unitId = `unit_${docSnap.id}`;
+          if (d.name !== user?.unitName) {
+            addOrMergeContact({
+              id: unitId,
+              email: `${docSnap.id}@kemendesa.go.id`,
+              role: d.level || "eselon_2",
+              unitName: d.name,
+              unitId: docSnap.id,
+              isUnitTarget: true
+            });
+          }
+        });
+      } catch (err) {
+        console.warn("Units fetch notice:", err);
+      }
+
       // D. Kontak Sistem Default
       const defaultContacts: UserContact[] = [
         {
@@ -197,38 +218,42 @@ export default function ChatPenggunaPage() {
           email: "inspektorat@kemendesa.go.id",
           role: "auditor",
           unitName: "Inspektorat Jenderal (Auditor APIP)",
-          isUnitTarget: true
+          isUnitTarget: true,
+          aliases: ["sys_apip"]
         },
         {
           id: "sys_kementerian",
           email: "pengelola.mr@kemendesa.go.id",
           role: "kementerian",
           unitName: "Tim Manajemen Risiko Kementerian",
-          isUnitTarget: true
+          isUnitTarget: true,
+          aliases: ["sys_kementerian"]
         },
         {
           id: "sys_admin",
           email: "admin.simari@kemendesa.go.id",
           role: "admin",
           unitName: "Administrator Sistem Si-MaRi",
-          isUnitTarget: true
+          isUnitTarget: true,
+          aliases: ["sys_admin"]
         }
       ];
 
       defaultContacts.forEach((dc) => {
-        if (!contactMap.has(dc.id) && user?.role !== dc.role) {
-          contactMap.set(dc.id, dc);
+        const normKey = normalizeUnitName(dc.unitName);
+        if (!unitMap.has(normKey) && user?.role !== dc.role) {
+          unitMap.set(normKey, dc);
         }
       });
 
-      setContactsList(Array.from(contactMap.values()));
+      setContactsList(Array.from(unitMap.values()));
       setLoadingContacts(false);
     };
 
     fetchContacts();
   }, [currentUid, user]);
 
-  // 3. Real-time Subscription ke SELURUH Pesan Chat (untuk Hitung Unread & Riwayat Chat Kontak)
+  // 3. Real-time Subscription ke SELURUH Pesan Chat
   useEffect(() => {
     try {
       const q = query(
@@ -270,75 +295,31 @@ export default function ChatPenggunaPage() {
     }
   }, []);
 
-  // 4. Real-time Subscription ke Pesan Ruangan yang Aktif
-  useEffect(() => {
-    if (!activeConversationId) return;
-
-    try {
-      const q = query(
-        collection(db, CHAT_COLLECTION),
-        where("type", "==", "chat_message"),
-        where("conversationId", "==", activeConversationId)
-      );
-
-      const unsubscribe = onSnapshot(
-        q,
-        (snapshot) => {
-          const msgs: ChatMessage[] = [];
-          snapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            msgs.push({
-              id: docSnap.id,
-              conversationId: data.conversationId || activeConversationId,
-              senderId: data.senderId,
-              senderName: data.senderName || data.senderEmail,
-              senderEmail: data.senderEmail,
-              senderRole: data.senderRole,
-              senderUnit: data.senderUnit,
-              recipientId: data.recipientId,
-              recipientName: data.recipientName,
-              text: data.text || "",
-              createdAt: data.createdAt || new Date().toISOString(),
-              createdAtStr: data.createdAtStr || "Baru saja"
-            });
-          });
-
-          // Urutkan dari pesan lama ke baru secara in-memory
-          msgs.sort(
-            (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          );
-
-          setMessages(msgs);
-        },
-        (error) => {
-          console.warn("Real-time chat snapshot error:", error);
-        }
-      );
-
-      return () => unsubscribe();
-    } catch (err) {
-      console.error("Subscription setup failed:", err);
-    }
-  }, [activeConversationId]);
-
-  // 5. Tandai pesan sebagai telah dibaca (Mark as read) saat ruangan aktif dibuka / pesan masuk
-  useEffect(() => {
-    if (!currentUid || !activeConversationId) return;
-    markConversationAsRead(currentUid, activeConversationId);
-  }, [currentUid, activeConversationId, messages.length]);
-
-  // Auto-scroll ke pesan terbaru
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // 6. Analisis data pesan: kontak yang pernah chat & pesan terakhir tiap kontak
-  const { chattedContactIds, lastMessageMap } = useMemo(() => {
+  // 4. Analisis Riwayat Chat: Pemetaan pesan ke Kontak Kanonikal Tunggal
+  const { chattedContactIds, lastMessageMap, unreadCountMap } = useMemo(() => {
     const ids = new Set<string>();
     const lastMsg: Record<
       string,
       { text: string; createdAtStr: string; createdAt: string; senderName: string }
     > = {};
+    const unreadMap: Record<string, number> = {};
+
+    // Peta cepat dari setiap alias ID dan normalized unitName ke ID kontak kanonikal
+    const aliasToCanonicalId = new Map<string, string>();
+    const unitNameToCanonicalId = new Map<string, string>();
+
+    contactsList.forEach((c) => {
+      aliasToCanonicalId.set(c.id, c.id);
+      c.aliases.forEach((a) => aliasToCanonicalId.set(a, c.id));
+      unitNameToCanonicalId.set(normalizeUnitName(c.unitName), c.id);
+    });
+
+    const unreadStats = computeUnreadStats(
+      currentUid,
+      allMessages,
+      activeRecipient.id === GENERAL_ROOM_ID ? GENERAL_ROOM_ID : getConversationId(currentUid, activeRecipient.id),
+      activeRecipient.aliases
+    );
 
     allMessages.forEach((msg) => {
       // Forum Umum
@@ -357,49 +338,137 @@ export default function ChatPenggunaPage() {
         return;
       }
 
-      // Pesan 1-on-1: tentukan ID lawan bicara
-      let otherId = "";
-      if (msg.senderId === currentUid) {
-        otherId = msg.recipientId || "";
-      } else if (msg.recipientId === currentUid) {
-        otherId = msg.senderId;
-      } else if (msg.conversationId && msg.conversationId.includes(currentUid)) {
+      // Pesan 1-on-1: cari kontak kanonikal yang bersangkutan
+      const otherPartyId = msg.senderId === currentUid ? (msg.recipientId || "") : msg.senderId;
+      const otherUnitName = msg.senderId === currentUid ? (msg.recipientName || "") : (msg.senderUnit || "");
+
+      let canonicalId =
+        aliasToCanonicalId.get(otherPartyId) ||
+        unitNameToCanonicalId.get(normalizeUnitName(otherUnitName));
+
+      // Jika belum terdaftar tetapi ada conversationId dengan currentUid
+      if (!canonicalId && msg.conversationId && msg.conversationId.includes(currentUid)) {
         const parts = msg.conversationId.split("_");
-        otherId = parts.find((p) => p !== currentUid) || "";
+        const found = parts.find((p) => p !== currentUid);
+        if (found) {
+          canonicalId = aliasToCanonicalId.get(found);
+        }
       }
 
-      if (otherId && otherId !== currentUid) {
-        ids.add(otherId);
+      if (canonicalId && canonicalId !== currentUid) {
+        ids.add(canonicalId);
+
+        // Catat pesan terbaru untuk kontak ini (pesan paling baru akan menimpa pesan lama)
         if (
-          !lastMsg[otherId] ||
-          new Date(msg.createdAt).getTime() > new Date(lastMsg[otherId].createdAt).getTime()
+          !lastMsg[canonicalId] ||
+          new Date(msg.createdAt).getTime() > new Date(lastMsg[canonicalId].createdAt).getTime()
         ) {
-          lastMsg[otherId] = {
+          lastMsg[canonicalId] = {
             text: msg.text,
             createdAtStr: msg.createdAtStr || "",
             createdAt: msg.createdAt,
             senderName: msg.senderName || "Pengguna"
           };
         }
+
+        // Hitung unread untuk kontak kanonikal ini
+        const convId = msg.conversationId || getConversationId(currentUid, otherPartyId);
+        if (unreadStats.perConversation[convId]) {
+          unreadMap[canonicalId] = (unreadMap[canonicalId] || 0) + unreadStats.perConversation[convId];
+        }
       }
     });
 
-    return { chattedContactIds: ids, lastMessageMap: lastMsg };
-  }, [allMessages, currentUid]);
+    if (unreadStats.perConversation[GENERAL_ROOM_ID]) {
+      unreadMap[GENERAL_ROOM_ID] = unreadStats.perConversation[GENERAL_ROOM_ID];
+    }
 
-  // 7. Hitung jumlah unread badge per percakapan
-  const unreadStats = useMemo(() => {
-    return computeUnreadStats(currentUid, allMessages, activeConversationId);
-  }, [currentUid, allMessages, activeConversationId]);
+    return { chattedContactIds: ids, lastMessageMap: lastMsg, unreadCountMap: unreadMap };
+  }, [allMessages, currentUid, contactsList, activeRecipient]);
 
-  // 8. Tampilkan Kontak Sesuai Aturan:
-  // - Default (tanpa pencarian): HANYA kontak yang SUDAH PERNAH melakukan chat
-  // - Sedang mencari: Cari di SEMUA kontak master (termasuk yang belum pernah chat)
+  // 5. Pesan yang ditampilkan di ruang obrolan aktif (Disatukan dari seluruh alias percakapan)
+  const activeConversationMessages = useMemo(() => {
+    if (activeRecipient.id === GENERAL_ROOM_ID) {
+      const generalMsgs = allMessages.filter(
+        (m) => m.conversationId === GENERAL_ROOM_ID || m.recipientId === GENERAL_ROOM_ID
+      );
+      return generalMsgs.sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+    }
+
+    const recipientAliases = new Set(activeRecipient.aliases || [activeRecipient.id]);
+    const normRecipientUnit = normalizeUnitName(activeRecipient.unitName);
+
+    // Kumpulkan seluruh pesan antara currentUid dan unit/kontak ini
+    const filtered = allMessages.filter((m) => {
+      if (m.conversationId === GENERAL_ROOM_ID || m.recipientId === GENERAL_ROOM_ID) {
+        return false;
+      }
+
+      const isSenderMe = m.senderId === currentUid;
+      const isRecipientMe = m.recipientId === currentUid;
+
+      if (!isSenderMe && !isRecipientMe) return false;
+
+      if (isSenderMe) {
+        // Pesan yang dikirim oleh saya ke kontak ini (baik via UID, unit_id, atau nama unit)
+        return (
+          recipientAliases.has(m.recipientId || "") ||
+          normalizeUnitName(m.recipientName || "") === normRecipientUnit ||
+          (m.conversationId &&
+            Array.from(recipientAliases).some(
+              (alias) => m.conversationId === getConversationId(currentUid, alias)
+            ))
+        );
+      }
+
+      if (isRecipientMe) {
+        // Pesan yang diterima dari kontak ini
+        return (
+          recipientAliases.has(m.senderId) ||
+          normalizeUnitName(m.senderUnit || "") === normRecipientUnit ||
+          (m.conversationId &&
+            Array.from(recipientAliases).some(
+              (alias) => m.conversationId === getConversationId(currentUid, alias)
+            ))
+        );
+      }
+
+      return false;
+    });
+
+    return filtered.sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+  }, [allMessages, currentUid, activeRecipient]);
+
+  // 6. Tandai pesan sebagai telah dibaca (Mark as read) saat ruangan aktif dibuka / pesan masuk
+  useEffect(() => {
+    if (!currentUid || !activeRecipient) return;
+
+    if (activeRecipient.id === GENERAL_ROOM_ID) {
+      markConversationAsRead(currentUid, GENERAL_ROOM_ID);
+    } else {
+      const canonicalConvId = getConversationId(currentUid, activeRecipient.id);
+      const aliasConvIds = (activeRecipient.aliases || []).map((a) =>
+        getConversationId(currentUid, a)
+      );
+      markConversationAsRead(currentUid, canonicalConvId, aliasConvIds);
+    }
+  }, [currentUid, activeRecipient, activeConversationMessages.length]);
+
+  // Auto-scroll ke pesan terbaru
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [activeConversationMessages]);
+
+  // 7. Tampilkan Kontak: HANYA 1 entitas riwayat per unit/user!
   const searchQuery = searchUser.trim().toLowerCase();
 
   const displayedContacts = useMemo(() => {
     if (searchQuery) {
-      // PENCARIAN AKTIF: Tampilkan seluruh kontak master yang cocok dengan kata kunci
+      // PENCARIAN AKTIF: Cari di seluruh kontak master yang cocok
       return contactsList.filter((c) => {
         if (c.id === currentUid) return false;
         const matchSearch =
@@ -411,7 +480,7 @@ export default function ChatPenggunaPage() {
       });
     }
 
-    // DEFAULT (KOLOM PENCARIAN KOSONG): HANYA kontak yang SUDAH PERNAH chat!
+    // DEFAULT: HANYA kontak yang SUDAH PERNAH chat!
     const recentList = contactsList.filter((c) => {
       if (c.id === currentUid) return false;
       const hasChatted = chattedContactIds.has(c.id);
@@ -419,7 +488,7 @@ export default function ChatPenggunaPage() {
       return hasChatted && matchRole;
     });
 
-    // Urutkan kontak dengan percakapan paling baru di atas
+    // Urutkan kontak dengan obrolan paling baru berada di posisi teratas
     recentList.sort((a, b) => {
       const timeA = lastMessageMap[a.id]?.createdAt
         ? new Date(lastMessageMap[a.id].createdAt).getTime()
@@ -433,7 +502,7 @@ export default function ChatPenggunaPage() {
     return recentList;
   }, [contactsList, currentUid, searchQuery, roleFilter, chattedContactIds, lastMessageMap]);
 
-  // 9. Kirim Pesan dengan jaminan izin tulis lengkap
+  // 8. Kirim Pesan dengan jaminan izin tulis lengkap
   const handleSendMessage = async (customText?: string) => {
     const textToSend = customText || newMessageText.trim();
 
@@ -445,12 +514,17 @@ export default function ChatPenggunaPage() {
       const timeStr = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
       const dateStr = now.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
 
+      const targetConvId =
+        activeRecipient.id === GENERAL_ROOM_ID
+          ? GENERAL_ROOM_ID
+          : getConversationId(currentUid, activeRecipient.id);
+
       const msgDocRef = doc(collection(db, CHAT_COLLECTION));
 
       const rawMsgData = {
         id: msgDocRef.id,
         type: "chat_message",
-        conversationId: activeConversationId,
+        conversationId: targetConvId,
         text: textToSend,
 
         // Field identitas autentikasi & kepemilikan
@@ -473,7 +547,6 @@ export default function ChatPenggunaPage() {
         createdAtStr: `${dateStr}, ${timeStr}`
       };
 
-      // Pastikan tidak ada field undefined agar Firebase tidak menolak
       const cleanData: any = {};
       Object.keys(rawMsgData).forEach((key) => {
         if ((rawMsgData as any)[key] !== undefined) {
@@ -484,7 +557,10 @@ export default function ChatPenggunaPage() {
       await setDoc(msgDocRef, cleanData, { merge: true });
 
       // Tandai percakapan sendiri langsung terbaca
-      markConversationAsRead(currentUid, activeConversationId);
+      const aliasConvIds = (activeRecipient.aliases || []).map((a) =>
+        getConversationId(currentUid, a)
+      );
+      markConversationAsRead(currentUid, targetConvId, aliasConvIds);
 
       setNewMessageText("");
       if (textareaRef.current) {
@@ -502,6 +578,19 @@ export default function ChatPenggunaPage() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  const handleSelectRecipient = (c: UserContact) => {
+    setActiveRecipient(c);
+    setShowMobileChat(true);
+
+    if (c.id === GENERAL_ROOM_ID) {
+      markConversationAsRead(currentUid, GENERAL_ROOM_ID);
+    } else {
+      const canonicalConvId = getConversationId(currentUid, c.id);
+      const aliasConvIds = (c.aliases || []).map((a) => getConversationId(currentUid, a));
+      markConversationAsRead(currentUid, canonicalConvId, aliasConvIds);
     }
   };
 
@@ -637,14 +726,13 @@ export default function ChatPenggunaPage() {
             {/* 1. Saluran Umum Kemendes PDT (Dipin di Paling Atas) */}
             <div
               onClick={() => {
-                setActiveRecipient({
+                handleSelectRecipient({
                   id: GENERAL_ROOM_ID,
                   email: "publik@kemendesa.go.id",
                   role: "Semua Pengguna",
-                  unitName: "Semua Unit Kerja & APIP"
+                  unitName: "Semua Unit Kerja & APIP",
+                  aliases: [GENERAL_ROOM_ID]
                 });
-                setShowMobileChat(true);
-                markConversationAsRead(currentUid, GENERAL_ROOM_ID);
               }}
               className={`p-3 rounded-xl cursor-pointer transition-all border ${
                 activeRecipient.id === GENERAL_ROOM_ID
@@ -663,10 +751,10 @@ export default function ChatPenggunaPage() {
                     </h3>
                     <div className="flex items-center gap-1.5 shrink-0">
                       {/* Unread badge untuk forum publik */}
-                      {unreadStats.perConversation[GENERAL_ROOM_ID] > 0 &&
+                      {(unreadCountMap[GENERAL_ROOM_ID] || 0) > 0 &&
                         activeRecipient.id !== GENERAL_ROOM_ID && (
                           <span className="bg-rose-500 text-white font-extrabold text-[10px] px-1.5 py-0.2 rounded-full shadow-xs animate-pulse">
-                            {unreadStats.perConversation[GENERAL_ROOM_ID]}
+                            {unreadCountMap[GENERAL_ROOM_ID]}
                           </span>
                         )}
                       <span className="text-[9px] bg-emerald-600 text-white font-bold px-1.5 py-0.2 rounded-md">
@@ -727,19 +815,14 @@ export default function ChatPenggunaPage() {
             ) : (
               displayedContacts.map((c) => {
                 const isSelected = activeRecipient.id === c.id;
-                const convId = getConversationId(currentUid, c.id);
-                const unreadCount = unreadStats.perConversation[convId] || 0;
+                const unreadCount = unreadCountMap[c.id] || 0;
                 const lastMsg = lastMessageMap[c.id];
                 const hasChatted = chattedContactIds.has(c.id);
 
                 return (
                   <div
                     key={c.id}
-                    onClick={() => {
-                      setActiveRecipient(c);
-                      setShowMobileChat(true);
-                      markConversationAsRead(currentUid, convId);
-                    }}
+                    onClick={() => handleSelectRecipient(c)}
                     className={`p-2.5 rounded-xl cursor-pointer transition-all border ${
                       isSelected
                         ? "bg-emerald-50 border-emerald-300 ring-2 ring-emerald-500/20 shadow-xs"
@@ -865,7 +948,7 @@ export default function ChatPenggunaPage() {
             </div>
 
             {/* List Bubble Pesan */}
-            {messages.length === 0 ? (
+            {activeConversationMessages.length === 0 ? (
               <div className="text-center py-16 text-slate-400 space-y-3">
                 <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
                   <MessageCircle className="w-6 h-6" />
@@ -878,7 +961,7 @@ export default function ChatPenggunaPage() {
                 </div>
               </div>
             ) : (
-              messages.map((msg) => {
+              activeConversationMessages.map((msg) => {
                 const isMe = msg.senderId === currentUid;
                 return (
                   <div

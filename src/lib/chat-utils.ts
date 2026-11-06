@@ -2,6 +2,13 @@
 export const CHAT_COLLECTION = "mr_identifikasi";
 export const GENERAL_ROOM_ID = "general";
 
+export const normalizeUnitName = (name: string): string => {
+  return (name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+};
+
 export const getConversationId = (currentUid: string, otherId: string): string => {
   if (!otherId || otherId === GENERAL_ROOM_ID) return GENERAL_ROOM_ID;
   if (!currentUid) return GENERAL_ROOM_ID;
@@ -33,17 +40,27 @@ export const getLastReadMap = (currentUid: string): Record<string, string> => {
   return {};
 };
 
-export const markConversationAsRead = (currentUid: string, conversationId: string) => {
+export const markConversationAsRead = (
+  currentUid: string,
+  conversationId: string,
+  aliasConversationIds?: string[]
+) => {
   if (typeof window === "undefined" || !currentUid || !conversationId) return;
   try {
     const map = getLastReadMap(currentUid);
-    map[conversationId] = new Date().toISOString();
+    const nowIso = new Date().toISOString();
+    map[conversationId] = nowIso;
+    if (aliasConversationIds && aliasConversationIds.length > 0) {
+      aliasConversationIds.forEach((id) => {
+        if (id) map[id] = nowIso;
+      });
+    }
     localStorage.setItem(`sim_risiko_chat_last_read_${currentUid}`, JSON.stringify(map));
 
     // Kirim event kustom ke seluruh tab/komponen agar badge di layout dan header langsung diperbarui
     window.dispatchEvent(
       new CustomEvent("sim_risiko_chat_read_updated", {
-        detail: { conversationId, timestamp: map[conversationId] }
+        detail: { conversationId, timestamp: nowIso }
       })
     );
   } catch (e) {
@@ -69,7 +86,8 @@ export interface ChatMessageData {
 export const computeUnreadStats = (
   currentUid: string,
   messages: ChatMessageData[],
-  activeConversationId?: string | null
+  activeConversationId?: string | null,
+  activeAliases?: string[]
 ): { totalUnread: number; perConversation: Record<string, number> } => {
   if (!currentUid) return { totalUnread: 0, perConversation: {} };
 
@@ -78,6 +96,15 @@ export const computeUnreadStats = (
 
   let totalUnread = 0;
   const perConversation: Record<string, number> = {};
+
+  const activeSet = new Set<string>();
+  if (activeConversationId) activeSet.add(activeConversationId);
+  if (activeAliases) {
+    activeAliases.forEach((a) => {
+      activeSet.add(a);
+      activeSet.add(getConversationId(currentUid, a));
+    });
+  }
 
   messages.forEach((msg) => {
     // Abaikan pesan yang dikirim oleh diri sendiri
@@ -97,7 +124,7 @@ export const computeUnreadStats = (
       (isGeneral ? GENERAL_ROOM_ID : getConversationId(currentUid, msg.senderId));
 
     // Jika user sedang aktif membuka percakapan ini, jangan hitung sebagai unread
-    if (activeConversationId && activeConversationId === convId) {
+    if (activeSet.has(convId) || (msg.senderId && activeSet.has(msg.senderId))) {
       return;
     }
 
