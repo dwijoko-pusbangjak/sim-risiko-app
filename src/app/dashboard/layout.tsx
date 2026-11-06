@@ -217,7 +217,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     items: [
       { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { name: "Katalog Peraturan", href: "/dashboard/katalog-peraturan", icon: BookOpen, badge: "Regulasi" },
-      { name: "Modul Aplikasi", href: "/dashboard/modul", icon: BookMarked, badge: "Panduan" },
     ],
   });
 
@@ -348,20 +347,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Mencari nama halaman saat ini untuk Topbar
   let currentPageName = "Dashboard";
-  navGroups.forEach((group) => {
-    group.items.forEach((item) => {
-      if (item.href === pathname) currentPageName = item.name;
-      if (item.children) {
-        const child = item.children.find((c) => c.href === pathname);
-        if (child) currentPageName = child.name;
-      }
+  if (pathname === "/dashboard/modul") {
+    currentPageName = "Panduan Alur MR";
+  } else {
+    navGroups.forEach((group) => {
+      group.items.forEach((item) => {
+        if (item.href === pathname) currentPageName = item.name;
+        if (item.children) {
+          const child = item.children.find((c) => c.href === pathname);
+          if (child) currentPageName = child.name;
+        }
+      });
     });
-  });
+  }
 
   // Breadcrumbs Generator Dinamis
   const breadcrumbs = useMemo(() => {
     const crumbs: { label: string; href?: string }[] = [{ label: "Beranda", href: "/dashboard" }];
     if (!pathname || pathname === "/dashboard") return crumbs;
+
+    if (pathname === "/dashboard/modul") {
+      crumbs.push({ label: "Panduan Alur MR", href: "/dashboard/modul" });
+      return crumbs;
+    }
 
     for (const group of navGroups) {
       for (const item of group.items) {
