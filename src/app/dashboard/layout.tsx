@@ -220,9 +220,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ],
   });
 
-  // Group 2: Cascading Kinerja
+  // Group 2: Cascading Kinerja (Khusus Kementerian, Eselon 1, dan Eselon 2 - tidak untuk Admin)
   const sasaranItems: NavItem[] = [];
-  if (user.role === "admin" || user.role === "kementerian") {
+  if (user.role === "kementerian") {
     sasaranItems.push({ name: "Sasaran Strategis", href: "/dashboard/sasaran-strategis", icon: Target, badge: "Level 1" });
     sasaranItems.push({ name: "Sasaran Program", href: "/dashboard/sasaran-program", icon: Target, badge: "Level 2" });
     sasaranItems.push({ name: "Sasaran Kegiatan", href: "/dashboard/sasaran-kegiatan", icon: Target, badge: "Level 3" });
