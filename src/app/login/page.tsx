@@ -57,6 +57,11 @@ export default function LoginPage() {
 
     try {
       setActiveYear(selectedYear);
+      try {
+        localStorage.setItem("sim_risiko_menu_position", "top");
+      } catch (storageErr) {
+        // Abaikan jika browser memblokir localStorage
+      }
       await signInWithEmailAndPassword(auth, email, password);
     } catch (err: any) {
       setError("Login gagal. Periksa kembali email dan kata sandi Anda.");

@@ -98,7 +98,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = rawPathname || "/dashboard";
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<"sidebar" | "top">("sidebar");
+  const [menuPosition, setMenuPosition] = useState<"sidebar" | "top">("top");
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({ 
     "Proses Manajemen Risiko": true,
     "Proses Riviu": false 
@@ -107,12 +107,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { user, loading, activeYear } = useAuth();
   const [isAnalisisRtpEnabled, setIsAnalisisRtpEnabled] = useState<boolean>(true);
 
-  // Ambil preferensi posisi menu pengguna dari localStorage setelah mount (mencegah hydration mismatch)
+  // Ambil preferensi posisi menu pengguna dari localStorage setelah mount (default posisi "top" / atas)
   useEffect(() => {
     try {
       const savedPosition = localStorage.getItem("sim_risiko_menu_position");
       if (savedPosition === "top" || savedPosition === "sidebar") {
         setMenuPosition(savedPosition);
+      } else {
+        setMenuPosition("top");
+        localStorage.setItem("sim_risiko_menu_position", "top");
       }
     } catch (e) {
       console.warn("Could not read menu position preference:", e);
