@@ -6,6 +6,8 @@ import { Toaster } from "@/components/ui/sonner";
 
 const font = Inter({ subsets: ["latin"] });
 
+import { ThemeProvider } from "@/context/ThemeContext";
+
 export const metadata: Metadata = {
   title: "..:: Sistem Informasi Manajemen Risiko - Kemendesa PDT ::..",
   description: "Sistem Informasi Manajemen Risiko Kementerian Desa dan Pembangunan Daerah Tertinggal",
@@ -17,10 +19,30 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id">
+    <html lang="id" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var t = localStorage.getItem('sim_risiko_theme_color');
+                if (t) document.documentElement.setAttribute('data-theme', t);
+                var b = localStorage.getItem('sim_risiko_theme_bgtone');
+                if (b) document.documentElement.setAttribute('data-bg-tone', b);
+                var n = localStorage.getItem('sim_risiko_theme_navbar');
+                if (n) document.documentElement.setAttribute('data-navbar-style', n);
+                var f = localStorage.getItem('sim_risiko_theme_fontsize');
+                if (f) document.documentElement.setAttribute('data-font-size', f);
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
       <body className={font.className}>
         <AuthProvider>
-          {children}
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
         </AuthProvider>
         <Toaster position="top-center" richColors />
       </body>
