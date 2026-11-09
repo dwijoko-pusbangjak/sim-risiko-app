@@ -762,7 +762,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <DropdownMenuTrigger className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 transition-colors border border-slate-200 cursor-pointer outline-none">
                 <User className="h-5 w-5 text-slate-600" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80 p-2 rounded-2xl shadow-xl max-w-[90vw] border border-slate-200">
+              <DropdownMenuContent align="end" className="w-80 p-2 rounded-2xl shadow-xl max-w-[90vw] border border-slate-200/80 bg-white/95 backdrop-blur-md">
                 <div className="px-2 py-1.5 bg-slate-50 rounded-xl border border-slate-100">
                   <div className="flex flex-col space-y-0.5">
                     <p className="text-xs xl:text-sm font-semibold text-slate-800 whitespace-normal break-words" title={user.unitName || user.email || ""}>
@@ -895,8 +895,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <span>Cascading Kinerja</span>
                     <ChevronDown className="h-3 w-3 text-slate-400 ml-0.5" />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-56 p-1.5 bg-[#0f172a] border border-slate-800 text-slate-200 rounded-xl shadow-2xl">
-                    <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800 mb-1">
+                  <DropdownMenuContent align="start" className="w-56 p-1.5 bg-slate-900/80 backdrop-blur-xl border border-slate-700/60 ring-0 text-slate-200 rounded-xl shadow-2xl shadow-black/50">
+                    <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-700/50 mb-1">
                       Cascading Kinerja
                     </div>
                     {sasaranItems.map((item) => {
@@ -905,10 +905,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <DropdownMenuItem
                           key={item.name}
                           onClick={() => router.push(item.href!)}
-                          className={`cursor-pointer rounded-lg text-xs py-2 px-2.5 flex items-center justify-between mb-0.5 ${
+                          className={`cursor-pointer rounded-lg text-xs py-2 px-2.5 flex items-center justify-between mb-0.5 transition-colors ${
                             isActive
-                              ? "bg-emerald-600 text-white font-semibold"
-                              : "text-slate-300 hover:bg-slate-800 hover:text-white focus:bg-slate-800 focus:text-white"
+                              ? "bg-emerald-600 text-white font-semibold shadow-sm"
+                              : "text-slate-200 hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white"
                           }`}
                         >
                           <div className="flex items-center gap-2 truncate">
@@ -982,8 +982,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       </span>
                       <ChevronDown className="h-3 w-3 text-slate-400 ml-0.5" />
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-64 p-1.5 bg-[#0f172a] border border-slate-800 text-slate-200 rounded-xl shadow-2xl">
-                      <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800 mb-1">
+                    <DropdownMenuContent align="start" className="w-64 p-1.5 bg-slate-900/80 backdrop-blur-xl border border-slate-700/60 ring-0 text-slate-200 rounded-xl shadow-2xl shadow-black/50">
+                      <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-700/50 mb-1">
                         7 Tahapan Proses Manajemen Risiko
                       </div>
                       {[
@@ -1000,15 +1000,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                           <DropdownMenuItem
                             key={child.name}
                             onClick={() => router.push(child.href)}
-                            className={`cursor-pointer rounded-lg text-xs py-2 px-2.5 flex items-center justify-between mb-0.5 ${
+                            className={`cursor-pointer rounded-lg text-xs py-2 px-2.5 flex items-center justify-between mb-0.5 transition-colors ${
                               isChildActive
-                                ? "bg-emerald-600 text-white font-semibold"
-                                : "text-slate-300 hover:bg-slate-800 hover:text-white focus:bg-slate-800 focus:text-white"
+                                ? "bg-emerald-600 text-white font-semibold shadow-sm"
+                                : "text-slate-200 hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white"
                             }`}
                           >
                             <div className="flex items-center min-w-0 pr-2">
                               <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded mr-2 shrink-0 border ${
-                                isChildActive ? "bg-white/20 text-white border-white/30" : "bg-slate-900 text-emerald-400 border-slate-700"
+                                isChildActive ? "bg-white/20 text-white border-white/30" : "bg-slate-800/80 text-emerald-400 border-slate-700/80"
                               }`}>
                                 {child.step}
                               </span>
@@ -1016,7 +1016,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             </div>
                             {child.badge && (
                               <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full shrink-0 ${
-                                isChildActive ? "bg-white/20 text-white" : "bg-emerald-950 text-emerald-400 border border-emerald-800"
+                                isChildActive ? "bg-white/20 text-white" : "bg-emerald-950/80 text-emerald-300 border border-emerald-700/50"
                               }`}>
                                 {child.badge}
                               </span>
@@ -1038,8 +1038,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       <span>Proses Riviu</span>
                       <ChevronDown className="h-3 w-3 text-slate-400 ml-0.5" />
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-56 p-1.5 bg-[#0f172a] border border-slate-800 text-slate-200 rounded-xl shadow-2xl">
-                      <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800 mb-1">
+                    <DropdownMenuContent align="start" className="w-56 p-1.5 bg-slate-900/80 backdrop-blur-xl border border-slate-700/60 ring-0 text-slate-200 rounded-xl shadow-2xl shadow-black/50">
+                      <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-700/50 mb-1">
                         Proses Riviu Auditor APIP
                       </div>
                       {[
@@ -1051,10 +1051,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                           <DropdownMenuItem
                             key={child.name}
                             onClick={() => router.push(child.href)}
-                            className={`cursor-pointer rounded-lg text-xs py-2 px-2.5 flex items-center justify-between mb-0.5 ${
+                            className={`cursor-pointer rounded-lg text-xs py-2 px-2.5 flex items-center justify-between mb-0.5 transition-colors ${
                               isChildActive
-                                ? "bg-emerald-600 text-white font-semibold"
-                                : "text-slate-300 hover:bg-slate-800 hover:text-white focus:bg-slate-800 focus:text-white"
+                                ? "bg-emerald-600 text-white font-semibold shadow-sm"
+                                : "text-slate-200 hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white"
                             }`}
                           >
                             <span className="truncate">{child.name}</span>
@@ -1090,8 +1090,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <span>Administrator</span>
                     <ChevronDown className="h-3 w-3 text-slate-400 ml-0.5" />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-60 p-1.5 bg-[#0f172a] border border-slate-800 text-slate-200 rounded-xl shadow-2xl">
-                    <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800 mb-1">
+                  <DropdownMenuContent align="start" className="w-60 p-1.5 bg-slate-900/80 backdrop-blur-xl border border-slate-700/60 ring-0 text-slate-200 rounded-xl shadow-2xl shadow-black/50">
+                    <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-700/50 mb-1">
                       Menu Administrator
                     </div>
                     {[
@@ -1108,10 +1108,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <DropdownMenuItem
                           key={adminItem.name}
                           onClick={() => router.push(adminItem.href)}
-                          className={`cursor-pointer rounded-lg text-xs py-2 px-2.5 flex items-center justify-between mb-0.5 ${
+                          className={`cursor-pointer rounded-lg text-xs py-2 px-2.5 flex items-center justify-between mb-0.5 transition-colors ${
                             isActive
-                              ? "bg-emerald-600 text-white font-semibold"
-                              : "text-slate-300 hover:bg-slate-800 hover:text-white focus:bg-slate-800 focus:text-white"
+                              ? "bg-emerald-600 text-white font-semibold shadow-sm"
+                              : "text-slate-200 hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white"
                           }`}
                         >
                           <div className="flex items-center gap-2 truncate">
@@ -1120,7 +1120,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                           </div>
                           {adminItem.badge && (
                             <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full ${
-                              isActive ? "bg-white/20 text-white" : "bg-emerald-950 text-emerald-400 border border-emerald-800"
+                              isActive ? "bg-white/20 text-white" : "bg-emerald-950/80 text-emerald-300 border border-emerald-700/50"
                             }`}>
                               {adminItem.badge}
                             </span>
