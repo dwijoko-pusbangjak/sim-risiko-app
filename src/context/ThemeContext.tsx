@@ -1,11 +1,31 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export type ColorTheme = "emerald" | "blue" | "indigo" | "violet" | "teal" | "amber" | "rose" | "slate";
 export type BgTone = "default" | "eyecare" | "cool";
 export type NavbarStyle = "dark" | "tinted";
 export type FontSize = "normal" | "large";
+export type MenuPosition = "top" | "sidebar";
+
+export interface UserPreferences {
+  colorTheme: ColorTheme;
+  bgTone: BgTone;
+  navbarStyle: NavbarStyle;
+  fontSize: FontSize;
+  menuPosition: MenuPosition;
+}
+
+export const DEFAULT_PREFERENCES: UserPreferences = {
+  colorTheme: "emerald",
+  bgTone: "default",
+  navbarStyle: "dark",
+  fontSize: "normal",
+  menuPosition: "top",
+};
 
 export interface ColorOption {
   id: ColorTheme;
@@ -125,11 +145,13 @@ interface ThemeContextType {
   bgTone: BgTone;
   navbarStyle: NavbarStyle;
   fontSize: FontSize;
+  menuPosition: MenuPosition;
   isCustomizerOpen: boolean;
   setColorTheme: (theme: ColorTheme) => void;
   setBgTone: (tone: BgTone) => void;
   setNavbarStyle: (style: NavbarStyle) => void;
   setFontSize: (size: FontSize) => void;
+  setMenuPosition: (pos: MenuPosition) => void;
   openCustomizer: () => void;
   closeCustomizer: () => void;
   resetToDefault: () => void;
@@ -138,99 +160,148 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [colorTheme, setColorThemeState] = useState<ColorTheme>("emerald");
-  const [bgTone, setBgToneState] = useState<BgTone>("default");
-  const [navbarStyle, setNavbarStyleState] = useState<NavbarStyle>("dark");
-  const [fontSize, setFontSizeState] = useState<FontSize>("normal");
+  const { user } = useAuth();
+  const [prefs, setPrefs] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
 
-  // Inisialisasi preferensi warna dari localStorage saat komponen dimount
+  // Helper untuk menerapkan atribut CSS ke root document
+  const applyDomAttributes = (targetPrefs: UserPreferences) => {
+    if (typeof document !== "undefined") {
+      document.documentElement.setAttribute("data-theme", targetPrefs.colorTheme);
+      document.documentElement.setAttribute("data-bg-tone", targetPrefs.bgTone);
+      document.documentElement.setAttribute("data-navbar-style", targetPrefs.navbarStyle);
+      document.documentElement.setAttribute("data-font-size", targetPrefs.fontSize);
+    }
+  };
+
+  // Muat preferensi khusus akun pengguna saat login / berganti user
   useEffect(() => {
+    // Bersihkan kunci lama yang bersifat global tanpa pemisahan akun
     try {
-      const savedTheme = localStorage.getItem("sim_risiko_theme_color") as ColorTheme | null;
-      const savedBgTone = localStorage.getItem("sim_risiko_theme_bgtone") as BgTone | null;
-      const savedNavbar = localStorage.getItem("sim_risiko_theme_navbar") as NavbarStyle | null;
-      const savedFontSize = localStorage.getItem("sim_risiko_theme_fontsize") as FontSize | null;
-
-      const activeTheme = savedTheme && COLOR_OPTIONS.some(c => c.id === savedTheme) ? savedTheme : "emerald";
-      setColorThemeState(activeTheme);
-      document.documentElement.setAttribute("data-theme", activeTheme);
-
-      const activeBg = savedBgTone && BG_TONE_OPTIONS.some(b => b.id === savedBgTone) ? savedBgTone : "default";
-      setBgToneState(activeBg);
-      document.documentElement.setAttribute("data-bg-tone", activeBg);
-
-      const activeNav = savedNavbar && ["dark", "tinted"].includes(savedNavbar) ? savedNavbar : "dark";
-      setNavbarStyleState(activeNav);
-      document.documentElement.setAttribute("data-navbar-style", activeNav);
-
-      const activeFont = savedFontSize && ["normal", "large"].includes(savedFontSize) ? savedFontSize : "normal";
-      setFontSizeState(activeFont);
-      document.documentElement.setAttribute("data-font-size", activeFont);
+      localStorage.removeItem("sim_risiko_theme_color");
+      localStorage.removeItem("sim_risiko_theme_bgtone");
+      localStorage.removeItem("sim_risiko_theme_navbar");
+      localStorage.removeItem("sim_risiko_theme_fontsize");
+      localStorage.removeItem("sim_risiko_menu_position");
     } catch (e) {
-      console.warn("Gagal memuat pengaturan tema:", e);
+      console.warn("Clean error:", e);
     }
-  }, []);
 
-  const setColorTheme = (theme: ColorTheme) => {
-    setColorThemeState(theme);
+    if (!user?.uid) {
+      // Jika pengguna belum login atau sudah logout: kembalikan ke default bersih
+      setPrefs(DEFAULT_PREFERENCES);
+      applyDomAttributes(DEFAULT_PREFERENCES);
+      return;
+    }
+
+    // 1. Ambil preferensi lokal khusus user ini dari localStorage
+    const userStorageKey = `sim_risiko_user_prefs_${user.uid}`;
+    let initialUserPrefs: UserPreferences = DEFAULT_PREFERENCES;
+
     try {
-      localStorage.setItem("sim_risiko_theme_color", theme);
-      document.documentElement.setAttribute("data-theme", theme);
+      const stored = localStorage.getItem(userStorageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        initialUserPrefs = {
+          colorTheme: COLOR_OPTIONS.some((c) => c.id === parsed.colorTheme) ? parsed.colorTheme : DEFAULT_PREFERENCES.colorTheme,
+          bgTone: BG_TONE_OPTIONS.some((b) => b.id === parsed.bgTone) ? parsed.bgTone : DEFAULT_PREFERENCES.bgTone,
+          navbarStyle: ["dark", "tinted"].includes(parsed.navbarStyle) ? parsed.navbarStyle : DEFAULT_PREFERENCES.navbarStyle,
+          fontSize: ["normal", "large"].includes(parsed.fontSize) ? parsed.fontSize : DEFAULT_PREFERENCES.fontSize,
+          menuPosition: ["top", "sidebar"].includes(parsed.menuPosition) ? parsed.menuPosition : DEFAULT_PREFERENCES.menuPosition,
+        };
+      }
     } catch (e) {
-      console.warn(e);
+      console.warn("Parse local user preferences error:", e);
     }
+
+    setPrefs(initialUserPrefs);
+    applyDomAttributes(initialUserPrefs);
+
+    // 2. Sinkronisasi dengan database cloud Firestore (user_preferences)
+    const syncCloudPreferences = async () => {
+      try {
+        const docRef = doc(db, "user_preferences", user.uid);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const merged: UserPreferences = {
+            colorTheme: COLOR_OPTIONS.some((c) => c.id === data.colorTheme) ? data.colorTheme : initialUserPrefs.colorTheme,
+            bgTone: BG_TONE_OPTIONS.some((b) => b.id === data.bgTone) ? data.bgTone : initialUserPrefs.bgTone,
+            navbarStyle: ["dark", "tinted"].includes(data.navbarStyle) ? data.navbarStyle : initialUserPrefs.navbarStyle,
+            fontSize: ["normal", "large"].includes(data.fontSize) ? data.fontSize : initialUserPrefs.fontSize,
+            menuPosition: ["top", "sidebar"].includes(data.menuPosition) ? data.menuPosition : initialUserPrefs.menuPosition,
+          };
+
+          setPrefs(merged);
+          applyDomAttributes(merged);
+          localStorage.setItem(userStorageKey, JSON.stringify(merged));
+        }
+      } catch (err) {
+        console.warn("Sync cloud preferences error:", err);
+      }
+    };
+
+    syncCloudPreferences();
+  }, [user?.uid]);
+
+  // Fungsi pembantu untuk menyimpan preferensi terisolasi per akun pengguna
+  const updatePreference = (patch: Partial<UserPreferences>) => {
+    setPrefs((prev) => {
+      const updated: UserPreferences = { ...prev, ...patch };
+      applyDomAttributes(updated);
+
+      if (user?.uid) {
+        const userStorageKey = `sim_risiko_user_prefs_${user.uid}`;
+        try {
+          localStorage.setItem(userStorageKey, JSON.stringify(updated));
+        } catch (e) {
+          console.warn("Save local preference error:", e);
+        }
+
+        // Simpan ke Firestore secara asinkron
+        setDoc(
+          doc(db, "user_preferences", user.uid),
+          {
+            ...updated,
+            uid: user.uid,
+            email: user.email || "",
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        ).catch((err) => {
+          console.warn("Gagal simpan preferensi ke Firestore:", err);
+        });
+      }
+
+      return updated;
+    });
   };
 
-  const setBgTone = (tone: BgTone) => {
-    setBgToneState(tone);
-    try {
-      localStorage.setItem("sim_risiko_theme_bgtone", tone);
-      document.documentElement.setAttribute("data-bg-tone", tone);
-    } catch (e) {
-      console.warn(e);
-    }
-  };
-
-  const setNavbarStyle = (style: NavbarStyle) => {
-    setNavbarStyleState(style);
-    try {
-      localStorage.setItem("sim_risiko_theme_navbar", style);
-      document.documentElement.setAttribute("data-navbar-style", style);
-    } catch (e) {
-      console.warn(e);
-    }
-  };
-
-  const setFontSize = (size: FontSize) => {
-    setFontSizeState(size);
-    try {
-      localStorage.setItem("sim_risiko_theme_fontsize", size);
-      document.documentElement.setAttribute("data-font-size", size);
-    } catch (e) {
-      console.warn(e);
-    }
-  };
+  const setColorTheme = (theme: ColorTheme) => updatePreference({ colorTheme: theme });
+  const setBgTone = (tone: BgTone) => updatePreference({ bgTone: tone });
+  const setNavbarStyle = (style: NavbarStyle) => updatePreference({ navbarStyle: style });
+  const setFontSize = (size: FontSize) => updatePreference({ fontSize: size });
+  const setMenuPosition = (pos: MenuPosition) => updatePreference({ menuPosition: pos });
 
   const resetToDefault = () => {
-    setColorTheme("emerald");
-    setBgTone("default");
-    setNavbarStyle("dark");
-    setFontSize("normal");
+    updatePreference(DEFAULT_PREFERENCES);
   };
 
   return (
     <ThemeContext.Provider
       value={{
-        colorTheme,
-        bgTone,
-        navbarStyle,
-        fontSize,
+        colorTheme: prefs.colorTheme,
+        bgTone: prefs.bgTone,
+        navbarStyle: prefs.navbarStyle,
+        fontSize: prefs.fontSize,
+        menuPosition: prefs.menuPosition,
         isCustomizerOpen,
         setColorTheme,
         setBgTone,
         setNavbarStyle,
         setFontSize,
+        setMenuPosition,
         openCustomizer: () => setIsCustomizerOpen(true),
         closeCustomizer: () => setIsCustomizerOpen(false),
         resetToDefault,

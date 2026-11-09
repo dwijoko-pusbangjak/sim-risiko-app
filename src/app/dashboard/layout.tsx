@@ -103,41 +103,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = rawPathname || "/dashboard";
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<"sidebar" | "top">("top");
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({ 
     "Proses Manajemen Risiko": true,
     "Proses Riviu": false 
   });
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const { user, loading, activeYear } = useAuth();
-  const { colorTheme, openCustomizer } = useTheme();
+  const { colorTheme, menuPosition, setMenuPosition, openCustomizer } = useTheme();
   const activeThemeObj = COLOR_OPTIONS.find((c) => c.id === colorTheme) || COLOR_OPTIONS[0];
   const [isAnalisisRtpEnabled, setIsAnalisisRtpEnabled] = useState<boolean>(true);
   const [unreadChatCount, setUnreadChatCount] = useState<number>(0);
   const [allChatMessages, setAllChatMessages] = useState<ChatMessageData[]>([]);
 
-  // Ambil preferensi posisi menu pengguna dari localStorage setelah mount (default posisi "top" / atas)
-  useEffect(() => {
-    try {
-      const savedPosition = localStorage.getItem("sim_risiko_menu_position");
-      if (savedPosition === "top" || savedPosition === "sidebar") {
-        setMenuPosition(savedPosition);
-      } else {
-        setMenuPosition("top");
-        localStorage.setItem("sim_risiko_menu_position", "top");
-      }
-    } catch (e) {
-      console.warn("Could not read menu position preference:", e);
-    }
-  }, []);
-
   const handleToggleMenuPosition = (pos: "sidebar" | "top") => {
     setMenuPosition(pos);
-    try {
-      localStorage.setItem("sim_risiko_menu_position", pos);
-    } catch (e) {
-      console.warn("Could not save menu position preference:", e);
-    }
   };
 
   // Subscribe ke pesan chat real-time untuk menghitung pesan belum dibaca (unread count badge)

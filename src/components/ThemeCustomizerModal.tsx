@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import {
   useTheme,
   COLOR_OPTIONS,
@@ -9,7 +8,9 @@ import {
   BgTone,
   NavbarStyle,
   FontSize,
+  MenuPosition,
 } from "@/context/ThemeContext";
+import { useAuth } from "@/context/AuthContext";
 import {
   Palette,
   Check,
@@ -20,20 +21,26 @@ import {
   Type,
   LayoutTemplate,
   ShieldAlert,
+  PanelLeft,
+  PanelTop,
+  UserCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ThemeCustomizerModal() {
+  const { user } = useAuth();
   const {
     colorTheme,
     bgTone,
     navbarStyle,
     fontSize,
+    menuPosition,
     isCustomizerOpen,
     setColorTheme,
     setBgTone,
     setNavbarStyle,
     setFontSize,
+    setMenuPosition,
     closeCustomizer,
     resetToDefault,
   } = useTheme();
@@ -41,7 +48,7 @@ export default function ThemeCustomizerModal() {
   if (!isCustomizerOpen) return null;
 
   const handleApplyAndClose = () => {
-    toast.success("Pengaturan warna tampilan berhasil diterapkan!");
+    toast.success("Pengaturan tampilan akun Anda berhasil disimpan!");
     closeCustomizer();
   };
 
@@ -81,6 +88,14 @@ export default function ThemeCustomizerModal() {
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Banner Akun Pribadi */}
+        <div className="px-5 py-2.5 bg-emerald-50/60 border-b border-emerald-100/80 flex items-center gap-2 text-xs text-emerald-900">
+          <UserCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>
+            Pengaturan ini tersimpan <strong>khusus untuk akun Anda</strong> ({user?.unitName || user?.email || "Akun Aktif"}) dan tidak akan mengubah tampilan akun pengguna lain.
+          </span>
         </div>
 
         {/* Konten Scrollable */}
@@ -303,6 +318,61 @@ export default function ThemeCustomizerModal() {
                 </div>
                 <p className="text-[11px] text-slate-500">
                   Teks sedikit lebih besar untuk memudahkan membaca angka dan tabel data panjang.
+                </p>
+              </button>
+            </div>
+          </div>
+
+          {/* Bagian 5: Posisi Penempatan Menu Utama */}
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                <PanelTop className="w-3.5 h-3.5 text-emerald-600" />
+                5. Posisi Penempatan Menu Utama
+              </label>
+              <span className="text-[11px] text-slate-400">Khusus Akun Anda</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => setMenuPosition("top")}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                  menuPosition === "top"
+                    ? "border-emerald-600 bg-emerald-50/40 ring-2 ring-emerald-500/20"
+                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <PanelTop className="w-4 h-4 text-slate-600" />
+                    <span className="text-xs font-bold text-slate-800">Sebelah Atas (Navbar)</span>
+                  </div>
+                  {menuPosition === "top" && <Check className="w-4 h-4 text-emerald-600 font-bold" />}
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Menu tersusun horizontal di bilah atas layar, area kerja dokumen lebih luas.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMenuPosition("sidebar")}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                  menuPosition === "sidebar"
+                    ? "border-emerald-600 bg-emerald-50/40 ring-2 ring-emerald-500/20"
+                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <PanelLeft className="w-4 h-4 text-slate-600" />
+                    <span className="text-xs font-bold text-slate-800">Sebelah Kiri (Sidebar)</span>
+                  </div>
+                  {menuPosition === "sidebar" && <Check className="w-4 h-4 text-emerald-600 font-bold" />}
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Menu tersusun vertikal di bilah samping kiri dengan kelompok kategori terlipat.
                 </p>
               </button>
             </div>

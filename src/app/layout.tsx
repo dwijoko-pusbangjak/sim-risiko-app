@@ -25,14 +25,11 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                var t = localStorage.getItem('sim_risiko_theme_color');
-                if (t) document.documentElement.setAttribute('data-theme', t);
-                var b = localStorage.getItem('sim_risiko_theme_bgtone');
-                if (b) document.documentElement.setAttribute('data-bg-tone', b);
-                var n = localStorage.getItem('sim_risiko_theme_navbar');
-                if (n) document.documentElement.setAttribute('data-navbar-style', n);
-                var f = localStorage.getItem('sim_risiko_theme_fontsize');
-                if (f) document.documentElement.setAttribute('data-font-size', f);
+                localStorage.removeItem('sim_risiko_theme_color');
+                localStorage.removeItem('sim_risiko_theme_bgtone');
+                localStorage.removeItem('sim_risiko_theme_navbar');
+                localStorage.removeItem('sim_risiko_theme_fontsize');
+                localStorage.removeItem('sim_risiko_menu_position');
               } catch (e) {}
             `,
           }}
