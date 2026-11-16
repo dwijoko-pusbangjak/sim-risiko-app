@@ -181,31 +181,31 @@
 }
 
 /* ========================================================================= */
-/* TRUE TRANSLUCENT GLASSMORPHISM (SEPERTI KACA ASLI)                        */
+/* TRUE TRANSLUCENT FROSTED GLASS (KACA BURAM TRANSPARAN BERKELAS)          */
 /* ========================================================================= */
 
 .glass-menu-bar {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(15, 23, 42, 0.40) 100%) !important;
-  backdrop-filter: blur(24px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.30) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.18) !important;
-  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.35), 0 10px 30px -10px rgba(0, 0, 0, 0.18) !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.95) !important;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04), inset 0 1px 0 0 rgba(255, 255, 255, 1) !important;
 }
 
 .glass-dropdown-content {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(15, 23, 42, 0.46) 100%) !important;
-  backdrop-filter: blur(28px) saturate(210%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(210%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.30) !important;
-  box-shadow: inset 0 1px 2px 0 rgba(255, 255, 255, 0.45), 0 24px 50px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(24px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 1) !important;
 }
 
 .glass-sidebar {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.55) 0%, rgba(11, 18, 32, 0.50) 50%, rgba(8, 13, 24, 0.60) 100%) !important;
-  backdrop-filter: blur(28px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.18) !important;
-  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.25), inset -1px 0 1px 0 rgba(255, 255, 255, 0.12), 10px 0 30px -10px rgba(0, 0, 0, 0.15) !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border-right: 1px solid rgba(226, 232, 240, 0.9) !important;
+  box-shadow: 4px 0 24px -4px rgba(0, 0, 0, 0.04), inset -1px 0 0 0 rgba(255, 255, 255, 0.8) !important;
 }
 

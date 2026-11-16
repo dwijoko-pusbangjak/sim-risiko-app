@@ -360,11 +360,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return groups.map((group, idx) => (
       <div key={group.title} className={idx > 0 ? "mt-5" : ""}>
         <div className="flex items-center justify-between px-3 mb-2">
-          <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400/90 flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-xs shadow-emerald-400/60" />
+          <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-xs shadow-emerald-500/60" />
             {group.title}
           </h3>
-          <span className="text-[10px] font-semibold text-slate-400 bg-white/[0.06] border border-white/10 px-1.5 py-0.5 rounded-md backdrop-blur-sm">
+          <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 border border-slate-200/80 px-1.5 py-0.5 rounded-md">
             {group.items.length}
           </span>
         </div>
@@ -387,15 +387,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     onClick={() => toggleMenu(item.name)}
                     className={`group flex items-center justify-between rounded-xl px-3 py-2.5 text-[12px] xl:text-[13px] font-medium transition-all w-full cursor-pointer text-left border ${
                       hasChildActive
-                        ? "bg-white/[0.08] text-emerald-300 border-white/10 shadow-xs backdrop-blur-sm"
-                        : "text-slate-300 hover:bg-white/[0.06] hover:text-white border-transparent hover:border-white/5"
+                        ? "bg-emerald-50 text-emerald-800 border-emerald-200/80 shadow-xs font-semibold"
+                        : "text-slate-700 hover:bg-slate-100/90 hover:text-emerald-700 border-transparent hover:border-slate-200/60"
                     }`}
                   >
                     <div className="flex items-center flex-1 min-w-0 pr-2">
                       <div className={`w-7 h-7 rounded-lg flex items-center justify-center mr-2.5 transition-all shrink-0 border ${
                         hasChildActive 
-                          ? "bg-emerald-500/25 text-emerald-300 border-emerald-400/30 shadow-xs" 
-                          : "bg-white/[0.05] text-slate-400 border-white/5 group-hover:text-emerald-300 group-hover:bg-white/[0.1] group-hover:border-white/10"
+                          ? "bg-emerald-600 text-white border-emerald-500 shadow-xs" 
+                          : "bg-slate-100 text-slate-600 border-slate-200/80 group-hover:text-emerald-700 group-hover:bg-emerald-50 group-hover:border-emerald-200"
                       }`}>
                         <Icon className="h-4 w-4" />
                       </div>
@@ -403,13 +403,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white/[0.06] text-slate-400 border border-white/10">
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 border border-slate-200/80 font-bold">
                         {item.children.length}
                       </span>
                       {isOpen ? (
-                        <ChevronDown className="h-4 w-4 text-slate-400 group-hover:text-slate-200 transition-transform" />
+                        <ChevronDown className="h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-transform" />
                       ) : (
-                        <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-200 transition-transform" />
+                        <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-transform" />
                       )}
                     </div>
                   </button>
@@ -417,7 +417,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {/* Submenu Item List */}
                   <div className={`grid transition-all duration-200 ease-in-out ${isOpen ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0"}`}>
                     <div className="overflow-hidden">
-                      <div className="flex flex-col space-y-1 p-1.5 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-md shadow-inner my-1">
+                      <div className="flex flex-col space-y-1 p-1.5 rounded-2xl bg-slate-100/70 border border-slate-200/80 backdrop-blur-md shadow-inner my-1">
                         {item.children.map((child) => {
                           const isChildActive = pathname === child.href;
                           return (
@@ -427,8 +427,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                               onClick={() => isMobile && setIsSidebarOpen(false)}
                               className={`group relative flex items-center justify-between rounded-xl px-2.5 py-2 text-[12px] font-medium transition-all border ${
                                 isChildActive
-                                  ? "bg-gradient-to-r from-emerald-600/80 to-emerald-500/75 text-white font-semibold shadow-md shadow-emerald-950/40 border-emerald-300/40 backdrop-blur-md"
-                                  : "text-slate-200/90 hover:bg-white/[0.10] hover:text-white border-transparent hover:border-white/10"
+                                  ? "bg-emerald-600 text-white font-bold shadow-xs border-emerald-500"
+                                  : "text-slate-700 hover:bg-white hover:text-emerald-800 border-transparent hover:border-slate-200/80 font-semibold"
                               }`}
                             >
                               <div className="flex items-center min-w-0 flex-1 pr-2">
@@ -437,7 +437,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                     className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md mr-2 shrink-0 border transition-all ${
                                       isChildActive
                                         ? "bg-white/20 text-white border-white/30"
-                                        : "bg-white/[0.06] text-emerald-300 border-white/10 group-hover:border-emerald-500/30"
+                                        : "bg-white text-slate-700 border-slate-200 group-hover:border-emerald-300 group-hover:text-emerald-700"
                                     }`}
                                   >
                                     {child.step}
@@ -445,7 +445,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 ) : (
                                   <span
                                     className={`w-1.5 h-1.5 rounded-full mr-2.5 shrink-0 transition-colors ${
-                                      isChildActive ? "bg-white" : "bg-slate-400 group-hover:bg-emerald-400"
+                                      isChildActive ? "bg-white" : "bg-slate-400 group-hover:bg-emerald-500"
                                     }`}
                                   />
                                 )}
@@ -457,7 +457,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                   className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full shrink-0 ${
                                     isChildActive
                                       ? "bg-white/20 text-white border border-white/30"
-                                      : "bg-emerald-950/80 text-emerald-300 border border-emerald-700/50"
+                                      : "bg-emerald-100 text-emerald-800 border border-emerald-200"
                                   }`}
                                 >
                                   {child.badge}
@@ -485,15 +485,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 onClick={() => isMobile && setIsSidebarOpen(false)}
                 className={`group flex items-center justify-between rounded-xl px-3 py-2.5 text-[12px] xl:text-[13px] font-medium transition-all w-full cursor-pointer border ${
                   isDirectActive
-                    ? "bg-gradient-to-r from-emerald-600/90 to-emerald-500/85 text-white shadow-md shadow-emerald-950/40 font-semibold border-emerald-400/30 backdrop-blur-sm"
-                    : "text-slate-300 hover:bg-white/[0.06] hover:text-white border-transparent hover:border-white/5"
+                    ? "bg-emerald-600 text-white shadow-xs font-bold border-emerald-500"
+                    : "text-slate-700 hover:bg-slate-100/90 hover:text-emerald-700 border-transparent hover:border-slate-200/60 font-semibold"
                 }`}
               >
                 <div className="flex items-center flex-1 min-w-0 pr-2">
                   <div className={`w-7 h-7 rounded-lg flex items-center justify-center mr-2.5 transition-all shrink-0 border ${
                     isDirectActive 
                       ? "bg-white/20 text-white border-white/30" 
-                      : "bg-white/[0.05] text-slate-400 border-white/5 group-hover:text-emerald-300 group-hover:bg-white/[0.1] group-hover:border-white/10"
+                      : "bg-slate-100 text-slate-600 border-slate-200/80 group-hover:text-emerald-700 group-hover:bg-emerald-50 group-hover:border-emerald-200"
                   }`}>
                     <Icon className="h-4 w-4" />
                   </div>
@@ -507,7 +507,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         ? "bg-rose-500 text-white border border-rose-400 text-[10px] animate-pulse"
                         : isDirectActive
                         ? "bg-white/20 text-white border border-white/30 text-[9px] uppercase tracking-wider"
-                        : "bg-white/[0.06] text-emerald-300 border border-white/10 text-[9px] uppercase tracking-wider"
+                        : "bg-emerald-100 text-emerald-800 border border-emerald-200 text-[9px] uppercase tracking-wider"
                     }`}
                   >
                     {item.badge}
@@ -560,30 +560,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {menuPosition === "sidebar" && (
         <aside className="hidden w-64 xl:w-72 flex-col glass-sidebar md:flex shrink-0 print:hidden animate-in fade-in duration-200 relative z-20">
           {/* Brand Header */}
-          <div className="flex h-16 items-center px-4 xl:px-6 border-b border-white/10 shrink-0 bg-white/[0.02]">
+          <div className="flex h-16 items-center px-4 xl:px-6 border-b border-slate-200/80 shrink-0 bg-white/40">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white shadow-md shadow-emerald-950/50 border border-emerald-400/30">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white shadow-sm border border-emerald-400/30">
                 <ShieldAlert className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-white tracking-tight leading-none">
-                  Si<span className="text-emerald-400">-MaRi</span>
+                <h1 className="text-lg font-bold text-slate-900 tracking-tight leading-none">
+                  Si<span className="text-emerald-600">-MaRi</span>
                 </h1>
-                <p className="text-[10px] text-slate-400 font-medium">Kemendes PDT</p>
+                <p className="text-[10px] text-slate-500 font-medium">Kemendes PDT</p>
               </div>
             </div>
           </div>
           
           {/* Info Profil di Sidebar */}
-          <div className="border-b border-white/10 px-4 xl:px-6 py-3.5 bg-white/[0.03] backdrop-blur-sm shrink-0">
-            <p className="text-xs xl:text-sm font-semibold text-white whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
+          <div className="border-b border-slate-200/80 px-4 xl:px-6 py-3.5 bg-white/30 backdrop-blur-sm shrink-0">
+            <p className="text-xs xl:text-sm font-bold text-slate-800 whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
               {user.unitName || user.email}
             </p>
             <div className="flex flex-wrap items-center gap-2 mt-2">
-              <span className="text-[10px] font-semibold text-emerald-300 uppercase tracking-wider border border-emerald-500/20 bg-emerald-500/10 inline-block px-2 py-0.5 rounded-lg backdrop-blur-sm">
+              <span className="text-[10px] font-semibold text-emerald-800 uppercase tracking-wider border border-emerald-200 bg-emerald-50 inline-block px-2 py-0.5 rounded-lg">
                 {getRoleLabel(user.role)}
               </span>
-              <span className="text-[10px] font-semibold text-slate-300 bg-white/[0.05] inline-block px-2 py-0.5 rounded-lg border border-white/10">
+              <span className="text-[10px] font-semibold text-slate-700 bg-slate-100 inline-block px-2 py-0.5 rounded-lg border border-slate-200">
                 TA {activeYear}
               </span>
             </div>
@@ -595,21 +595,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </nav>
           
           {/* Sidebar Footer dengan Pintasan Panduan Alur MR */}
-          <div className="border-t border-white/10 p-3 shrink-0 bg-white/[0.02] space-y-2">
+          <div className="border-t border-slate-200/80 p-3 shrink-0 bg-white/40 space-y-2">
             <Link
               href="/dashboard/modul"
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-emerald-500/30 text-slate-200 hover:text-emerald-300 transition-all text-xs group backdrop-blur-sm"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/60 hover:bg-emerald-50 border border-slate-200/80 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 transition-all text-xs group shadow-2xs"
             >
               <div className="flex items-center gap-2.5">
-                <BookMarked className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+                <BookMarked className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
                 <div className="text-left">
-                  <div className="font-semibold text-white group-hover:text-emerald-300">Panduan Alur MR</div>
-                  <div className="text-[10px] text-slate-400">Diagram alur & petunjuk</div>
+                  <div className="font-semibold text-slate-800 group-hover:text-emerald-800">Panduan Alur MR</div>
+                  <div className="text-[10px] text-slate-500">Diagram alur & petunjuk</div>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
+              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all" />
             </Link>
-            <p className="text-[10px] text-slate-500 text-center font-medium pt-1">Kemendes PDT © 2026</p>
+            <p className="text-[10px] text-slate-400 text-center font-medium pt-1">Kemendes PDT © 2026</p>
           </div>
         </aside>
       )}
@@ -818,18 +818,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* 3. NAVBAR HORIZONTAL (Tampil HANYA jika menuPosition === "top")        */}
         {/* ====================================================================== */}
         {menuPosition === "top" && (
-          <nav className="hidden md:flex items-center justify-between glass-menu-bar text-slate-200 px-4 md:px-6 py-2 shrink-0 overflow-x-auto shadow-xl custom-scrollbar relative z-10 animate-in fade-in duration-200">
+          <nav className="hidden md:flex items-center justify-between glass-menu-bar text-slate-800 px-4 md:px-6 py-2 shrink-0 overflow-x-auto shadow-xs custom-scrollbar relative z-10 animate-in fade-in duration-200">
             <div className="flex items-center gap-1.5 flex-wrap">
               {/* Overview Group: Dashboard & Katalog Peraturan */}
               <Link
                 href="/dashboard"
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                   pathname === "/dashboard"
-                    ? "bg-gradient-to-r from-emerald-600/95 to-emerald-500/90 text-white shadow-md shadow-emerald-950/40 border-emerald-400/30 backdrop-blur-md font-bold"
-                    : "text-slate-300 hover:text-white hover:bg-white/[0.08] hover:border-white/10 border-transparent"
+                    ? "bg-emerald-600 text-white font-bold shadow-xs border-emerald-500"
+                    : "text-slate-700 hover:text-emerald-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80"
                 }`}
               >
-                <LayoutDashboard className="h-3.5 w-3.5 text-emerald-400" />
+                <LayoutDashboard className={`h-3.5 w-3.5 ${pathname === "/dashboard" ? "text-white" : "text-emerald-600"}`} />
                 <span>Dashboard</span>
               </Link>
 
@@ -837,30 +837,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 href="/dashboard/katalog-peraturan"
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                   pathname === "/dashboard/katalog-peraturan"
-                    ? "bg-gradient-to-r from-emerald-600/95 to-emerald-500/90 text-white shadow-md shadow-emerald-950/40 border-emerald-400/30 backdrop-blur-md font-bold"
-                    : "text-slate-300 hover:text-white hover:bg-white/[0.08] hover:border-white/10 border-transparent"
+                    ? "bg-emerald-600 text-white font-bold shadow-xs border-emerald-500"
+                    : "text-slate-700 hover:text-emerald-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80"
                 }`}
               >
-                <BookOpen className="h-3.5 w-3.5 text-emerald-400" />
+                <BookOpen className={`h-3.5 w-3.5 ${pathname === "/dashboard/katalog-peraturan" ? "text-white" : "text-emerald-600"}`} />
                 <span>Katalog Peraturan</span>
               </Link>
 
-              <div className="h-4 w-px bg-white/15 mx-1.5 shrink-0" />
+              <div className="h-4 w-px bg-slate-300/80 mx-1.5 shrink-0" />
 
               {/* Cascading Kinerja (Khusus Kementerian, Eselon 1, Eselon 2 - tidak untuk Admin) */}
               {sasaranItems.length > 0 && (
                 <DropdownMenu>
                   <DropdownMenuTrigger className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
                     sasaranItems.some(s => pathname === s.href)
-                      ? "bg-gradient-to-r from-emerald-600/95 to-emerald-500/90 text-white shadow-md shadow-emerald-950/40 border-emerald-400/30 backdrop-blur-md font-bold"
-                      : "text-slate-300 hover:text-white hover:bg-white/[0.08] hover:border-white/10 border-transparent"
+                      ? "bg-emerald-600 text-white font-bold shadow-xs border-emerald-500"
+                      : "text-slate-700 hover:text-emerald-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80"
                   }`}>
-                    <Target className="h-3.5 w-3.5 text-emerald-400" />
+                    <Target className={`h-3.5 w-3.5 ${sasaranItems.some(s => pathname === s.href) ? "text-white" : "text-emerald-600"}`} />
                     <span>Cascading Kinerja</span>
-                    <ChevronDown className="h-3 w-3 text-slate-400 ml-0.5" />
+                    <ChevronDown className={`h-3 w-3 ml-0.5 ${sasaranItems.some(s => pathname === s.href) ? "text-white" : "text-slate-400"}`} />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-58 p-1.5 glass-dropdown-content text-slate-200 rounded-2xl shadow-2xl animate-in fade-in-50 zoom-in-95 duration-150">
-                    <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-white/10 mb-1">
+                  <DropdownMenuContent align="start" className="w-58 p-1.5 glass-dropdown-content text-slate-800 rounded-2xl shadow-xl animate-in fade-in-50 zoom-in-95 duration-150">
+                    <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200/80 mb-1">
                       Cascading Kinerja
                     </div>
                     {sasaranItems.map((item) => {
@@ -871,12 +871,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                           onClick={() => router.push(item.href!)}
                           className={`cursor-pointer rounded-xl text-xs py-2 px-2.5 flex items-center justify-between mb-0.5 transition-all border ${
                             isActive
-                              ? "bg-gradient-to-r from-emerald-600/90 to-emerald-500/85 text-white font-semibold shadow-xs border-emerald-400/30"
-                              : "text-slate-200 hover:bg-white/[0.09] hover:text-white focus:bg-white/[0.09] focus:text-white border-transparent"
+                              ? "bg-emerald-600 text-white font-bold shadow-xs border-emerald-500"
+                              : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 focus:bg-emerald-50 focus:text-emerald-800 border-transparent font-medium"
                           }`}
                         >
                           <div className="flex items-center gap-2 truncate">
-                            <Target className="h-3.5 w-3.5 text-emerald-400" />
+                            <Target className={`h-3.5 w-3.5 ${isActive ? "text-white" : "text-emerald-600"}`} />
                             <span className="truncate">{item.name}</span>
                           </div>
                         </DropdownMenuItem>
@@ -894,24 +894,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       href="/dashboard/mr-analisis-rtp"
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                         pathname === "/dashboard/mr-analisis-rtp"
-                          ? "bg-gradient-to-r from-emerald-600/95 to-emerald-500/90 text-white shadow-md shadow-emerald-950/40 border-emerald-400/30 backdrop-blur-md font-bold"
-                          : "text-slate-300 hover:text-white hover:bg-white/[0.08] hover:border-white/10 border-transparent"
+                          ? "bg-emerald-600 text-white font-bold shadow-xs border-emerald-500"
+                          : "text-slate-700 hover:text-emerald-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80"
                       }`}
                     >
-                      <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
+                      <Sparkles className={`h-3.5 w-3.5 ${pathname === "/dashboard/mr-analisis-rtp" ? "text-white" : "text-emerald-600"}`} />
                       <span>Analisis RTP</span>
-                      <span className="text-[9px] bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 px-1.5 py-0.2 rounded-md">Telaah</span>
+                      <span className={`text-[9px] px-1.5 py-0.2 rounded-md font-bold ${
+                        pathname === "/dashboard/mr-analisis-rtp" ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                      }`}>
+                        Telaah
+                      </span>
                     </Link>
                   )}
                   <Link
                     href="/dashboard/laporan"
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                       pathname === "/dashboard/laporan"
-                        ? "bg-gradient-to-r from-emerald-600/95 to-emerald-500/90 text-white shadow-md shadow-emerald-950/40 border-emerald-400/30 backdrop-blur-md font-bold"
-                        : "text-slate-300 hover:text-white hover:bg-white/[0.08] hover:border-white/10 border-transparent"
+                        ? "bg-emerald-600 text-white font-bold shadow-xs border-emerald-500"
+                        : "text-slate-700 hover:text-emerald-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80"
                     }`}
                   >
-                    <BarChart4 className="h-3.5 w-3.5 text-emerald-400" />
+                    <BarChart4 className={`h-3.5 w-3.5 ${pathname === "/dashboard/laporan" ? "text-white" : "text-emerald-600"}`} />
                     <span>Cetak Laporan</span>
                   </Link>
                 </>
@@ -924,11 +928,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     href="/dashboard/mr-konteks"
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                       pathname === "/dashboard/mr-konteks"
-                        ? "bg-gradient-to-r from-emerald-600/95 to-emerald-500/90 text-white shadow-md shadow-emerald-950/40 border-emerald-400/30 backdrop-blur-md font-bold"
-                        : "text-slate-300 hover:text-white hover:bg-white/[0.08] hover:border-white/10 border-transparent"
+                        ? "bg-emerald-600 text-white font-bold shadow-xs border-emerald-500"
+                        : "text-slate-700 hover:text-emerald-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80"
                     }`}
                   >
-                    <ClipboardList className="h-3.5 w-3.5 text-emerald-400" />
+                    <ClipboardList className={`h-3.5 w-3.5 ${pathname === "/dashboard/mr-konteks" ? "text-white" : "text-emerald-600"}`} />
                     <span>Penetapan Konteks</span>
                   </Link>
 
@@ -936,18 +940,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <DropdownMenu>
                     <DropdownMenuTrigger className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
                       pathname.startsWith("/dashboard/mr-") && pathname !== "/dashboard/mr-konteks"
-                        ? "bg-gradient-to-r from-emerald-600/95 to-emerald-500/90 text-white shadow-md shadow-emerald-950/40 border-emerald-400/30 backdrop-blur-md font-bold"
-                        : "text-slate-300 hover:text-white hover:bg-white/[0.08] hover:border-white/10 border-transparent"
+                        ? "bg-emerald-600 text-white font-bold shadow-xs border-emerald-500"
+                        : "text-slate-700 hover:text-emerald-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80"
                     }`}>
-                      <FolderTree className="h-3.5 w-3.5 text-emerald-400" />
+                      <FolderTree className={`h-3.5 w-3.5 ${pathname.startsWith("/dashboard/mr-") && pathname !== "/dashboard/mr-konteks" ? "text-white" : "text-emerald-600"}`} />
                       <span>Proses MR</span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-md bg-white/[0.08] text-emerald-300 border border-white/15">
+                      <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md font-bold ${
+                        pathname.startsWith("/dashboard/mr-") && pathname !== "/dashboard/mr-konteks"
+                          ? "bg-white/20 text-white"
+                          : "bg-slate-100 text-slate-700 border border-slate-200"
+                      }`}>
                         {isAnalisisRtpEnabled ? "7" : "6"}
                       </span>
-                      <ChevronDown className="h-3 w-3 text-slate-400 ml-0.5" />
+                      <ChevronDown className={`h-3 w-3 ml-0.5 ${pathname.startsWith("/dashboard/mr-") && pathname !== "/dashboard/mr-konteks" ? "text-white" : "text-slate-400"}`} />
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-68 p-1.5 glass-dropdown-content text-slate-200 rounded-2xl shadow-2xl animate-in fade-in-50 zoom-in-95 duration-150">
-                      <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-white/10 mb-1">
+                    <DropdownMenuContent align="start" className="w-68 p-1.5 glass-dropdown-content text-slate-800 rounded-2xl shadow-xl animate-in fade-in-50 zoom-in-95 duration-150">
+                      <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200/80 mb-1">
                         7 Tahapan Proses Manajemen Risiko
                       </div>
                       {[
@@ -966,13 +974,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             onClick={() => router.push(child.href)}
                             className={`cursor-pointer rounded-xl text-xs py-2 px-2.5 flex items-center justify-between mb-0.5 transition-all border ${
                               isChildActive
-                                ? "bg-gradient-to-r from-emerald-600/90 to-emerald-500/85 text-white font-semibold shadow-xs border-emerald-400/30"
-                                : "text-slate-200 hover:bg-white/[0.09] hover:text-white focus:bg-white/[0.09] focus:text-white border-transparent"
+                                ? "bg-emerald-600 text-white font-bold shadow-xs border-emerald-500"
+                                : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 focus:bg-emerald-50 focus:text-emerald-800 border-transparent font-medium"
                             }`}
                           >
                             <div className="flex items-center min-w-0 pr-2">
                               <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md mr-2 shrink-0 border ${
-                                isChildActive ? "bg-white/20 text-white border-white/30" : "bg-white/[0.08] text-emerald-300 border-white/15"
+                                isChildActive ? "bg-white/20 text-white border-white/30" : "bg-slate-100 text-slate-700 border border-slate-200"
                               }`}>
                                 {child.step}
                               </span>
@@ -980,7 +988,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             </div>
                             {child.badge && (
                               <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full shrink-0 ${
-                                isChildActive ? "bg-white/20 text-white border border-white/30" : "bg-emerald-950/80 text-emerald-300 border border-emerald-700/50"
+                                isChildActive ? "bg-white/20 text-white border border-white/30" : "bg-emerald-100 text-emerald-800 border border-emerald-200"
                               }`}>
                                 {child.badge}
                               </span>
@@ -995,15 +1003,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <DropdownMenu>
                     <DropdownMenuTrigger className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
                       pathname.startsWith("/dashboard/proses-audit")
-                        ? "bg-gradient-to-r from-emerald-600/95 to-emerald-500/90 text-white shadow-md shadow-emerald-950/40 border-emerald-400/30 backdrop-blur-md font-bold"
-                        : "text-slate-300 hover:text-white hover:bg-white/[0.08] hover:border-white/10 border-transparent"
+                        ? "bg-emerald-600 text-white font-bold shadow-xs border-emerald-500"
+                        : "text-slate-700 hover:text-emerald-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80"
                     }`}>
-                      <SearchCheck className="h-3.5 w-3.5 text-emerald-400" />
+                      <SearchCheck className={`h-3.5 w-3.5 ${pathname.startsWith("/dashboard/proses-audit") ? "text-white" : "text-emerald-600"}`} />
                       <span>Proses Riviu</span>
-                      <ChevronDown className="h-3 w-3 text-slate-400 ml-0.5" />
+                      <ChevronDown className={`h-3 w-3 ml-0.5 ${pathname.startsWith("/dashboard/proses-audit") ? "text-white" : "text-slate-400"}`} />
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-58 p-1.5 glass-dropdown-content text-slate-200 rounded-2xl shadow-2xl animate-in fade-in-50 zoom-in-95 duration-150">
-                      <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-white/10 mb-1">
+                    <DropdownMenuContent align="start" className="w-58 p-1.5 glass-dropdown-content text-slate-800 rounded-2xl shadow-xl animate-in fade-in-50 zoom-in-95 duration-150">
+                      <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200/80 mb-1">
                         Proses Riviu Auditor APIP
                       </div>
                       {[
@@ -1017,8 +1025,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             onClick={() => router.push(child.href)}
                             className={`cursor-pointer rounded-xl text-xs py-2 px-2.5 flex items-center justify-between mb-0.5 transition-all border ${
                               isChildActive
-                                ? "bg-gradient-to-r from-emerald-600/90 to-emerald-500/85 text-white font-semibold shadow-xs border-emerald-400/30"
-                                : "text-slate-200 hover:bg-white/[0.09] hover:text-white focus:bg-white/[0.09] focus:text-white border-transparent"
+                                ? "bg-emerald-600 text-white font-bold shadow-xs border-emerald-500"
+                                : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 focus:bg-emerald-50 focus:text-emerald-800 border-transparent font-medium"
                             }`}
                           >
                             <span className="truncate">{child.name}</span>
@@ -1032,11 +1040,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     href="/dashboard/laporan"
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                       pathname === "/dashboard/laporan"
-                        ? "bg-gradient-to-r from-emerald-600/95 to-emerald-500/90 text-white shadow-md shadow-emerald-950/40 border-emerald-400/30 backdrop-blur-md font-bold"
-                        : "text-slate-300 hover:text-white hover:bg-white/[0.08] hover:border-white/10 border-transparent"
+                        ? "bg-emerald-600 text-white font-bold shadow-xs border-emerald-500"
+                        : "text-slate-700 hover:text-emerald-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80"
                     }`}
                   >
-                    <BarChart4 className="h-3.5 w-3.5 text-emerald-400" />
+                    <BarChart4 className={`h-3.5 w-3.5 ${pathname === "/dashboard/laporan" ? "text-white" : "text-emerald-600"}`} />
                     <span>Cetak Laporan</span>
                   </Link>
                 </>
@@ -1047,15 +1055,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <DropdownMenu>
                   <DropdownMenuTrigger className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
                     ["/dashboard/units", "/dashboard/users", "/dashboard/mr-analisis-rtp", "/dashboard/logs", "/dashboard/settings", "/dashboard/backup"].includes(pathname)
-                      ? "bg-gradient-to-r from-emerald-600/95 to-emerald-500/90 text-white shadow-md shadow-emerald-950/40 border-emerald-400/30 backdrop-blur-md font-bold"
-                      : "text-slate-300 hover:text-white hover:bg-white/[0.08] hover:border-white/10 border-transparent"
+                      ? "bg-emerald-600 text-white font-bold shadow-xs border-emerald-500"
+                      : "text-slate-700 hover:text-emerald-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80"
                   }`}>
-                    <Settings className="h-3.5 w-3.5 text-emerald-400" />
+                    <Settings className={`h-3.5 w-3.5 ${["/dashboard/units", "/dashboard/users", "/dashboard/mr-analisis-rtp", "/dashboard/logs", "/dashboard/settings", "/dashboard/backup"].includes(pathname) ? "text-white" : "text-emerald-600"}`} />
                     <span>Administrator</span>
-                    <ChevronDown className="h-3 w-3 text-slate-400 ml-0.5" />
+                    <ChevronDown className={`h-3 w-3 ml-0.5 ${["/dashboard/units", "/dashboard/users", "/dashboard/mr-analisis-rtp", "/dashboard/logs", "/dashboard/settings", "/dashboard/backup"].includes(pathname) ? "text-white" : "text-slate-400"}`} />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-64 p-1.5 glass-dropdown-content text-slate-200 rounded-2xl shadow-2xl animate-in fade-in-50 zoom-in-95 duration-150">
-                    <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-white/10 mb-1">
+                  <DropdownMenuContent align="start" className="w-64 p-1.5 glass-dropdown-content text-slate-800 rounded-2xl shadow-xl animate-in fade-in-50 zoom-in-95 duration-150">
+                    <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200/80 mb-1">
                       Menu Administrator
                     </div>
                     {[
@@ -1074,17 +1082,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                           onClick={() => router.push(adminItem.href)}
                           className={`cursor-pointer rounded-xl text-xs py-2 px-2.5 flex items-center justify-between mb-0.5 transition-all border ${
                             isActive
-                              ? "bg-gradient-to-r from-emerald-600/90 to-emerald-500/85 text-white font-semibold shadow-xs border-emerald-400/30"
-                              : "text-slate-200 hover:bg-white/[0.09] hover:text-white focus:bg-white/[0.09] focus:text-white border-transparent"
+                              ? "bg-emerald-600 text-white font-bold shadow-xs border-emerald-500"
+                              : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 focus:bg-emerald-50 focus:text-emerald-800 border-transparent font-medium"
                           }`}
                         >
                           <div className="flex items-center gap-2 truncate">
-                            <Icon className="h-3.5 w-3.5 text-emerald-400" />
+                            <Icon className={`h-3.5 w-3.5 ${isActive ? "text-white" : "text-emerald-600"}`} />
                             <span className="truncate">{adminItem.name}</span>
                           </div>
                           {adminItem.badge && (
                             <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full ${
-                              isActive ? "bg-white/20 text-white border border-white/30" : "bg-emerald-950/80 text-emerald-300 border border-emerald-700/50"
+                              isActive ? "bg-white/20 text-white border border-white/30" : "bg-emerald-100 text-emerald-800 border border-emerald-200"
                             }`}>
                               {adminItem.badge}
                             </span>
@@ -1103,11 +1111,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     href="/dashboard/audit"
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                       pathname === "/dashboard/audit"
-                        ? "bg-gradient-to-r from-emerald-600/95 to-emerald-500/90 text-white shadow-md shadow-emerald-950/40 border-emerald-400/30 backdrop-blur-md font-bold"
-                        : "text-slate-300 hover:text-white hover:bg-white/[0.08] hover:border-white/10 border-transparent"
+                        ? "bg-emerald-600 text-white font-bold shadow-xs border-emerald-500"
+                        : "text-slate-700 hover:text-emerald-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80"
                     }`}
                   >
-                    <SearchCheck className="h-3.5 w-3.5 text-emerald-400" />
+                    <SearchCheck className={`h-3.5 w-3.5 ${pathname === "/dashboard/audit" ? "text-white" : "text-emerald-600"}`} />
                     <span>Audit Risiko</span>
                   </Link>
                   {isAnalisisRtpEnabled && (
@@ -1115,11 +1123,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       href="/dashboard/mr-analisis-rtp"
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                         pathname === "/dashboard/mr-analisis-rtp"
-                          ? "bg-gradient-to-r from-emerald-600/95 to-emerald-500/90 text-white shadow-md shadow-emerald-950/40 border-emerald-400/30 backdrop-blur-md font-bold"
-                          : "text-slate-300 hover:text-white hover:bg-white/[0.08] hover:border-white/10 border-transparent"
+                          ? "bg-emerald-600 text-white font-bold shadow-xs border-emerald-500"
+                          : "text-slate-700 hover:text-emerald-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80"
                       }`}
                     >
-                      <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
+                      <Sparkles className={`h-3.5 w-3.5 ${pathname === "/dashboard/mr-analisis-rtp" ? "text-white" : "text-emerald-600"}`} />
                       <span>Analisis RTP</span>
                     </Link>
                   )}
@@ -1127,11 +1135,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     href="/dashboard/laporan"
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                       pathname === "/dashboard/laporan"
-                        ? "bg-gradient-to-r from-emerald-600/95 to-emerald-500/90 text-white shadow-md shadow-emerald-950/40 border-emerald-400/30 backdrop-blur-md font-bold"
-                        : "text-slate-300 hover:text-white hover:bg-white/[0.08] hover:border-white/10 border-transparent"
+                        ? "bg-emerald-600 text-white font-bold shadow-xs border-emerald-500"
+                        : "text-slate-700 hover:text-emerald-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80"
                     }`}
                   >
-                    <BarChart4 className="h-3.5 w-3.5 text-emerald-400" />
+                    <BarChart4 className={`h-3.5 w-3.5 ${pathname === "/dashboard/laporan" ? "text-white" : "text-emerald-600"}`} />
                     <span>Cetak Laporan</span>
                   </Link>
                 </>
@@ -1144,11 +1152,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 href="/dashboard/modul"
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                   pathname === "/dashboard/modul"
-                    ? "bg-gradient-to-r from-emerald-600/95 to-emerald-500/90 text-white shadow-md shadow-emerald-950/40 border-emerald-400/30 font-bold"
-                    : "bg-white/[0.06] hover:bg-white/[0.12] text-emerald-300 hover:text-white border-white/10 hover:border-emerald-500/40 backdrop-blur-md"
+                    ? "bg-emerald-600 text-white font-bold shadow-xs border-emerald-500"
+                    : "bg-slate-100/80 hover:bg-emerald-50 text-emerald-700 hover:text-emerald-800 border-slate-200/80 hover:border-emerald-300 backdrop-blur-md"
                 }`}
               >
-                <BookMarked className="h-3.5 w-3.5 text-emerald-400" />
+                <BookMarked className={`h-3.5 w-3.5 ${pathname === "/dashboard/modul" ? "text-white" : "text-emerald-600"}`} />
                 <span>Panduan Alur MR</span>
               </Link>
             </div>
@@ -1177,31 +1185,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 xl:w-72 transform glass-sidebar shadow-2xl transition-transform duration-300 ease-in-out md:hidden flex flex-col ${
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       }`}>
-        <div className="flex h-16 items-center justify-between border-b border-white/10 px-4 xl:px-6 shrink-0 bg-white/[0.02]">
+        <div className="flex h-16 items-center justify-between border-b border-slate-200/80 px-4 xl:px-6 shrink-0 bg-white/40">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white shadow-md shadow-emerald-950/50 border border-emerald-400/30">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white shadow-sm border border-emerald-400/30">
               <ShieldAlert className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white tracking-tight leading-none">
-                Si<span className="text-emerald-400">-MaRi</span>
+              <h1 className="text-lg font-bold text-slate-900 tracking-tight leading-none">
+                Si<span className="text-emerald-600">-MaRi</span>
               </h1>
-              <p className="text-[10px] text-slate-400 font-medium">Kemendes PDT</p>
+              <p className="text-[10px] text-slate-500 font-medium">Kemendes PDT</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)} className="text-slate-400 hover:text-white hover:bg-white/10">
+          <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)} className="text-slate-500 hover:text-slate-800 hover:bg-slate-100">
             <Menu className="h-5 w-5" />
           </Button>
         </div>
-        <div className="border-b border-white/10 px-4 xl:px-6 py-3.5 bg-white/[0.03] backdrop-blur-sm shrink-0">
-          <p className="text-xs xl:text-sm font-semibold text-white whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
+        <div className="border-b border-slate-200/80 px-4 xl:px-6 py-3.5 bg-white/30 backdrop-blur-sm shrink-0">
+          <p className="text-xs xl:text-sm font-bold text-slate-800 whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
             {user.unitName || user.email}
           </p>
           <div className="flex flex-wrap items-center gap-2 mt-2">
-            <span className="text-[10px] font-semibold text-emerald-300 uppercase tracking-wider border border-emerald-500/20 bg-emerald-500/10 inline-block px-2 py-0.5 rounded-lg backdrop-blur-sm">
+            <span className="text-[10px] font-semibold text-emerald-800 uppercase tracking-wider border border-emerald-200 bg-emerald-50 inline-block px-2 py-0.5 rounded-lg">
               {getRoleLabel(user.role)}
             </span>
-            <span className="text-[10px] font-semibold text-slate-300 bg-white/[0.05] inline-block px-2 py-0.5 rounded-lg border border-white/10">
+            <span className="text-[10px] font-semibold text-slate-700 bg-slate-100 inline-block px-2 py-0.5 rounded-lg border border-slate-200">
               TA {activeYear}
             </span>
           </div>
@@ -1209,22 +1217,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav className="flex-1 overflow-y-auto px-3.5 py-4 custom-scrollbar">
           {renderNavGroups(navGroups, true)}
         </nav>
-        <div className="border-t border-white/10 p-3 shrink-0 bg-white/[0.02] space-y-2">
+        <div className="border-t border-slate-200/80 p-3 shrink-0 bg-white/40 space-y-2">
           <Link
             href="/dashboard/modul"
             onClick={() => setIsSidebarOpen(false)}
-            className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-emerald-500/30 text-slate-200 hover:text-emerald-300 transition-all text-xs group backdrop-blur-sm"
+            className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/60 hover:bg-emerald-50 border border-slate-200/80 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 transition-all text-xs group shadow-2xs"
           >
             <div className="flex items-center gap-2.5">
-              <BookMarked className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+              <BookMarked className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
               <div className="text-left">
-                <div className="font-semibold text-white group-hover:text-emerald-300">Panduan Alur MR</div>
-                <div className="text-[10px] text-slate-400">Diagram alur & petunjuk</div>
+                <div className="font-semibold text-slate-800 group-hover:text-emerald-800">Panduan Alur MR</div>
+                <div className="text-[10px] text-slate-500">Diagram alur & petunjuk</div>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 transition-all" />
+            <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 transition-all" />
           </Link>
-          <p className="text-[10px] text-slate-500 text-center font-medium pt-1">Kemendes PDT © 2026</p>
+          <p className="text-[10px] text-slate-400 text-center font-medium pt-1">Kemendes PDT © 2026</p>
         </div>
       </aside>
 
