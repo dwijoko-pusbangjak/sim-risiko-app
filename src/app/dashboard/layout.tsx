@@ -259,13 +259,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     title: "Overview",
     items: [
       { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { name: "Katalog Peraturan", href: "/dashboard/katalog-peraturan", icon: BookOpen },
-      { 
-        name: "Chat Pengguna", 
-        href: "/dashboard/chat", 
-        icon: MessageSquare, 
-        badge: unreadChatCount > 0 ? String(unreadChatCount) : undefined 
-      }
+      { name: "Katalog Peraturan", href: "/dashboard/katalog-peraturan", icon: BookOpen }
     ]
   });
 
@@ -716,18 +710,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </button>
             </div>
 
-            {/* Tombol Pintasan Chat Pengguna */}
+            {/* Tombol Pintasan Chat Pengguna (Pojok Kanan Atas) */}
             <Link
               href="/dashboard/chat"
-              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all relative ${
+              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all relative cursor-pointer ${
                 pathname === "/dashboard/chat"
                   ? "bg-emerald-600 text-white shadow-xs font-bold"
-                  : "text-slate-600 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300"
+                  : "text-slate-700 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300"
               }`}
               title="Pusat Chat Antar Pengguna"
             >
               <div className="relative flex items-center">
-                <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                <MessageSquare className={`w-3.5 h-3.5 ${pathname === "/dashboard/chat" ? "text-white" : "text-emerald-600"}`} />
                 {unreadChatCount > 0 && (
                   <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-xs">
                     {unreadChatCount > 99 ? "99+" : unreadChatCount}
@@ -740,7 +734,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {unreadChatCount}
                 </span>
               ) : (
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${pathname === "/dashboard/chat" ? "bg-white" : "bg-emerald-500"}`} />
               )}
             </Link>
 
@@ -880,34 +874,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >
                 <BookOpen className="h-3.5 w-3.5 text-emerald-400" />
                 <span>Katalog Peraturan</span>
-              </Link>
-
-              <Link
-                href="/dashboard/chat"
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 relative ${
-                  pathname === "/dashboard/chat"
-                    ? "bg-emerald-600 text-white shadow-sm font-bold"
-                    : "text-slate-300 hover:text-white hover:bg-slate-800"
-                }`}
-              >
-                <div className="relative flex items-center">
-                  <MessageSquare className="h-3.5 w-3.5 text-emerald-400" />
-                  {unreadChatCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
-                      {unreadChatCount > 99 ? "99+" : unreadChatCount}
-                    </span>
-                  )}
-                </div>
-                <span>Chat Pengguna</span>
-                {unreadChatCount > 0 ? (
-                  <span className="text-[10px] bg-rose-500 text-white px-2 py-0.5 rounded-full font-bold animate-pulse shadow-xs">
-                    {unreadChatCount}
-                  </span>
-                ) : (
-                  <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1 rounded font-bold">
-                    Live
-                  </span>
-                )}
               </Link>
 
               <div className="h-4 w-px bg-slate-700/80 mx-1 shrink-0" />
