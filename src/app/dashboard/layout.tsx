@@ -417,7 +417,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {/* Submenu Item List */}
                   <div className={`grid transition-all duration-200 ease-in-out ${isOpen ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0"}`}>
                     <div className="overflow-hidden">
-                      <div className="flex flex-col space-y-1 pl-4 pr-1 pb-1 relative before:absolute before:left-6 before:top-1 before:bottom-3 before:w-px before:bg-gradient-to-b before:from-emerald-500/40 before:via-white/15 before:to-transparent">
+                      <div className="flex flex-col space-y-1 p-1.5 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-md shadow-inner my-1">
                         {item.children.map((child) => {
                           const isChildActive = pathname === child.href;
                           return (
@@ -427,8 +427,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                               onClick={() => isMobile && setIsSidebarOpen(false)}
                               className={`group relative flex items-center justify-between rounded-xl px-2.5 py-2 text-[12px] font-medium transition-all border ${
                                 isChildActive
-                                  ? "bg-gradient-to-r from-emerald-600/90 to-emerald-500/85 text-white font-semibold shadow-md shadow-emerald-950/40 border-emerald-400/30 backdrop-blur-sm"
-                                  : "text-slate-300/80 hover:bg-white/[0.06] hover:text-white border-transparent hover:border-white/5"
+                                  ? "bg-gradient-to-r from-emerald-600/80 to-emerald-500/75 text-white font-semibold shadow-md shadow-emerald-950/40 border-emerald-300/40 backdrop-blur-md"
+                                  : "text-slate-200/90 hover:bg-white/[0.10] hover:text-white border-transparent hover:border-white/10"
                               }`}
                             >
                               <div className="flex items-center min-w-0 flex-1 pr-2">
@@ -445,7 +445,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 ) : (
                                   <span
                                     className={`w-1.5 h-1.5 rounded-full mr-2.5 shrink-0 transition-colors ${
-                                      isChildActive ? "bg-white" : "bg-slate-500 group-hover:bg-emerald-400"
+                                      isChildActive ? "bg-white" : "bg-slate-400 group-hover:bg-emerald-400"
                                     }`}
                                   />
                                 )}
@@ -544,7 +544,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 print:h-auto print:min-h-0 print:block print:overflow-visible font-sans">
+    <div className="flex h-screen overflow-hidden bg-slate-50 relative print:h-auto print:min-h-0 print:block print:overflow-visible font-sans">
+      {/* Latar Belakang Gradien Halus untuk Refraksi Kaca Nyata */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden print:hidden" aria-hidden="true">
+        <div className="absolute -top-20 -left-20 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-8 w-80 h-80 bg-teal-400/15 rounded-full blur-3xl" />
+        <div className="absolute -top-10 right-1/4 w-[500px] h-48 bg-emerald-600/15 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 right-10 w-96 h-96 bg-blue-500/15 rounded-full blur-3xl" />
+        <div className="absolute bottom-10 left-1/3 w-80 h-80 bg-slate-400/15 rounded-full blur-3xl" />
+      </div>
+
       {/* ====================================================================== */}
       {/* 1. SIDEBAR DESKTOP (Tampil HANYA jika menuPosition === "sidebar")        */}
       {/* ====================================================================== */}
