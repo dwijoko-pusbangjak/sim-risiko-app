@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-export type ColorTheme = "emerald" | "blue" | "indigo" | "violet" | "teal" | "amber" | "rose" | "slate";
+export type ColorTheme = "sky" | "emerald" | "blue" | "indigo" | "violet" | "teal" | "amber" | "rose" | "slate";
 export type BgTone = "default" | "eyecare" | "cool";
 export type NavbarStyle = "dark" | "tinted";
 export type FontSize = "normal" | "large";
@@ -20,7 +20,7 @@ export interface UserPreferences {
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
-  colorTheme: "emerald",
+  colorTheme: "sky",
   bgTone: "default",
   navbarStyle: "dark",
   fontSize: "normal",
@@ -39,10 +39,19 @@ export interface ColorOption {
 
 export const COLOR_OPTIONS: ColorOption[] = [
   {
+    id: "sky",
+    name: "Biru Langit",
+    tagline: "Cerah, segar, berkelas & menenangkan (Standar Baru)",
+    badge: "Default",
+    primaryHex: "#0284c7",
+    lightHex: "#f0f9ff",
+    dotColor: "bg-sky-600",
+  },
+  {
     id: "emerald",
     name: "Hijau Zamrud",
-    tagline: "Resmi, seimbang & alami (Standar Kemendesa)",
-    badge: "Default",
+    tagline: "Resmi, seimbang & alami",
+    badge: "Klasik",
     primaryHex: "#059669",
     lightHex: "#ecfdf5",
     dotColor: "bg-emerald-600",

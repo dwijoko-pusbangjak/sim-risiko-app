@@ -154,24 +154,24 @@
 }
 
 /* ========================================================================= */
-/* PALET WARNA PROFESIONAL KEMENTERIAN DESA PDT                              */
+/* PALET TEMA BIRU LANGIT (SKY BLUE EXECUTIVE PALETTE)                       */
 /* ========================================================================= */
 
 :root {
-  --color-emerald-50: #ecfdf5;
-  --color-emerald-100: #d1fae5;
-  --color-emerald-200: #a7f3d0;
-  --color-emerald-300: #6ee7b7;
-  --color-emerald-400: #34d399;
-  --color-emerald-500: #10b981;
-  --color-emerald-600: #059669;
-  --color-emerald-700: #047857;
-  --color-emerald-800: #065f46;
-  --color-emerald-900: #064e3b;
-  --color-emerald-950: #022c22;
-  --theme-accent: #059669;
-  --theme-accent-light: #ecfdf5;
-  --theme-accent-ring: rgba(5, 150, 105, 0.25);
+  --color-sky-50: #f0f9ff;
+  --color-sky-100: #e0f2fe;
+  --color-sky-200: #bae6fd;
+  --color-sky-300: #7dd3fc;
+  --color-sky-400: #38bdf8;
+  --color-sky-500: #0ea5e9;
+  --color-sky-600: #0284c7;
+  --color-sky-700: #0369a1;
+  --color-sky-800: #075985;
+  --color-sky-900: #0c4a6e;
+  --color-sky-950: #082f49;
+  --theme-accent: #0284c7;
+  --theme-accent-light: #f0f9ff;
+  --theme-accent-ring: rgba(2, 132, 199, 0.25);
   --app-bg-main: #f8fafc;
 }
 

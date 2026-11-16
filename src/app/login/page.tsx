@@ -124,8 +124,8 @@ export default function LoginPage() {
           <div className="w-full max-w-[20rem] space-y-4 xl:space-y-5 animate-in fade-in slide-in-from-right-8 duration-700 delay-150 fill-mode-both">
             
             <div className="space-y-2 md:hidden mb-8 text-center">
-               <div className="inline-flex items-center justify-center p-3 bg-emerald-100 rounded-xl mb-3">
-                 <ShieldCheck className="w-8 h-8 text-emerald-700" />
+               <div className="inline-flex items-center justify-center p-3 bg-sky-100 rounded-xl mb-3">
+                 <ShieldCheck className="w-8 h-8 text-sky-700" />
                </div>
                <h1 className="text-2xl font-bold tracking-tight text-slate-900">Si-MaRi</h1>
                <p className="text-sm text-slate-500">Kemendes PDT</p>
@@ -149,7 +149,7 @@ export default function LoginPage() {
               <div className="space-y-2.5">
                 <Label htmlFor="year" className="text-slate-700 font-semibold text-xs sm:text-sm">Tahun Manajemen Risiko</Label>
                 <Select value={selectedYear} onValueChange={setSelectedYear}>
-                  <SelectTrigger id="year" className="h-10 bg-slate-50 border-slate-200 focus:ring-emerald-500">
+                  <SelectTrigger id="year" className="h-10 bg-slate-50 border-slate-200 focus:ring-sky-500">
                     <SelectValue placeholder="Pilih Tahun" />
                   </SelectTrigger>
                   <SelectContent>
@@ -170,7 +170,7 @@ export default function LoginPage() {
                   placeholder="nama@kemendesa.go.id" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-10 bg-slate-50 border-slate-200 focus:border-emerald-500 focus:ring-emerald-500"
+                  className="h-10 bg-slate-50 border-slate-200 focus:border-sky-500 focus:ring-sky-500"
                   required
                 />
               </div>
@@ -185,14 +185,14 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-10 bg-slate-50 border-slate-200 focus:border-emerald-500 focus:ring-emerald-500"
+                  className="h-10 bg-slate-50 border-slate-200 focus:border-sky-500 focus:ring-sky-500"
                   required
                 />
               </div>
 
               <Button 
                 type="submit" 
-                className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-all shadow-md hover:shadow-lg mt-4" 
+                className="w-full h-10 bg-sky-600 hover:bg-sky-700 text-white font-semibold text-sm transition-all shadow-md hover:shadow-lg mt-4 cursor-pointer" 
                 disabled={loading}
               >
                 {loading ? (

@@ -54,14 +54,14 @@ function FormattedMessage({ content }: { content: string }) {
         }
         if (trimmed.startsWith("## ")) {
           return (
-            <h3 key={idx} className="font-bold text-slate-900 mt-2.5 mb-1 text-base text-emerald-900">
+            <h3 key={idx} className="font-bold text-slate-900 mt-2.5 mb-1 text-base text-sky-900">
               {renderInline(trimmed.replace(/^##\s+/, ""))}
             </h3>
           );
         }
         if (trimmed.startsWith("# ")) {
           return (
-            <h2 key={idx} className="font-bold text-slate-900 mt-3 mb-1 text-base sm:text-lg text-emerald-950">
+            <h2 key={idx} className="font-bold text-slate-900 mt-3 mb-1 text-base sm:text-lg text-sky-950">
               {renderInline(trimmed.replace(/^#\s+/, ""))}
             </h2>
           );
@@ -70,7 +70,7 @@ function FormattedMessage({ content }: { content: string }) {
         // Blockquotes
         if (trimmed.startsWith("> ")) {
           return (
-            <blockquote key={idx} className="border-l-3 border-emerald-500 bg-emerald-50/70 pl-2.5 py-1 my-1 rounded-r text-slate-700 italic text-xs sm:text-sm">
+            <blockquote key={idx} className="border-l-3 border-sky-500 bg-sky-50/70 pl-2.5 py-1 my-1 rounded-r text-slate-700 italic text-xs sm:text-sm">
               {renderInline(trimmed.replace(/^>\s*/, ""))}
             </blockquote>
           );
@@ -85,7 +85,7 @@ function FormattedMessage({ content }: { content: string }) {
         if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
           return (
             <div key={idx} className="flex items-start gap-2 pl-1 my-0.5">
-              <span className="text-emerald-600 mt-1.5 shrink-0 block w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span className="text-sky-600 mt-1.5 shrink-0 block w-1.5 h-1.5 rounded-full bg-sky-500" />
               <div className="flex-1">
                 {renderInline(trimmed.substring(2))}
               </div>
@@ -98,7 +98,7 @@ function FormattedMessage({ content }: { content: string }) {
         if (numMatch) {
           return (
             <div key={idx} className="flex items-start gap-2 pl-1 my-0.5">
-              <span className="font-semibold text-emerald-700 text-xs shrink-0 mt-0.5 bg-emerald-50 px-1 rounded border border-emerald-200">
+              <span className="font-semibold text-sky-700 text-xs shrink-0 mt-0.5 bg-sky-50 px-1 rounded border border-sky-200">
                 {numMatch[1]}.
               </span>
               <div className="flex-1">
@@ -143,7 +143,7 @@ function renderInline(text: string): React.ReactNode {
       );
     } else if (token.startsWith("`") && token.endsWith("`")) {
       parts.push(
-        <code key={keyIdx++} className="bg-slate-100 text-emerald-800 text-xs px-1 py-0.5 rounded font-mono border border-slate-200">
+        <code key={keyIdx++} className="bg-slate-100 text-sky-800 text-xs px-1 py-0.5 rounded font-mono border border-slate-200">
           {token.slice(1, -1)}
         </code>
       );
@@ -422,8 +422,8 @@ export default function AIChatBox() {
       {!isOpen && (
         <div className="relative group">
           {/* Greeting Tooltip Bubble */}
-          <div className="absolute right-0 bottom-16 w-64 bg-white/95 backdrop-blur-md p-3.5 rounded-xl shadow-xl border border-emerald-100 text-xs text-slate-700 pointer-events-none transform translate-y-2 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-            <div className="flex items-center gap-1.5 font-bold text-emerald-800 mb-1">
+          <div className="absolute right-0 bottom-16 w-64 bg-white/95 backdrop-blur-md p-3.5 rounded-xl shadow-xl border border-sky-100 text-xs text-slate-700 pointer-events-none transform translate-y-2 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+            <div className="flex items-center gap-1.5 font-bold text-sky-800 mb-1">
               <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
               Si-MaRi AI Assistant
             </div>
@@ -437,7 +437,7 @@ export default function AIChatBox() {
               setIsOpen(true);
               setIsMinimized(false);
             }}
-            className="flex items-center gap-2.5 px-4 py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-full shadow-lg hover:shadow-emerald-500/30 transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-emerald-400/30 border border-emerald-400/30"
+            className="flex items-center gap-2.5 px-4 py-3 bg-gradient-to-r from-sky-600 via-cyan-600 to-sky-700 hover:from-sky-700 hover:to-cyan-800 text-white rounded-full shadow-lg hover:shadow-sky-500/30 transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-sky-400/30 border border-sky-400/30"
           >
             <div className="relative">
               <Bot className="w-5 h-5 text-white" />
@@ -462,16 +462,16 @@ export default function AIChatBox() {
           }`}
         >
           {/* HEADER CHAT */}
-          <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white p-3.5 flex items-center justify-between shrink-0 border-b border-emerald-900/40 select-none">
+          <div className="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 text-white p-3.5 flex items-center justify-between shrink-0 border-b border-sky-900/40 select-none">
             <div className="flex items-center gap-2.5">
-              <div className="relative p-1.5 bg-emerald-600/30 border border-emerald-500/40 rounded-xl">
-                <Bot className="w-5 h-5 text-emerald-400" />
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-slate-900" />
+              <div className="relative p-1.5 bg-sky-600/30 border border-sky-500/40 rounded-xl">
+                <Bot className="w-5 h-5 text-sky-400" />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-sky-400 ring-2 ring-slate-900" />
               </div>
               <div className="leading-tight">
                 <div className="flex items-center gap-1.5">
                   <span className="font-bold text-sm text-white tracking-wide">Si-MaRi AI</span>
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded border border-emerald-500/30 font-medium">
+                  <span className="text-[10px] bg-sky-500/20 text-sky-300 px-1.5 py-0.2 rounded border border-sky-500/30 font-medium">
                     Online
                   </span>
                 </div>
@@ -522,7 +522,7 @@ export default function AIChatBox() {
                 <div className="bg-slate-50 border-b border-slate-200 p-3.5 text-xs text-slate-700 animate-in slide-in-from-top-2 duration-200">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-bold text-slate-900 flex items-center gap-1.5">
-                      <Key className="w-3.5 h-3.5 text-emerald-600" />
+                      <Key className="w-3.5 h-3.5 text-sky-600" />
                       Konfigurasi Engine AI
                     </span>
                     <button
@@ -541,11 +541,11 @@ export default function AIChatBox() {
                       placeholder="Masukkan Gemini API Key (opsional)..."
                       value={apiKeyInput}
                       onChange={(e) => setApiKeyInput(e.target.value)}
-                      className="flex-1 px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+                      className="flex-1 px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono"
                     />
                     <button
                       onClick={handleSaveApiKey}
-                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-xs transition-colors shrink-0"
+                      className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg font-medium text-xs transition-colors shrink-0"
                     >
                       Simpan
                     </button>
@@ -564,8 +564,8 @@ export default function AIChatBox() {
                     {msg.role === "user" ? (
                       /* USER MESSAGE BUBBLE */
                       <div className="flex items-start justify-end gap-2 max-w-[90%] self-end">
-                        <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-2xl rounded-tr-xs p-3 shadow-sm">
-                          <div className="flex items-center justify-between gap-3 mb-1 text-[10px] text-emerald-100/90 font-medium pb-1 border-b border-emerald-500/30">
+                        <div className="bg-gradient-to-r from-sky-600 to-cyan-700 text-white rounded-2xl rounded-tr-xs p-3 shadow-sm">
+                          <div className="flex items-center justify-between gap-3 mb-1 text-[10px] text-sky-100/90 font-medium pb-1 border-b border-sky-500/30">
                             <span className="font-semibold text-white flex items-center gap-1">
                               Anda ({user?.role === "kementerian" ? "Kementerian" : user?.role === "auditor" ? "Auditor" : "Unit Kerja"})
                             </span>
@@ -575,21 +575,21 @@ export default function AIChatBox() {
                             {msg.content}
                           </p>
                         </div>
-                        <div className="w-7 h-7 rounded-full bg-emerald-700 text-white flex items-center justify-center shrink-0 text-xs font-bold shadow-sm ring-2 ring-emerald-200 mt-1">
+                        <div className="w-7 h-7 rounded-full bg-sky-700 text-white flex items-center justify-center shrink-0 text-xs font-bold shadow-sm ring-2 ring-sky-200 mt-1">
                           {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
                         </div>
                       </div>
                     ) : (
                       /* ASSISTANT MESSAGE BUBBLE */
                       <div className="flex items-start gap-2 max-w-[94%] self-start">
-                        <div className="w-7 h-7 rounded-full bg-slate-900 border border-emerald-500/50 text-emerald-400 flex items-center justify-center shrink-0 shadow-sm mt-1">
-                          <Bot className="w-4 h-4 text-emerald-400" />
+                        <div className="w-7 h-7 rounded-full bg-slate-900 border border-sky-500/50 text-sky-400 flex items-center justify-center shrink-0 shadow-sm mt-1">
+                          <Bot className="w-4 h-4 text-sky-400" />
                         </div>
                         <div className="bg-white text-slate-800 border border-slate-200/90 rounded-2xl rounded-tl-xs p-3.5 shadow-sm flex-1 relative group">
                           <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-slate-100 text-[11px] text-slate-500">
                             <div className="flex items-center gap-1.5">
-                              <span className="font-bold text-emerald-900">Si-MaRi AI</span>
-                              <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono font-medium">
+                              <span className="font-bold text-sky-900">Si-MaRi AI</span>
+                              <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-sky-50 text-sky-700 border border-sky-200 font-mono font-medium">
                                 {msg.source === "gemini" ? "Gemini 2.0" : "KB Expert Engine"}
                               </span>
                             </div>
@@ -601,7 +601,7 @@ export default function AIChatBox() {
                                 className="p-1 hover:bg-slate-100 hover:text-slate-700 rounded transition-colors"
                               >
                                 {copiedId === msg.id ? (
-                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                  <Check className="w-3.5 h-3.5 text-sky-600" />
                                 ) : (
                                   <Copy className="w-3.5 h-3.5" />
                                 )}
@@ -618,11 +618,11 @@ export default function AIChatBox() {
                 {/* Loading Bubble */}
                 {isLoading && (
                   <div className="flex items-start gap-2 max-w-[90%] self-start">
-                    <div className="w-7 h-7 rounded-full bg-slate-900 border border-emerald-500/50 text-emerald-400 flex items-center justify-center shrink-0 shadow-sm mt-1">
-                      <Bot className="w-4 h-4 text-emerald-400" />
+                    <div className="w-7 h-7 rounded-full bg-slate-900 border border-sky-500/50 text-sky-400 flex items-center justify-center shrink-0 shadow-sm mt-1">
+                      <Bot className="w-4 h-4 text-sky-400" />
                     </div>
                     <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-xs p-3 shadow-sm flex items-center gap-2.5 text-xs text-slate-600">
-                      <Loader2 className="w-4 h-4 text-emerald-600 animate-spin shrink-0" />
+                      <Loader2 className="w-4 h-4 text-sky-600 animate-spin shrink-0" />
                       <span>Si-MaRi sedang menganalisis & merumuskan jawaban...</span>
                     </div>
                   </div>
@@ -642,7 +642,7 @@ export default function AIChatBox() {
                       key={i}
                       onClick={() => handleSendMessage(prompt)}
                       disabled={isLoading}
-                      className="text-[11px] bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 px-2.5 py-1 rounded-full border border-slate-200 transition-colors disabled:opacity-50 shrink-0"
+                      className="text-[11px] bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 px-2.5 py-1 rounded-full border border-slate-200 transition-colors disabled:opacity-50 shrink-0"
                     >
                       {prompt}
                     </button>
@@ -652,7 +652,7 @@ export default function AIChatBox() {
 
               {/* INPUT BOX */}
               <div className="p-3 bg-white border-t border-slate-200 shrink-0">
-                <div className="relative flex items-end gap-2 bg-slate-50 rounded-xl border border-slate-300 focus-within:border-emerald-600 focus-within:ring-1 focus-within:ring-emerald-600 p-2">
+                <div className="relative flex items-end gap-2 bg-slate-50 rounded-xl border border-slate-300 focus-within:border-sky-600 focus-within:ring-1 focus-within:ring-sky-600 p-2">
                   <textarea
                     ref={textareaRef}
                     rows={2}
@@ -666,7 +666,7 @@ export default function AIChatBox() {
                   <button
                     onClick={() => handleSendMessage()}
                     disabled={isLoading || !inputMessage.trim()}
-                    className="p-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0 shadow-sm"
+                    className="p-2 bg-gradient-to-r from-sky-600 to-cyan-700 hover:from-sky-700 hover:to-cyan-800 text-white rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0 shadow-sm"
                     title="Kirim (Enter)"
                   >
                     {isLoading ? (
@@ -678,8 +678,8 @@ export default function AIChatBox() {
                 </div>
                 <div className="flex items-center justify-between mt-1.5 text-[10px] text-slate-400 px-1">
                   <span>Tekan <strong>Enter</strong> kirim, <strong>Shift+Enter</strong> baris baru</span>
-                  <span className="flex items-center gap-1 font-medium text-emerald-700">
-                    <ShieldAlert className="w-3 h-3 text-emerald-600" />
+                  <span className="flex items-center gap-1 font-medium text-sky-700">
+                    <ShieldAlert className="w-3 h-3 text-sky-600" />
                     Permenpan RB 5/2020
                   </span>
                 </div>
