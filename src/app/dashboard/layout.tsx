@@ -28,8 +28,7 @@ import {
   PanelLeft,
   PanelTop,
   Check,
-  MessageSquare,
-  Palette
+  MessageSquare
 } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -44,8 +43,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
-import { useTheme, COLOR_OPTIONS } from "@/context/ThemeContext";
-import ThemeCustomizerModal from "@/components/ThemeCustomizerModal";
+import { useTheme } from "@/context/ThemeContext";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
 import AIChatBox from "@/components/AIChatBox";
 
@@ -109,8 +107,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   });
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const { user, loading, activeYear } = useAuth();
-  const { colorTheme, menuPosition, setMenuPosition, openCustomizer } = useTheme();
-  const activeThemeObj = COLOR_OPTIONS.find((c) => c.id === colorTheme) || COLOR_OPTIONS[0];
+  const { menuPosition, setMenuPosition } = useTheme();
   const [isAnalisisRtpEnabled, setIsAnalisisRtpEnabled] = useState<boolean>(true);
   const [unreadChatCount, setUnreadChatCount] = useState<number>(0);
   const [allChatMessages, setAllChatMessages] = useState<ChatMessageData[]>([]);
@@ -584,25 +581,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {renderNavGroups(navGroups)}
           </nav>
           
-          {/* Sidebar Footer dengan Pintasan Panduan Alur MR & Kustomisasi Warna */}
+          {/* Sidebar Footer dengan Pintasan Panduan Alur MR */}
           <div className="border-t border-slate-800 p-3 shrink-0 bg-[#0f172a] space-y-2">
-            <button
-              type="button"
-              onClick={openCustomizer}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-emerald-950/40 border border-slate-800 hover:border-emerald-700/50 text-slate-200 hover:text-emerald-300 transition-all text-xs group cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5">
-                <Palette className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-                <div className="text-left">
-                  <div className="font-semibold text-white group-hover:text-emerald-300">Warna Tampilan</div>
-                  <div className="text-[10px] text-slate-400">Tema: {activeThemeObj.name}</div>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
-            </button>
             <Link
               href="/dashboard/modul"
-              className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-emerald-950/40 border border-slate-800 hover:border-emerald-700/50 text-slate-200 hover:text-emerald-300 transition-all text-xs group"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-900/90 hover:bg-emerald-950/40 border border-slate-800 hover:border-emerald-700/50 text-slate-200 hover:text-emerald-300 transition-all text-xs group"
             >
               <div className="flex items-center gap-2.5">
                 <BookMarked className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
@@ -613,7 +596,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
               <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
             </Link>
-            <p className="text-[10px] text-slate-500 text-center font-medium">Kemendes PDT © 2026</p>
+            <p className="text-[10px] text-slate-500 text-center font-medium pt-1">Kemendes PDT © 2026</p>
           </div>
         </aside>
       )}
@@ -749,18 +732,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Link>
             )}
 
-            {/* Tombol Kustomisasi Warna & Kenyamanan Layar */}
-            <button
-              type="button"
-              onClick={openCustomizer}
-              title="Sesuaikan Warna Tampilan & Kenyamanan"
-              className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 px-2.5 py-1.5 rounded-xl transition-all cursor-pointer"
-            >
-              <Palette className="w-3.5 h-3.5 text-emerald-600" />
-              <span className="hidden sm:inline">Warna</span>
-              <span className="w-2 h-2 rounded-full bg-emerald-600" />
-            </button>
-
             {/* User Avatar Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 transition-colors border border-slate-200 cursor-pointer outline-none">
@@ -777,23 +748,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </p>
                   </div>
                 </div>
-
-                {/* Pengaturan Tema & Warna di dalam Dropdown */}
-                <div className="px-2 pt-2 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Kenyamanan Tampilan
-                </div>
-                <DropdownMenuItem
-                  onClick={openCustomizer}
-                  className="cursor-pointer rounded-lg text-xs py-2 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <Palette className="h-4 w-4 text-emerald-600" />
-                    <span className="font-medium">Sesuaikan Warna Layar</span>
-                  </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold uppercase tracking-wider border border-emerald-200">
-                    {activeThemeObj.name}
-                  </span>
-                </DropdownMenuItem>
 
                 <DropdownMenuSeparator className="my-1.5" />
 
@@ -1188,7 +1142,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Konten Halaman */}
         <ChangePasswordModal isOpen={isPasswordModalOpen} onClose={() => setIsPasswordModalOpen(false)} />
-        <ThemeCustomizerModal />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 theme-bg-main relative print:overflow-visible print:bg-white print:p-0 print:m-0">
           <div className="mx-auto max-w-7xl 2xl:max-w-[1600px] print:max-w-none print:w-full">
             {children}
@@ -1242,27 +1195,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {renderNavGroups(navGroups, true)}
         </nav>
         <div className="border-t border-slate-800 p-3 shrink-0 bg-[#0f172a] space-y-2">
-          <button
-            type="button"
-            onClick={() => {
-              setIsSidebarOpen(false);
-              openCustomizer();
-            }}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-emerald-950/40 border border-slate-800 hover:border-emerald-700/50 text-slate-200 hover:text-emerald-300 transition-all text-xs group cursor-pointer"
-          >
-            <div className="flex items-center gap-2.5">
-              <Palette className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-              <div className="text-left">
-                <div className="font-semibold text-white group-hover:text-emerald-300">Warna Tampilan</div>
-                <div className="text-[10px] text-slate-400">Tema: {activeThemeObj.name}</div>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 transition-all" />
-          </button>
           <Link
             href="/dashboard/modul"
             onClick={() => setIsSidebarOpen(false)}
-            className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-emerald-950/40 border border-slate-800 hover:border-emerald-700/50 text-slate-200 hover:text-emerald-300 transition-all text-xs group"
+            className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-900/90 hover:bg-emerald-950/40 border border-slate-800 hover:border-emerald-700/50 text-slate-200 hover:text-emerald-300 transition-all text-xs group"
           >
             <div className="flex items-center gap-2.5">
               <BookMarked className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
@@ -1273,7 +1209,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
             <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 transition-all" />
           </Link>
-          <p className="text-[10px] text-slate-500 text-center font-medium">Kemendes PDT © 2026</p>
+          <p className="text-[10px] text-slate-500 text-center font-medium pt-1">Kemendes PDT © 2026</p>
         </div>
       </aside>
 
