@@ -328,15 +328,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       });
     } else {
       const prosesMRChildren: NavItemChild[] = [
-        { name: "Identifikasi Risiko", href: "/dashboard/mr-identifikasi", step: "01" },
-        { name: "Analisis Risiko", href: "/dashboard/mr-analisis", step: "02" },
-        { name: "Rencana Tindak Pengendalian", href: "/dashboard/mr-rtp", step: "03" },
-        { name: "Pemantauan RTP", href: "/dashboard/mr-pemantauan", step: "04" },
-        { name: "Pencatatan Keterjadian", href: "/dashboard/mr-keterjadian", step: "05" },
-        { name: "Efektifitas RTP", href: "/dashboard/mr-efektifitas", step: "06" },
+        { name: "Identifikasi Risiko", href: "/dashboard/mr-identifikasi" },
+        { name: "Analisis Risiko", href: "/dashboard/mr-analisis" },
+        { name: "Rencana Tindak Pengendalian", href: "/dashboard/mr-rtp" },
+        { name: "Pemantauan RTP", href: "/dashboard/mr-pemantauan" },
+        { name: "Pencatatan Keterjadian", href: "/dashboard/mr-keterjadian" },
+        { name: "Efektifitas RTP", href: "/dashboard/mr-efektifitas" },
       ];
       if (isAnalisisRtpEnabled) {
-        prosesMRChildren.push({ name: "Analisis RTP", href: "/dashboard/mr-analisis-rtp", step: "07", badge: "Telaah" });
+        prosesMRChildren.push({ name: "Analisis RTP", href: "/dashboard/mr-analisis-rtp", badge: "Telaah" });
       }
 
       navGroups.push({
@@ -397,13 +397,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const renderNavGroups = (groups: NavGroup[], isMobile = false) => {
     return groups.map((group, idx) => (
       <div key={group.title} className={idx > 0 ? "mt-5" : ""}>
-        <div className="flex items-center justify-between px-3.5 py-2.5 my-2.5 rounded-xl bg-[#122842]/50 border border-white/10 shadow-xs backdrop-blur-xs">
+        <div className="flex items-center px-3.5 py-2.5 my-2.5 rounded-xl bg-[#122842]/50 border border-white/10 shadow-xs backdrop-blur-xs">
           <h3 className="text-[13.5px] font-bold text-white tracking-normal flex items-center gap-2">
             {group.title}
           </h3>
-          <span className="text-[10px] font-bold text-white/90 bg-white/15 border border-white/20 px-2 py-0.5 rounded-full">
-            {group.items.length}
-          </span>
         </div>
 
         <div className="space-y-1">
@@ -442,14 +439,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       <span className="text-left leading-tight truncate flex-1 font-medium">{item.name}</span>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold border transition-colors ${
-                        hasChildActive || isHovered
-                          ? "bg-white/20 text-white border-white/30"
-                          : "bg-white/10 text-white/80 border-white/15"
-                      }`}>
-                        {item.children.length}
-                      </span>
+                    <div className="flex items-center shrink-0">
                       {isOpen ? (
                         <ChevronDown className="h-4 w-4 text-white transition-transform duration-200" />
                       ) : (
@@ -476,23 +466,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                               }`}
                             >
                               <div className="flex items-center min-w-0 flex-1 pr-2">
-                                {child.step ? (
-                                  <span
-                                    className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md mr-2.5 shrink-0 border transition-all ${
-                                      isChildActive
-                                        ? "bg-white/30 text-white border-white/40"
-                                        : "bg-white/15 text-white/90 border-white/20 group-hover:border-white/40"
-                                    }`}
-                                  >
-                                    {child.step}
-                                  </span>
-                                ) : (
-                                  <span
-                                    className={`w-1.5 h-1.5 rounded-full mr-2.5 shrink-0 transition-colors ${
-                                      isChildActive ? "bg-white" : "bg-white/60 group-hover:bg-white"
-                                    }`}
-                                  />
-                                )}
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full mr-2.5 shrink-0 transition-colors ${
+                                    isChildActive ? "bg-white scale-125" : "bg-white/50 group-hover:bg-white"
+                                  }`}
+                                />
                                 <span className="truncate leading-tight">{child.name}</span>
                               </div>
 
@@ -987,7 +965,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <span>Penetapan Konteks</span>
                   </Link>
 
-                  {/* Dropdown 7 Tahapan Proses Manajemen Risiko */}
+                  {/* Dropdown Proses Manajemen Risiko */}
                   <DropdownMenu modal={false}>
                     <DropdownMenuTrigger
                       openOnHover
@@ -1001,27 +979,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     >
                       <FolderTree className="h-3.5 w-3.5 text-white" />
                       <span>Proses MR</span>
-                      <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md font-bold ${
-                        pathname.startsWith("/dashboard/mr-") && pathname !== "/dashboard/mr-konteks"
-                          ? "bg-white/25 text-white border border-white/30"
-                          : "bg-white/15 text-white border border-white/20"
-                      }`}>
-                        {isAnalisisRtpEnabled ? "7" : "6"}
-                      </span>
                       <ChevronDown className="h-3 w-3 ml-0.5 transition-transform duration-200 text-white/80" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" sideOffset={6} className="w-68 p-1.5 glass-dropdown-content text-white rounded-xl shadow-2xl animate-in fade-in-50 zoom-in-95 duration-150">
                       <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white/70 border-b border-white/15 mb-1">
-                        7 Tahapan Proses Manajemen Risiko
+                        Tahapan Proses Manajemen Risiko
                       </div>
                       {[
-                        { name: "Identifikasi Risiko", href: "/dashboard/mr-identifikasi", step: "01" },
-                        { name: "Analisis Risiko", href: "/dashboard/mr-analisis", step: "02" },
-                        { name: "Rencana Tindak Pengendalian", href: "/dashboard/mr-rtp", step: "03" },
-                        { name: "Pemantauan RTP", href: "/dashboard/mr-pemantauan", step: "04" },
-                        { name: "Pencatatan Keterjadian", href: "/dashboard/mr-keterjadian", step: "05" },
-                        { name: "Efektifitas RTP", href: "/dashboard/mr-efektifitas", step: "06" },
-                        ...(isAnalisisRtpEnabled ? [{ name: "Analisis RTP", href: "/dashboard/mr-analisis-rtp", step: "07", badge: "Telaah" }] : [])
+                        { name: "Identifikasi Risiko", href: "/dashboard/mr-identifikasi" },
+                        { name: "Analisis Risiko", href: "/dashboard/mr-analisis" },
+                        { name: "Rencana Tindak Pengendalian", href: "/dashboard/mr-rtp" },
+                        { name: "Pemantauan RTP", href: "/dashboard/mr-pemantauan" },
+                        { name: "Pencatatan Keterjadian", href: "/dashboard/mr-keterjadian" },
+                        { name: "Efektifitas RTP", href: "/dashboard/mr-efektifitas" },
+                        ...(isAnalisisRtpEnabled ? [{ name: "Analisis RTP", href: "/dashboard/mr-analisis-rtp", badge: "Telaah" }] : [])
                       ].map((child) => {
                         const isChildActive = pathname === child.href;
                         return (
@@ -1035,11 +1006,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             }`}
                           >
                             <div className="flex items-center min-w-0 pr-2">
-                              <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md mr-2 shrink-0 border ${
-                                isChildActive ? "bg-white/30 text-white border-white/40" : "bg-white/15 text-white/90 border-white/20"
-                              }`}>
-                                {child.step}
-                              </span>
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full mr-2 shrink-0 transition-colors ${
+                                  isChildActive ? "bg-white scale-125" : "bg-white/50"
+                                }`}
+                              />
                               <span className="truncate">{child.name}</span>
                             </div>
                             {child.badge && (
