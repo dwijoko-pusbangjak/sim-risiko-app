@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { 
@@ -101,10 +101,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = rawPathname || "/dashboard";
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({ 
-    "Proses Manajemen Risiko": true,
-    "Proses Riviu": false 
-  });
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+  const [hoveredSidebarMenu, setHoveredSidebarMenu] = useState<string | null>(null);
+  const sidebarHoverEnterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const sidebarHoverLeaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleSidebarMenuEnter = (menuName: string) => {
+    if (sidebarHoverLeaveTimeoutRef.current) {
+      clearTimeout(sidebarHoverLeaveTimeoutRef.current);
+      sidebarHoverLeaveTimeoutRef.current = null;
+    }
+    if (sidebarHoverEnterTimeoutRef.current) {
+      clearTimeout(sidebarHoverEnterTimeoutRef.current);
+    }
+    sidebarHoverEnterTimeoutRef.current = setTimeout(() => {
+      setHoveredSidebarMenu(menuName);
+    }, 40);
+  };
+
+  const handleSidebarMenuLeave = (menuName: string) => {
+    if (sidebarHoverEnterTimeoutRef.current) {
+      clearTimeout(sidebarHoverEnterTimeoutRef.current);
+      sidebarHoverEnterTimeoutRef.current = null;
+    }
+    if (sidebarHoverLeaveTimeoutRef.current) {
+      clearTimeout(sidebarHoverLeaveTimeoutRef.current);
+    }
+    sidebarHoverLeaveTimeoutRef.current = setTimeout(() => {
+      setHoveredSidebarMenu((curr) => (curr === menuName ? null : curr));
+    }, 200);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (sidebarHoverEnterTimeoutRef.current) clearTimeout(sidebarHoverEnterTimeoutRef.current);
+      if (sidebarHoverLeaveTimeoutRef.current) clearTimeout(sidebarHoverLeaveTimeoutRef.current);
+    };
+  }, []);
+
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const { user, loading, activeYear } = useAuth();
   const { menuPosition, setMenuPosition } = useTheme();
@@ -223,8 +257,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.push("/login");
   };
 
-  const toggleMenu = (name: string) => {
-    setOpenMenus((prev) => ({ ...prev, [name]: !prev[name] }));
+  const toggleMenu = (name: string, currentlyOpen?: boolean) => {
+    setOpenMenus((prev) => {
+      const isCurrentlyOpen = currentlyOpen !== undefined ? currentlyOpen : Boolean(prev[name]);
+      return { ...prev, [name]: !isCurrentlyOpen };
+    });
   };
 
   const getRoleLabel = (role: string | null | undefined) => {
@@ -378,16 +415,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             // Submenu bertingkat (children)
             if (item.children) {
-              const isOpen = openMenus[item.name] !== undefined ? openMenus[item.name] : Boolean(isActive);
+              const isHovered = !isMobile && hoveredSidebarMenu === item.name;
+              const isPinned = openMenus[item.name];
+              const isOpen = isHovered || isPinned || (isPinned === undefined && Boolean(hasChildActive));
 
               return (
-                <div key={item.name} className="flex flex-col space-y-1">
+                <div
+                  key={item.name}
+                  onMouseEnter={!isMobile ? () => handleSidebarMenuEnter(item.name) : undefined}
+                  onMouseLeave={!isMobile ? () => handleSidebarMenuLeave(item.name) : undefined}
+                  className="flex flex-col space-y-1"
+                >
                   <button
                     type="button"
-                    onClick={() => toggleMenu(item.name)}
+                    onClick={() => toggleMenu(item.name, isOpen)}
                     className={`group flex items-center justify-between rounded-xl px-3 py-2.5 text-[12px] xl:text-[13px] font-medium transition-all w-full cursor-pointer text-left border ${
                       hasChildActive
                         ? "bg-sky-50 text-sky-800 border-sky-200/80 shadow-xs font-semibold"
+                        : isHovered
+                        ? "bg-sky-50/80 text-sky-800 border-sky-200/60 shadow-2xs font-semibold"
                         : "text-slate-700 hover:bg-slate-100/90 hover:text-sky-700 border-transparent hover:border-slate-200/60"
                     }`}
                   >
@@ -395,6 +441,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       <div className={`w-7 h-7 rounded-lg flex items-center justify-center mr-2.5 transition-all shrink-0 border ${
                         hasChildActive 
                           ? "bg-sky-600 text-white border-sky-500 shadow-xs" 
+                          : isHovered
+                          ? "bg-sky-100 text-sky-700 border-sky-200"
                           : "bg-slate-100 text-slate-600 border-slate-200/80 group-hover:text-sky-700 group-hover:bg-sky-50 group-hover:border-sky-200"
                       }`}>
                         <Icon className="h-4 w-4" />
@@ -403,13 +451,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 border border-slate-200/80 font-bold">
+                      <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold border transition-colors ${
+                        hasChildActive || isHovered
+                          ? "bg-sky-100 text-sky-800 border-sky-200"
+                          : "bg-slate-100 text-slate-600 border-slate-200/80"
+                      }`}>
                         {item.children.length}
                       </span>
                       {isOpen ? (
-                        <ChevronDown className="h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-transform" />
+                        <ChevronDown className="h-4 w-4 text-sky-600 transition-transform duration-200" />
                       ) : (
-                        <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-transform" />
+                        <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-transform duration-200" />
                       )}
                     </div>
                   </button>
