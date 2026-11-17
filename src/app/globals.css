@@ -126,9 +126,9 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
   html {
-    font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: 15px;
-    letter-spacing: -0.011em;
+    font-family: var(--font-sans), "Open Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    letter-spacing: -0.005em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -181,31 +181,37 @@
 }
 
 /* ========================================================================= */
-/* TRUE TRANSLUCENT FROSTED GLASS (KACA BURAM TRANSPARAN BERKELAS)          */
+/* TEMA MENU & SUB-MENU WEBPRAKTIS (DEEP STEEL SLATE BLUE GRADIENT)          */
 /* ========================================================================= */
 
-.glass-menu-bar {
-  background: rgba(255, 255, 255, 0.78) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.95) !important;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.9) !important;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04), inset 0 1px 0 0 rgba(255, 255, 255, 1) !important;
+.glass-menu-bar,
+.theme-menu-bar {
+  background: linear-gradient(90deg, #183658 0%, #22476e 40%, #345a82 100%) !important;
+  color: #ffffff !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-bottom: 1px solid #1a3c61 !important;
+  box-shadow: 0 4px 20px -2px rgba(10, 25, 45, 0.25) !important;
 }
 
-.glass-dropdown-content {
-  background: rgba(255, 255, 255, 0.92) !important;
-  backdrop-filter: blur(24px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.95) !important;
-  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 1) !important;
+.glass-dropdown-content,
+.theme-dropdown-content {
+  background: #183658 !important;
+  border: 1px solid #2b537e !important;
+  box-shadow: 0 20px 45px -10px rgba(8, 20, 36, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
 }
 
-.glass-sidebar {
-  background: rgba(255, 255, 255, 0.85) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-  border-right: 1px solid rgba(226, 232, 240, 0.9) !important;
-  box-shadow: 4px 0 24px -4px rgba(0, 0, 0, 0.04), inset -1px 0 0 0 rgba(255, 255, 255, 0.8) !important;
+.glass-sidebar,
+.theme-sidebar-gradient {
+  background: linear-gradient(180deg, #183658 0%, #244972 38%, #41678f 72%, #6888a9 100%) !important;
+  color: #ffffff !important;
+  border-right: 1px solid #183658 !important;
+  box-shadow: 4px 0 24px -4px rgba(10, 25, 45, 0.25) !important;
+}
+
+.theme-header-dark {
+  background: #183658 !important;
+  border-bottom: 1px solid #23476e !important;
+  color: #ffffff !important;
 }
 
