@@ -849,17 +849,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
               {/* Cascading Kinerja (Khusus Kementerian, Eselon 1, Eselon 2 - tidak untuk Admin) */}
               {sasaranItems.length > 0 && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
-                    sasaranItems.some(s => pathname === s.href)
-                      ? "bg-sky-600 text-white font-bold shadow-xs border-sky-500"
-                      : "text-slate-700 hover:text-sky-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80"
-                  }`}>
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger
+                    openOnHover
+                    delay={60}
+                    closeDelay={180}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
+                      sasaranItems.some(s => pathname === s.href)
+                        ? "bg-sky-600 text-white font-bold shadow-xs border-sky-500"
+                        : "text-slate-700 hover:text-sky-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80 data-popup-open:bg-slate-100/90 data-popup-open:border-slate-200/80"
+                    }`}
+                  >
                     <Target className={`h-3.5 w-3.5 ${sasaranItems.some(s => pathname === s.href) ? "text-white" : "text-sky-600"}`} />
                     <span>Cascading Kinerja</span>
-                    <ChevronDown className={`h-3 w-3 ml-0.5 ${sasaranItems.some(s => pathname === s.href) ? "text-white" : "text-slate-400"}`} />
+                    <ChevronDown className={`h-3 w-3 ml-0.5 transition-transform duration-200 ${sasaranItems.some(s => pathname === s.href) ? "text-white" : "text-slate-400"}`} />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-58 p-1.5 glass-dropdown-content text-slate-800 rounded-2xl shadow-xl animate-in fade-in-50 zoom-in-95 duration-150">
+                  <DropdownMenuContent align="start" sideOffset={6} className="w-58 p-1.5 glass-dropdown-content text-slate-800 rounded-2xl shadow-xl animate-in fade-in-50 zoom-in-95 duration-150">
                     <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200/80 mb-1">
                       Cascading Kinerja
                     </div>
@@ -937,12 +942,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </Link>
 
                   {/* Dropdown 7 Tahapan Proses Manajemen Risiko */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
-                      pathname.startsWith("/dashboard/mr-") && pathname !== "/dashboard/mr-konteks"
-                        ? "bg-sky-600 text-white font-bold shadow-xs border-sky-500"
-                        : "text-slate-700 hover:text-sky-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80"
-                    }`}>
+                  <DropdownMenu modal={false}>
+                    <DropdownMenuTrigger
+                      openOnHover
+                      delay={60}
+                      closeDelay={180}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
+                        pathname.startsWith("/dashboard/mr-") && pathname !== "/dashboard/mr-konteks"
+                          ? "bg-sky-600 text-white font-bold shadow-xs border-sky-500"
+                          : "text-slate-700 hover:text-sky-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80 data-popup-open:bg-slate-100/90 data-popup-open:border-slate-200/80"
+                      }`}
+                    >
                       <FolderTree className={`h-3.5 w-3.5 ${pathname.startsWith("/dashboard/mr-") && pathname !== "/dashboard/mr-konteks" ? "text-white" : "text-sky-600"}`} />
                       <span>Proses MR</span>
                       <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md font-bold ${
@@ -952,9 +962,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       }`}>
                         {isAnalisisRtpEnabled ? "7" : "6"}
                       </span>
-                      <ChevronDown className={`h-3 w-3 ml-0.5 ${pathname.startsWith("/dashboard/mr-") && pathname !== "/dashboard/mr-konteks" ? "text-white" : "text-slate-400"}`} />
+                      <ChevronDown className={`h-3 w-3 ml-0.5 transition-transform duration-200 ${pathname.startsWith("/dashboard/mr-") && pathname !== "/dashboard/mr-konteks" ? "text-white" : "text-slate-400"}`} />
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-68 p-1.5 glass-dropdown-content text-slate-800 rounded-2xl shadow-xl animate-in fade-in-50 zoom-in-95 duration-150">
+                    <DropdownMenuContent align="start" sideOffset={6} className="w-68 p-1.5 glass-dropdown-content text-slate-800 rounded-2xl shadow-xl animate-in fade-in-50 zoom-in-95 duration-150">
                       <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200/80 mb-1">
                         7 Tahapan Proses Manajemen Risiko
                       </div>
@@ -1000,17 +1010,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </DropdownMenu>
 
                   {/* Dropdown Proses Riviu */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
-                      pathname.startsWith("/dashboard/proses-audit")
-                        ? "bg-sky-600 text-white font-bold shadow-xs border-sky-500"
-                        : "text-slate-700 hover:text-sky-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80"
-                    }`}>
+                  <DropdownMenu modal={false}>
+                    <DropdownMenuTrigger
+                      openOnHover
+                      delay={60}
+                      closeDelay={180}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
+                        pathname.startsWith("/dashboard/proses-audit")
+                          ? "bg-sky-600 text-white font-bold shadow-xs border-sky-500"
+                          : "text-slate-700 hover:text-sky-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80 data-popup-open:bg-slate-100/90 data-popup-open:border-slate-200/80"
+                      }`}
+                    >
                       <SearchCheck className={`h-3.5 w-3.5 ${pathname.startsWith("/dashboard/proses-audit") ? "text-white" : "text-sky-600"}`} />
                       <span>Proses Riviu</span>
-                      <ChevronDown className={`h-3 w-3 ml-0.5 ${pathname.startsWith("/dashboard/proses-audit") ? "text-white" : "text-slate-400"}`} />
+                      <ChevronDown className={`h-3 w-3 ml-0.5 transition-transform duration-200 ${pathname.startsWith("/dashboard/proses-audit") ? "text-white" : "text-slate-400"}`} />
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-58 p-1.5 glass-dropdown-content text-slate-800 rounded-2xl shadow-xl animate-in fade-in-50 zoom-in-95 duration-150">
+                    <DropdownMenuContent align="start" sideOffset={6} className="w-58 p-1.5 glass-dropdown-content text-slate-800 rounded-2xl shadow-xl animate-in fade-in-50 zoom-in-95 duration-150">
                       <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200/80 mb-1">
                         Proses Riviu Auditor APIP
                       </div>
@@ -1052,17 +1067,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
               {/* Menu Khusus Administrator */}
               {user.role === "admin" && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
-                    ["/dashboard/units", "/dashboard/users", "/dashboard/mr-analisis-rtp", "/dashboard/logs", "/dashboard/settings", "/dashboard/backup"].includes(pathname)
-                      ? "bg-sky-600 text-white font-bold shadow-xs border-sky-500"
-                      : "text-slate-700 hover:text-sky-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80"
-                  }`}>
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger
+                    openOnHover
+                    delay={60}
+                    closeDelay={180}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
+                      ["/dashboard/units", "/dashboard/users", "/dashboard/mr-analisis-rtp", "/dashboard/logs", "/dashboard/settings", "/dashboard/backup"].includes(pathname)
+                        ? "bg-sky-600 text-white font-bold shadow-xs border-sky-500"
+                        : "text-slate-700 hover:text-sky-700 hover:bg-slate-100/90 border-transparent hover:border-slate-200/80 data-popup-open:bg-slate-100/90 data-popup-open:border-slate-200/80"
+                    }`}
+                  >
                     <Settings className={`h-3.5 w-3.5 ${["/dashboard/units", "/dashboard/users", "/dashboard/mr-analisis-rtp", "/dashboard/logs", "/dashboard/settings", "/dashboard/backup"].includes(pathname) ? "text-white" : "text-sky-600"}`} />
                     <span>Administrator</span>
-                    <ChevronDown className={`h-3 w-3 ml-0.5 ${["/dashboard/units", "/dashboard/users", "/dashboard/mr-analisis-rtp", "/dashboard/logs", "/dashboard/settings", "/dashboard/backup"].includes(pathname) ? "text-white" : "text-slate-400"}`} />
+                    <ChevronDown className={`h-3 w-3 ml-0.5 transition-transform duration-200 ${["/dashboard/units", "/dashboard/users", "/dashboard/mr-analisis-rtp", "/dashboard/logs", "/dashboard/settings", "/dashboard/backup"].includes(pathname) ? "text-white" : "text-slate-400"}`} />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-64 p-1.5 glass-dropdown-content text-slate-800 rounded-2xl shadow-xl animate-in fade-in-50 zoom-in-95 duration-150">
+                  <DropdownMenuContent align="start" sideOffset={6} className="w-64 p-1.5 glass-dropdown-content text-slate-800 rounded-2xl shadow-xl animate-in fade-in-50 zoom-in-95 duration-150">
                     <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200/80 mb-1">
                       Menu Administrator
                     </div>
