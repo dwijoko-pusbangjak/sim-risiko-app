@@ -27,6 +27,13 @@ import {
   UserPlus
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   CHAT_COLLECTION,
@@ -55,7 +62,9 @@ export default function ChatPenggunaPage() {
   const [contactsList, setContactsList] = useState<UserContact[]>([]);
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [searchUser, setSearchUser] = useState("");
-  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
+  const [modalSearch, setModalSearch] = useState("");
+  const [modalRoleFilter, setModalRoleFilter] = useState("all");
 
   // Percakapan aktif: default ke Forum Diskusi Umum
   const [activeRecipient, setActiveRecipient] = useState<UserContact>({
@@ -470,22 +479,19 @@ export default function ChatPenggunaPage() {
     if (searchQuery) {
       // PENCARIAN AKTIF: Cari di seluruh kontak master yang cocok
       return contactsList.filter((c) => {
-        if (c.id === currentUid) return false;
-        const matchSearch =
+        if (c.id === currentUid || c.id === GENERAL_ROOM_ID) return false;
+        return (
           c.unitName.toLowerCase().includes(searchQuery) ||
           c.email.toLowerCase().includes(searchQuery) ||
-          (c.role && c.role.toLowerCase().includes(searchQuery));
-        const matchRole = roleFilter === "all" || c.role === roleFilter;
-        return matchSearch && matchRole;
+          (c.role && c.role.toLowerCase().includes(searchQuery))
+        );
       });
     }
 
     // DEFAULT: HANYA kontak yang SUDAH PERNAH chat!
     const recentList = contactsList.filter((c) => {
-      if (c.id === currentUid) return false;
-      const hasChatted = chattedContactIds.has(c.id);
-      const matchRole = roleFilter === "all" || c.role === roleFilter;
-      return hasChatted && matchRole;
+      if (c.id === currentUid || c.id === GENERAL_ROOM_ID) return false;
+      return chattedContactIds.has(c.id);
     });
 
     // Urutkan kontak dengan obrolan paling baru berada di posisi teratas
@@ -499,8 +505,32 @@ export default function ChatPenggunaPage() {
       return timeB - timeA;
     });
 
+    // Jika sedang memilih kontak yang baru dipilih dari modal "Chat Baru" (belum ada pesan terkirim),
+    // sisipkan di paling atas riwayat agar langsung terlihat di panel samping
+    if (
+      activeRecipient.id !== GENERAL_ROOM_ID &&
+      !recentList.some((c) => c.id === activeRecipient.id)
+    ) {
+      recentList.unshift(activeRecipient);
+    }
+
     return recentList;
-  }, [contactsList, currentUid, searchQuery, roleFilter, chattedContactIds, lastMessageMap]);
+  }, [contactsList, currentUid, searchQuery, chattedContactIds, lastMessageMap, activeRecipient]);
+
+  // Kontak yang disaring untuk Modal "Chat Baru"
+  const modalFilteredContacts = useMemo(() => {
+    const q = modalSearch.trim().toLowerCase();
+    return contactsList.filter((c) => {
+      if (c.id === currentUid || c.id === GENERAL_ROOM_ID) return false;
+      const matchSearch =
+        !q ||
+        c.unitName.toLowerCase().includes(q) ||
+        c.email.toLowerCase().includes(q) ||
+        (c.role && c.role.toLowerCase().includes(q));
+      const matchRole = modalRoleFilter === "all" || c.role === modalRoleFilter;
+      return matchSearch && matchRole;
+    });
+  }, [contactsList, currentUid, modalSearch, modalRoleFilter]);
 
   // 8. Kirim Pesan dengan jaminan izin tulis lengkap
   const handleSendMessage = async (customText?: string) => {
@@ -673,13 +703,28 @@ export default function ChatPenggunaPage() {
             showMobileChat ? "hidden md:flex" : "flex"
           }`}
         >
-          {/* Pencarian & Filter Peran */}
-          <div className="p-3 border-b border-slate-200 bg-white space-y-2 shrink-0">
+          {/* Tombol Chat Baru & Kolom Pencarian */}
+          <div className="p-3 border-b border-slate-200 bg-white space-y-2.5 shrink-0">
+            {/* Tombol Chat Baru yang Menonjol */}
+            <button
+              type="button"
+              onClick={() => {
+                setModalSearch("");
+                setModalRoleFilter("all");
+                setIsNewChatModalOpen(true);
+              }}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:from-emerald-800 active:to-teal-800 text-white font-semibold text-xs transition-all shadow-xs cursor-pointer group"
+            >
+              <UserPlus className="w-4 h-4 transition-transform group-hover:scale-110" />
+              <span>Chat Baru</span>
+            </button>
+
+            {/* Kolom Pencarian Percakapan */}
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <Input
                 type="text"
-                placeholder="Cari unit atau nama pengguna..."
+                placeholder="Cari percakapan..."
                 value={searchUser}
                 onChange={(e) => setSearchUser(e.target.value)}
                 className="pl-9 h-9 text-xs bg-slate-50 border-slate-200 focus:bg-white rounded-xl"
@@ -688,36 +733,11 @@ export default function ChatPenggunaPage() {
                 <button
                   type="button"
                   onClick={() => setSearchUser("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-[11px] font-bold px-1"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-[11px] font-bold px-1 cursor-pointer"
                 >
                   ✕
                 </button>
               )}
-            </div>
-
-            {/* Filter Peran Pill */}
-            <div className="flex items-center gap-1 overflow-x-auto pb-1 custom-scrollbar text-[11px]">
-              {[
-                { id: "all", label: "Semua" },
-                { id: "kementerian", label: "Kementerian" },
-                { id: "eselon_1", label: "Eselon 1" },
-                { id: "eselon_2", label: "Eselon 2" },
-                { id: "auditor", label: "Auditor" },
-                { id: "admin", label: "Admin" }
-              ].map((rf) => (
-                <button
-                  key={rf.id}
-                  type="button"
-                  onClick={() => setRoleFilter(rf.id)}
-                  className={`px-2 py-0.5 rounded-lg font-medium whitespace-nowrap transition-colors cursor-pointer ${
-                    roleFilter === rf.id
-                      ? "bg-emerald-600 text-white shadow-xs font-semibold"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                >
-                  {rf.label}
-                </button>
-              ))}
             </div>
           </div>
 
@@ -800,16 +820,28 @@ export default function ChatPenggunaPage() {
                 </div>
               ) : (
                 /* Card panduan ketika belum ada riwayat chat 1-on-1 */
-                <div className="text-center py-8 px-4 text-slate-400 space-y-2.5 bg-white rounded-xl border border-slate-200/80">
+                <div className="text-center py-8 px-4 text-slate-400 space-y-3 bg-white rounded-xl border border-slate-200/80">
                   <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
                     <UserPlus className="w-5 h-5" />
                   </div>
                   <div className="space-y-1">
                     <p className="text-xs font-bold text-slate-700">Belum Ada Percakapan Langsung</p>
                     <p className="text-[11px] text-slate-400 leading-relaxed">
-                      Kontak yang belum pernah chat tidak ditampilkan di sini. Ketik nama unit kerja atau pejabat pada kolom pencarian di atas untuk memulai chat baru.
+                      Kontak yang belum pernah chat tidak ditampilkan di sini. Klik tombol <strong>Chat Baru</strong> di atas untuk memulai koordinasi dengan pengguna lain.
                     </p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModalSearch("");
+                      setModalRoleFilter("all");
+                      setIsNewChatModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs cursor-pointer transition-colors"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Mulai Chat Baru</span>
+                  </button>
                 </div>
               )
             ) : (
@@ -1070,6 +1102,160 @@ export default function ChatPenggunaPage() {
           </div>
         </div>
       </div>
+
+      {/* ====================================================================== */}
+      {/* MODAL / DIALOG: PILIH USER UNTUK CHAT BARU                              */}
+      {/* ====================================================================== */}
+      <Dialog open={isNewChatModalOpen} onOpenChange={setIsNewChatModalOpen}>
+        <DialogContent className="sm:max-w-lg p-0 overflow-hidden rounded-2xl border border-slate-200 shadow-2xl bg-white text-slate-800">
+          {/* Header Modal */}
+          <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white p-4 sm:p-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600/30 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0">
+                <UserPlus className="w-5 h-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-base font-bold text-white tracking-wide">
+                  Mulai Chat Baru
+                </DialogTitle>
+                <DialogDescription className="text-xs text-slate-300 mt-0.5">
+                  Pilih pengguna atau unit kerja untuk memulai obrolan langsung
+                </DialogDescription>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 space-y-3">
+            {/* Input Pencarian Pengguna */}
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Input
+                type="text"
+                placeholder="Cari nama unit kerja, pejabat, atau email..."
+                value={modalSearch}
+                onChange={(e) => setModalSearch(e.target.value)}
+                autoFocus
+                className="pl-9 h-9.5 text-xs bg-slate-50 border-slate-200 focus:bg-white rounded-xl"
+              />
+              {modalSearch && (
+                <button
+                  type="button"
+                  onClick={() => setModalSearch("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold px-1 cursor-pointer"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Filter Peran di dalam Modal */}
+            <div className="flex items-center gap-1 overflow-x-auto pb-1 custom-scrollbar text-[11px]">
+              {[
+                { id: "all", label: "Semua Peran" },
+                { id: "kementerian", label: "Kementerian" },
+                { id: "eselon_1", label: "Eselon 1" },
+                { id: "eselon_2", label: "Eselon 2" },
+                { id: "auditor", label: "Auditor" },
+                { id: "admin", label: "Admin" }
+              ].map((rf) => (
+                <button
+                  key={rf.id}
+                  type="button"
+                  onClick={() => setModalRoleFilter(rf.id)}
+                  className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-colors cursor-pointer text-xs ${
+                    modalRoleFilter === rf.id
+                      ? "bg-emerald-600 text-white font-semibold shadow-xs"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  {rf.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Total Kontak Ditemukan */}
+            <div className="text-[11px] font-semibold text-slate-400 px-1 flex items-center justify-between">
+              <span>Daftar Pengguna ({modalFilteredContacts.length})</span>
+              <span>Klik untuk langsung mengobrol</span>
+            </div>
+
+            {/* Daftar Pengguna Scrollable */}
+            <div className="max-h-[340px] overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
+              {loadingContacts ? (
+                <div className="text-center py-10 text-xs text-slate-400 space-y-2">
+                  <Loader2 className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto text-emerald-600" />
+                  <p>Memuat daftar pengguna...</p>
+                </div>
+              ) : modalFilteredContacts.length === 0 ? (
+                <div className="text-center py-10 px-4 text-slate-400 space-y-2 bg-slate-50 rounded-xl border border-slate-200/80">
+                  <Search className="w-8 h-8 mx-auto text-slate-300" />
+                  <p className="text-xs font-semibold text-slate-700">Pengguna Tidak Ditemukan</p>
+                  <p className="text-[11px] text-slate-400">
+                    Tidak ditemukan pengguna yang cocok dengan kriteria pencarian &quot;{modalSearch}&quot;.
+                  </p>
+                </div>
+              ) : (
+                modalFilteredContacts.map((c) => {
+                  const isCurrentActive = activeRecipient.id === c.id;
+                  const hasChatted = chattedContactIds.has(c.id);
+
+                  return (
+                    <div
+                      key={c.id}
+                      onClick={() => {
+                        handleSelectRecipient(c);
+                        setIsNewChatModalOpen(false);
+                        setModalSearch("");
+                        setTimeout(() => {
+                          textareaRef.current?.focus();
+                        }, 100);
+                      }}
+                      className={`p-3 rounded-xl cursor-pointer transition-all border flex items-center justify-between gap-3 group ${
+                        isCurrentActive
+                          ? "bg-emerald-50 border-emerald-300 ring-2 ring-emerald-500/20"
+                          : "bg-white hover:bg-emerald-50/60 hover:border-emerald-200 border-slate-200/80 shadow-2xs"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-10 h-10 rounded-xl bg-slate-800 group-hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs transition-colors">
+                          {getUserInitials(c.unitName || c.email)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-bold text-slate-800 group-hover:text-emerald-950 truncate" title={c.unitName}>
+                              {c.unitName}
+                            </p>
+                            {hasChatted && (
+                              <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.2 rounded font-medium shrink-0">
+                                Pernah Chat
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className={`text-[9px] font-semibold px-1.5 py-0.2 rounded border ${getRoleBadgeColor(c.role)}`}>
+                              {getRoleLabel(c.role)}
+                            </span>
+                            <span className="text-[11px] text-slate-400 truncate">
+                              {c.email || "Unit Resmi"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white border border-emerald-200 group-hover:border-emerald-600 transition-all cursor-pointer"
+                      >
+                        Pilih
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
