@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { collection, query, where, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Loader2, Save, Plus, Pencil, Trash2, X, AlertCircle, Search, Layers, Filter } from "lucide-react";
+import { Loader2, Save, Plus, Pencil, Trash2, X, AlertCircle, Search, Layers, Filter, ChevronLeft, ChevronRight, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 interface Indikator { name: string; target: string; }
@@ -92,6 +92,67 @@ export default function IdentifikasiRisikoPage() {
     const set = new Set(risikoList.map(r => (r.indikatorKinerja || "").trim()).filter(Boolean));
     return set.size;
   }, [risikoList]);
+
+  // Sinkronisasi Scrollbar Atas & Bawah
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
+  const isSyncingScroll = useRef(false);
+  const [tableScrollWidth, setTableScrollWidth] = useState(2500);
+
+  useEffect(() => {
+    const updateScrollWidth = () => {
+      if (tableRef.current) {
+        setTableScrollWidth(tableRef.current.scrollWidth);
+      }
+    };
+
+    updateScrollWidth();
+    const timer = setTimeout(updateScrollWidth, 150);
+
+    let observer: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined" && tableRef.current) {
+      observer = new ResizeObserver(() => {
+        updateScrollWidth();
+      });
+      observer.observe(tableRef.current);
+    }
+
+    window.addEventListener("resize", updateScrollWidth);
+    return () => {
+      clearTimeout(timer);
+      if (observer) observer.disconnect();
+      window.removeEventListener("resize", updateScrollWidth);
+    };
+  }, [groupedRisiko, isFormVisible]);
+
+  const handleTopScroll = () => {
+    if (isSyncingScroll.current) return;
+    isSyncingScroll.current = true;
+    if (topScrollRef.current && tableScrollRef.current) {
+      tableScrollRef.current.scrollLeft = topScrollRef.current.scrollLeft;
+    }
+    requestAnimationFrame(() => {
+      isSyncingScroll.current = false;
+    });
+  };
+
+  const handleTableScroll = () => {
+    if (isSyncingScroll.current) return;
+    isSyncingScroll.current = true;
+    if (topScrollRef.current && tableScrollRef.current) {
+      topScrollRef.current.scrollLeft = tableScrollRef.current.scrollLeft;
+    }
+    requestAnimationFrame(() => {
+      isSyncingScroll.current = false;
+    });
+  };
+
+  const nudgeScroll = (amount: number) => {
+    if (tableScrollRef.current) {
+      tableScrollRef.current.scrollBy({ left: amount, behavior: "smooth" });
+    }
+  };
 
   // Master Data (Indikator & Sasaran)
   const [kinerjaList, setKinerjaList] = useState<{ id: string; indikator: string; sasaran: string }[]>([]);
@@ -403,25 +464,131 @@ export default function IdentifikasiRisikoPage() {
       {/* Tabel Daftar Risiko Berdasarkan Kelompok Indikator */}
       {!isFormVisible && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden animate-in fade-in zoom-in-95">
-          <div className="overflow-auto max-h-[calc(100vh-16rem)] relative custom-scrollbar pb-2">
-            <Table className="border-collapse">
-              <TableHeader className="bg-slate-100/90 sticky top-0 z-20 backdrop-blur-md">
+          {/* Bar Informasi Freeze & Tombol Nudge Scroll */}
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 bg-slate-50/90 border-b border-slate-200 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-100 text-blue-800 font-semibold text-[11px] border border-blue-200 shadow-2xs">
+                <Lock className="w-3.5 h-3.5 text-blue-700" /> Freeze Kolom Aktif
+              </span>
+              <span className="text-slate-600 font-medium hidden sm:inline">
+                Kolom <strong className="text-slate-800">Indikator Kinerja</strong> s.d. <strong className="text-slate-800">Pernyataan Risiko</strong> terkunci di sisi kiri saat tabel digeser ke samping.
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 ml-auto">
+              <span className="text-[11px] text-slate-500 mr-1 hidden md:inline">Geser cepat:</span>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={() => nudgeScroll(-350)}
+                className="h-7 px-2.5 text-xs text-slate-700 hover:text-blue-700 hover:bg-blue-50 border-slate-300 gap-1 rounded-lg"
+                title="Geser tabel ke kiri"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" /> Ke Kiri
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={() => nudgeScroll(350)}
+                className="h-7 px-2.5 text-xs text-slate-700 hover:text-blue-700 hover:bg-blue-50 border-slate-300 gap-1 rounded-lg"
+                title="Geser tabel ke kanan"
+              >
+                Ke Kanan <ChevronRight className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Bilah Scrollbar Atas (Top Scrollbar) yang tersinkronisasi */}
+          <div 
+            ref={topScrollRef}
+            onScroll={handleTopScroll}
+            className="overflow-x-auto overflow-y-hidden border-b border-slate-200 bg-slate-100/70 custom-scrollbar"
+            style={{ height: '15px' }}
+          >
+            <div style={{ width: `${Math.max(tableScrollWidth, 2500)}px`, height: '1px' }} />
+          </div>
+
+          {/* Kontainer Tabel Utama */}
+          <div 
+            ref={tableScrollRef}
+            onScroll={handleTableScroll}
+            className="overflow-auto max-h-[calc(100vh-17rem)] relative custom-scrollbar pb-2"
+          >
+            <Table ref={tableRef as any} className="border-separate border-spacing-0 w-full">
+              <TableHeader className="bg-slate-100/95 sticky top-0 z-30">
                 <TableRow className="border-b border-slate-200 text-slate-700">
-                  <TableHead className="min-w-[240px] max-w-[280px] font-bold text-slate-800">Indikator Kinerja</TableHead>
-                  <TableHead className="min-w-[220px] max-w-[260px] font-bold text-slate-800">Sasaran Terkait</TableHead>
-                  <TableHead className="min-w-[220px] font-bold text-slate-800">Permasalahan</TableHead>
-                  <TableHead className="min-w-[260px] font-bold text-slate-800">Pernyataan Risiko</TableHead>
-                  <TableHead className="min-w-[120px] font-bold text-slate-800">Kategori</TableHead>
-                  <TableHead className="min-w-[170px] font-bold text-slate-800">Pemilik Risiko</TableHead>
-                  <TableHead className="min-w-[220px] font-bold text-slate-800">Uraian Penyebab</TableHead>
-                  <TableHead className="min-w-[160px] font-bold text-slate-800">Sumber Penyebab</TableHead>
-                  <TableHead className="min-w-[110px] text-center font-bold text-slate-800">Sifat (C/UC)</TableHead>
-                  <TableHead className="min-w-[220px] font-bold text-slate-800">Uraian Dampak</TableHead>
-                  <TableHead className="min-w-[160px] font-bold text-slate-800">Pihak Terdampak</TableHead>
-                  <TableHead className="min-w-[220px] font-bold text-slate-800">Pengendalian Yg Ada</TableHead>
-                  <TableHead className="min-w-[140px] font-bold text-slate-800">Penilaian</TableHead>
-                  <TableHead className="min-w-[160px] font-bold text-slate-800">Sisa Risiko</TableHead>
-                  <TableHead className="text-center min-w-[90px] sticky right-0 bg-slate-100 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)] z-30 font-bold text-slate-800">Aksi</TableHead>
+                  {/* Kolom 1: Indikator Kinerja (Sticky Left 0px) */}
+                  <TableHead 
+                    style={{ left: 0 }}
+                    className="sticky top-0 left-0 z-40 bg-slate-100 font-bold text-slate-800 w-[220px] min-w-[220px] max-w-[220px] border-b border-r border-slate-200"
+                  >
+                    Indikator Kinerja
+                  </TableHead>
+
+                  {/* Kolom 2: Sasaran Terkait (Sticky Left 220px) */}
+                  <TableHead 
+                    style={{ left: 220 }}
+                    className="sticky top-0 z-40 bg-slate-100 font-bold text-slate-800 w-[200px] min-w-[200px] max-w-[200px] border-b border-r border-slate-200"
+                  >
+                    Sasaran Terkait
+                  </TableHead>
+
+                  {/* Kolom 3: Permasalahan (Sticky Left 420px) */}
+                  <TableHead 
+                    style={{ left: 420 }}
+                    className="sticky top-0 z-40 bg-slate-100 font-bold text-slate-800 w-[180px] min-w-[180px] max-w-[180px] border-b border-r border-slate-200"
+                  >
+                    Permasalahan
+                  </TableHead>
+
+                  {/* Kolom 4: Pernyataan Risiko (Sticky Left 600px - Batas Freeze) */}
+                  <TableHead 
+                    style={{ left: 600 }}
+                    className="sticky top-0 z-40 bg-slate-100 font-bold text-slate-800 w-[240px] min-w-[240px] max-w-[240px] border-b border-r-2 border-slate-300 shadow-[4px_0_10px_-2px_rgba(0,0,0,0.12)]"
+                  >
+                    Pernyataan Risiko
+                  </TableHead>
+
+                  {/* Kolom 5 s.d. 14: Kolom yang bergulir di bawah freeze */}
+                  <TableHead className="sticky top-0 z-30 bg-slate-100 min-w-[120px] font-bold text-slate-800 border-b border-r border-slate-200">
+                    Kategori
+                  </TableHead>
+                  <TableHead className="sticky top-0 z-30 bg-slate-100 min-w-[170px] font-bold text-slate-800 border-b border-r border-slate-200">
+                    Pemilik Risiko
+                  </TableHead>
+                  <TableHead className="sticky top-0 z-30 bg-slate-100 min-w-[220px] font-bold text-slate-800 border-b border-r border-slate-200">
+                    Uraian Penyebab
+                  </TableHead>
+                  <TableHead className="sticky top-0 z-30 bg-slate-100 min-w-[160px] font-bold text-slate-800 border-b border-r border-slate-200">
+                    Sumber Penyebab
+                  </TableHead>
+                  <TableHead className="sticky top-0 z-30 bg-slate-100 min-w-[110px] text-center font-bold text-slate-800 border-b border-r border-slate-200">
+                    Sifat (C/UC)
+                  </TableHead>
+                  <TableHead className="sticky top-0 z-30 bg-slate-100 min-w-[220px] font-bold text-slate-800 border-b border-r border-slate-200">
+                    Uraian Dampak
+                  </TableHead>
+                  <TableHead className="sticky top-0 z-30 bg-slate-100 min-w-[160px] font-bold text-slate-800 border-b border-r border-slate-200">
+                    Pihak Terdampak
+                  </TableHead>
+                  <TableHead className="sticky top-0 z-30 bg-slate-100 min-w-[220px] font-bold text-slate-800 border-b border-r border-slate-200">
+                    Pengendalian Yg Ada
+                  </TableHead>
+                  <TableHead className="sticky top-0 z-30 bg-slate-100 min-w-[140px] font-bold text-slate-800 border-b border-r border-slate-200">
+                    Penilaian
+                  </TableHead>
+                  <TableHead className="sticky top-0 z-30 bg-slate-100 min-w-[160px] font-bold text-slate-800 border-b border-r border-slate-200">
+                    Sisa Risiko
+                  </TableHead>
+
+                  {/* Kolom 15: Aksi (Sticky Right 0px) */}
+                  <TableHead 
+                    style={{ right: 0 }}
+                    className="text-center w-[90px] min-w-[90px] max-w-[90px] sticky top-0 right-0 bg-slate-100 border-b border-l border-slate-200 shadow-[-4px_0_10px_-2px_rgba(0,0,0,0.08)] z-40 font-bold text-slate-800"
+                  >
+                    Aksi
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -440,11 +607,12 @@ export default function IdentifikasiRisikoPage() {
                             : "border-t border-slate-100"
                         }`}
                       >
-                        {/* 1. Indikator Kinerja: DITULIS 1 KALI SAJA PER KELOMPOK DENGAN ROWSPAN */}
+                        {/* 1. Indikator Kinerja: FREEZE STICKY LEFT 0px & DITULIS 1 KALI SAJA PER KELOMPOK */}
                         {idx === 0 && (
                           <TableCell 
                             rowSpan={group.items.length} 
-                            className="align-top bg-sky-50/40 border-r border-slate-200 p-3.5 min-w-[240px] max-w-[280px]"
+                            style={{ left: 0 }}
+                            className="sticky left-0 z-20 align-top bg-[#f0f6fd] border-b border-r border-slate-200 p-3.5 w-[220px] min-w-[220px] max-w-[220px]"
                           >
                             <div className="space-y-2 sticky top-12">
                               <div className="flex items-center gap-1.5 flex-wrap">
@@ -459,11 +627,12 @@ export default function IdentifikasiRisikoPage() {
                           </TableCell>
                         )}
 
-                        {/* 2. Sasaran Terkait: DITULIS 1 KALI SAJA JIKA SERAGAM PER KELOMPOK */}
+                        {/* 2. Sasaran Terkait: FREEZE STICKY LEFT 220px */}
                         {idx === 0 && isSasaranSame && (
                           <TableCell 
                             rowSpan={group.items.length} 
-                            className="align-top bg-slate-50/50 border-r border-slate-200 p-3.5 min-w-[220px] max-w-[260px]"
+                            style={{ left: 220 }}
+                            className="sticky z-20 align-top bg-slate-50 border-b border-r border-slate-200 p-3.5 w-[200px] min-w-[200px] max-w-[200px]"
                           >
                             <p className="text-xs text-slate-700 leading-relaxed whitespace-normal break-words sticky top-12">
                               {group.sasaranTerkait || "-"}
@@ -471,18 +640,29 @@ export default function IdentifikasiRisikoPage() {
                           </TableCell>
                         )}
                         {!isSasaranSame && (
-                          <TableCell className="align-top border-r border-slate-200 p-3 text-xs text-slate-700 whitespace-normal break-words">
+                          <TableCell 
+                            style={{ left: 220 }}
+                            className="sticky z-20 align-top bg-slate-50 border-b border-r border-slate-200 p-3 text-xs text-slate-700 whitespace-normal break-words w-[200px] min-w-[200px] max-w-[200px]"
+                          >
                             {item.sasaranTerkait || "-"}
                           </TableCell>
                         )}
 
-                        {/* 3. Permasalahan */}
-                        <TableCell className="text-xs max-w-[220px] align-top text-slate-600 whitespace-normal break-words leading-relaxed" title={item.permasalahan}>
+                        {/* 3. Permasalahan: FREEZE STICKY LEFT 420px */}
+                        <TableCell 
+                          style={{ left: 420 }}
+                          className="sticky z-20 bg-white border-b border-r border-slate-200 text-xs w-[180px] min-w-[180px] max-w-[180px] align-top text-slate-600 whitespace-normal break-words leading-relaxed p-3" 
+                          title={item.permasalahan}
+                        >
                           {item.permasalahan || "-"}
                         </TableCell>
 
-                        {/* 4. Pernyataan Risiko */}
-                        <TableCell className="text-xs max-w-[260px] align-top font-semibold text-slate-900 whitespace-normal break-words leading-relaxed" title={item.pernyataanRisiko}>
+                        {/* 4. Pernyataan Risiko: FREEZE STICKY LEFT 600px - BATAS FREEZE DENGAN SHADOW & BORDER */}
+                        <TableCell 
+                          style={{ left: 600 }}
+                          className="sticky z-20 bg-white border-b border-r-2 border-slate-300 shadow-[4px_0_10px_-2px_rgba(0,0,0,0.12)] text-xs w-[240px] min-w-[240px] max-w-[240px] align-top font-semibold text-slate-900 whitespace-normal break-words leading-relaxed p-3" 
+                          title={item.pernyataanRisiko}
+                        >
                           <div className="flex items-start gap-1.5">
                             {group.items.length > 1 && (
                               <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold shrink-0 mt-0.5">
@@ -492,7 +672,7 @@ export default function IdentifikasiRisikoPage() {
                             <div className="space-y-1">
                               <span>{item.pernyataanRisiko}</span>
                               {item.catatanAuditor && (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-pink-700 bg-pink-50 border border-pink-200 px-1.5 py-0.2 rounded-md">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-pink-700 bg-pink-50 border border-pink-200 px-1.5 py-0.5 rounded-md">
                                   <AlertCircle className="w-3 h-3 text-pink-600" /> Ada Catatan APIP
                                 </span>
                               )}
@@ -500,30 +680,30 @@ export default function IdentifikasiRisikoPage() {
                           </div>
                         </TableCell>
 
-                        {/* 5. Kategori */}
-                        <TableCell className="align-top">
+                        {/* 5. Kategori (Bergulir di bawah freeze) */}
+                        <TableCell className="align-top border-b border-r border-slate-200 p-3 min-w-[120px]">
                           <span className="bg-slate-100 text-slate-700 px-2 py-1 rounded-md text-[11px] font-medium whitespace-nowrap inline-block">
                             {item.kategori || "-"}
                           </span>
                         </TableCell>
 
                         {/* 6. Pemilik Risiko */}
-                        <TableCell className="text-xs max-w-[170px] align-top text-slate-700 whitespace-normal break-words" title={item.pemilikRisiko}>
+                        <TableCell className="text-xs min-w-[170px] max-w-[190px] align-top text-slate-700 whitespace-normal break-words border-b border-r border-slate-200 p-3" title={item.pemilikRisiko}>
                           {item.pemilikRisiko || "-"}
                         </TableCell>
 
                         {/* 7. Uraian Penyebab */}
-                        <TableCell className="text-xs max-w-[220px] align-top text-slate-600 whitespace-normal break-words leading-relaxed" title={item.uraianPenyebab}>
+                        <TableCell className="text-xs min-w-[220px] max-w-[240px] align-top text-slate-600 whitespace-normal break-words leading-relaxed border-b border-r border-slate-200 p-3" title={item.uraianPenyebab}>
                           {item.uraianPenyebab || "-"}
                         </TableCell>
 
                         {/* 8. Sumber Penyebab */}
-                        <TableCell className="text-xs max-w-[160px] align-top text-slate-700 whitespace-normal break-words" title={item.sumberPenyebab}>
+                        <TableCell className="text-xs min-w-[160px] max-w-[180px] align-top text-slate-700 whitespace-normal break-words border-b border-r border-slate-200 p-3" title={item.sumberPenyebab}>
                           {item.sumberPenyebab || "-"}
                         </TableCell>
 
                         {/* 9. Sifat (C/UC) */}
-                        <TableCell className="text-center align-top">
+                        <TableCell className="text-center align-top border-b border-r border-slate-200 p-3 min-w-[110px]">
                           <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
                             item.sifatPenyebab === 'Controllable' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'
                           }`} title={item.sifatPenyebab}>
@@ -532,22 +712,22 @@ export default function IdentifikasiRisikoPage() {
                         </TableCell>
 
                         {/* 10. Uraian Dampak */}
-                        <TableCell className="text-xs max-w-[220px] align-top text-slate-600 whitespace-normal break-words leading-relaxed" title={item.uraianDampak}>
+                        <TableCell className="text-xs min-w-[220px] max-w-[240px] align-top text-slate-600 whitespace-normal break-words leading-relaxed border-b border-r border-slate-200 p-3" title={item.uraianDampak}>
                           {item.uraianDampak || "-"}
                         </TableCell>
 
                         {/* 11. Pihak Terdampak */}
-                        <TableCell className="text-xs max-w-[160px] align-top text-slate-700 whitespace-normal break-words" title={item.pihakTerdampak}>
+                        <TableCell className="text-xs min-w-[160px] max-w-[180px] align-top text-slate-700 whitespace-normal break-words border-b border-r border-slate-200 p-3" title={item.pihakTerdampak}>
                           {item.pihakTerdampak || "-"}
                         </TableCell>
 
                         {/* 12. Pengendalian Yang Ada */}
-                        <TableCell className="text-xs max-w-[220px] align-top text-slate-600 whitespace-normal break-words leading-relaxed" title={item.pengendalianAda}>
+                        <TableCell className="text-xs min-w-[220px] max-w-[240px] align-top text-slate-600 whitespace-normal break-words leading-relaxed border-b border-r border-slate-200 p-3" title={item.pengendalianAda}>
                           {item.pengendalianAda || "-"}
                         </TableCell>
 
                         {/* 13. Penilaian Pengendalian */}
-                        <TableCell className="text-xs whitespace-nowrap align-top">
+                        <TableCell className="text-xs whitespace-nowrap align-top border-b border-r border-slate-200 p-3 min-w-[140px]">
                           <span className={`px-2 py-1 rounded-md text-[11px] font-medium border inline-block ${
                             item.penilaianPengendalian === 'Sudah Memadai' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-700'
                           }`}>
@@ -556,12 +736,15 @@ export default function IdentifikasiRisikoPage() {
                         </TableCell>
 
                         {/* 14. Sisa Risiko */}
-                        <TableCell className="text-xs max-w-[160px] align-top font-medium text-slate-700 whitespace-normal break-words" title={item.sisaRisiko}>
+                        <TableCell className="text-xs min-w-[160px] max-w-[180px] align-top font-medium text-slate-700 whitespace-normal break-words border-b border-r border-slate-200 p-3" title={item.sisaRisiko}>
                           {item.sisaRisiko || "-"}
                         </TableCell>
                         
-                        {/* 15. Aksi */}
-                        <TableCell className="text-center align-top sticky right-0 bg-white/95 backdrop-blur-sm shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.05)]">
+                        {/* 15. Aksi (Sticky Right 0px) */}
+                        <TableCell 
+                          style={{ right: 0 }}
+                          className="text-center align-top sticky right-0 z-20 bg-white border-b border-l border-slate-200 shadow-[-4px_0_10px_-2px_rgba(0,0,0,0.08)] p-2 w-[90px] min-w-[90px] max-w-[90px]"
+                        >
                           <div className="flex items-center justify-center gap-1">
                             <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} title="Edit Risiko" className="h-8 w-8 hover:bg-blue-50">
                               <Pencil className="h-3.5 w-3.5 text-blue-600" />
