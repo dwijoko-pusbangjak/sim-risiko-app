@@ -1257,7 +1257,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Konten Halaman */}
         <ChangePasswordModal isOpen={isPasswordModalOpen} onClose={() => setIsPasswordModalOpen(false)} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 theme-bg-main relative print:overflow-visible print:bg-white print:p-0 print:m-0">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-6 2xl:p-8 theme-bg-main relative print:overflow-visible print:bg-white print:p-0 print:m-0">
           <div className="mx-auto max-w-7xl 2xl:max-w-[1600px] print:max-w-none print:w-full">
             {children}
           </div>

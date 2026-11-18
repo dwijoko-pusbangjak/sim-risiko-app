@@ -329,16 +329,16 @@ export default function DashboardPage() {
     }
 
     return (
-      <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
+      <div className="space-y-4 sm:space-y-6 animate-in fade-in zoom-in-95 duration-500">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-slate-900 leading-tight">
             {viewMode === "kementerian"
               ? "Dashboard Pengelola Risiko Kementerian"
               : viewMode === "admin"
               ? "Dashboard Konsolidasi Nasional"
               : "Dashboard Konsolidasi Eselon 1"}
           </h2>
-          <p className="text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
             {viewMode === "kementerian"
               ? selectedChartUnit === "kementerian"
                 ? `Menampilkan profil risiko Tingkat Kementerian TA ${activeYear}. Pilih Eselon 1, Eselon 2, atau Konsolidasi Nasional pada menu dropdown untuk memantau unit lain.`
@@ -352,18 +352,18 @@ export default function DashboardPage() {
         </div>
 
         {/* DROPDOWN FILTER & CHARTS */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm space-y-3 sm:space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-slate-800">Visualisasi & Rekapitulasi Risiko</h3>
+                <h3 className="text-base sm:text-lg font-bold text-slate-800">Visualisasi & Rekapitulasi Risiko</h3>
                 {selectedChartUnit === "kementerian" && (
-                  <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full font-bold">
+                  <span className="text-[10px] sm:text-xs bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full font-bold">
                     Tingkat Kementerian
                   </span>
                 )}
               </div>
-              <p className="text-sm text-slate-500">
+              <p className="text-xs sm:text-sm text-slate-500">
                 {viewMode === "kementerian"
                   ? "Pilih level unit (Kementerian, Eselon 1, Eselon 2, atau Konsolidasi) untuk melihat grafik distribusinya."
                   : "Pilih unit kerja untuk melihat grafik distribusinya."}
@@ -371,7 +371,7 @@ export default function DashboardPage() {
             </div>
             <div className="w-full md:w-[380px]">
               <Select value={selectedChartUnit} onValueChange={setSelectedChartUnit}>
-                <SelectTrigger className="w-full bg-slate-50 border-slate-300 font-medium">
+                <SelectTrigger className="w-full bg-slate-50 border-slate-300 font-medium text-xs sm:text-sm">
                   <SelectValue placeholder="Pilih Level / Unit Kerja" />
                 </SelectTrigger>
                 <SelectContent className="max-h-96">
@@ -421,23 +421,23 @@ export default function DashboardPage() {
         </div>
 
         {/* Kartu Ringkasan */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
           <Card className={`border-l-4 shadow-sm ${selectedChartUnit === "kementerian" ? "border-l-indigo-600 bg-indigo-50/20" : "border-l-blue-500"}`}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+            <CardHeader className="flex flex-row items-center justify-between p-3.5 sm:p-5 pb-1 sm:pb-2">
+              <CardTitle className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider truncate">
                 {selectedChartUnit === "kementerian"
                   ? "Total Risiko Kementerian"
                   : selectedChartUnit === "all"
                   ? "Total Risiko Global"
                   : "Total Risiko Unit"}
               </CardTitle>
-              <Target className={`h-5 w-5 ${selectedChartUnit === "kementerian" ? "text-indigo-600" : "text-blue-500"}`} />
+              <Target className={`h-4 w-4 sm:h-5 sm:w-5 ${selectedChartUnit === "kementerian" ? "text-indigo-600" : "text-blue-500"} shrink-0`} />
             </CardHeader>
-            <CardContent>
-              <div className={`text-3xl font-black ${selectedChartUnit === "kementerian" ? "text-indigo-950" : "text-slate-900"}`}>
+            <CardContent className="p-3.5 sm:p-5 pt-0">
+              <div className={`text-2xl sm:text-3xl font-black ${selectedChartUnit === "kementerian" ? "text-indigo-950" : "text-slate-900"} leading-tight`}>
                 {totalSemuaRisiko}
               </div>
-              <p className="text-xs text-slate-500 mt-1 font-medium">
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1 font-medium truncate">
                 {selectedChartUnit === "kementerian"
                   ? `Risiko Tingkat Kementerian (${kementerianUnitName})`
                   : selectedChartUnit === "all"
@@ -448,36 +448,36 @@ export default function DashboardPage() {
           </Card>
 
           <Card className="border-l-4 border-l-red-500 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+            <CardHeader className="flex flex-row items-center justify-between p-3.5 sm:p-5 pb-1 sm:pb-2">
+              <CardTitle className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider truncate">
                 {selectedChartUnit === "kementerian"
                   ? "Risiko Prioritas Kementerian"
                   : selectedChartUnit === "all"
                   ? "Risiko Prioritas Global"
                   : "Risiko Prioritas Unit"}
               </CardTitle>
-              <AlertOctagon className="h-5 w-5 text-red-500" />
+              <AlertOctagon className="h-4 w-4 sm:h-5 sm:w-5 text-red-500 shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-black text-slate-900">{totalSemuaPrioritas}</div>
-              <p className="text-xs text-slate-500 mt-1 font-medium">Nilai Sedang - Sangat Tinggi (Skor ≥ 12)</p>
+            <CardContent className="p-3.5 sm:p-5 pt-0">
+              <div className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">{totalSemuaPrioritas}</div>
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1 font-medium truncate">Nilai Sedang - Sangat Tinggi (Skor ≥ 12)</p>
             </CardContent>
           </Card>
 
           <Card className={`border-l-4 shadow-sm ${selectedChartUnit === "kementerian" ? "border-l-emerald-600" : "border-l-indigo-500"}`}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+            <CardHeader className="flex flex-row items-center justify-between p-3.5 sm:p-5 pb-1 sm:pb-2">
+              <CardTitle className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider truncate">
                 {selectedChartUnit === "kementerian"
                   ? "Total RTP Kementerian"
                   : selectedChartUnit === "all"
                   ? "Total RTP Global"
                   : "Total RTP Unit"}
               </CardTitle>
-              <ShieldCheck className={`h-5 w-5 ${selectedChartUnit === "kementerian" ? "text-emerald-600" : "text-indigo-500"}`} />
+              <ShieldCheck className={`h-4 w-4 sm:h-5 sm:w-5 ${selectedChartUnit === "kementerian" ? "text-emerald-600" : "text-indigo-500"} shrink-0`} />
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-black text-slate-900">{totalSemuaRtp}</div>
-              <p className="text-xs text-slate-500 mt-1 font-medium">
+            <CardContent className="p-3.5 sm:p-5 pt-0">
+              <div className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">{totalSemuaRtp}</div>
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1 font-medium truncate">
                 {selectedChartUnit === "kementerian"
                   ? "Mitigasi Tingkat Kementerian"
                   : "Akumulasi rencana mitigasi"}
@@ -636,61 +636,61 @@ export default function DashboardPage() {
   const recentRisks = data.slice(0, 5);
 
   return (
-    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
+    <div className="space-y-4 sm:space-y-6 animate-in fade-in zoom-in-95 duration-500">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard Eksekutif</h2>
-        <p className="text-slate-500 mt-1">Ringkasan profil dan mitigasi risiko {user?.unitName} Tahun {activeYear}.</p>
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-slate-900 leading-tight">Dashboard Eksekutif</h2>
+        <p className="text-xs sm:text-sm text-slate-500 mt-0.5 sm:mt-1">Ringkasan profil dan mitigasi risiko {user?.unitName} Tahun {activeYear}.</p>
       </div>
 
       {/* Kartu Ringkasan (Top Metrics) */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wider">Total Risiko</CardTitle>
-            <Target className="h-5 w-5 text-blue-500" />
+          <CardHeader className="flex flex-row items-center justify-between p-3.5 sm:p-5 pb-1 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider truncate">Total Risiko</CardTitle>
+            <Target className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-black text-slate-900">{totalRisiko}</div>
-            <p className="text-xs text-slate-500 mt-1 font-medium">Teridentifikasi di Tahun {activeYear}</p>
+          <CardContent className="p-3.5 sm:p-5 pt-0">
+            <div className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">{totalRisiko}</div>
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1 font-medium truncate">Teridentifikasi di Tahun {activeYear}</p>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-red-500 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wider">Risiko Prioritas</CardTitle>
-            <AlertOctagon className="h-5 w-5 text-red-500" />
+          <CardHeader className="flex flex-row items-center justify-between p-3.5 sm:p-5 pb-1 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider truncate">Risiko Prioritas</CardTitle>
+            <AlertOctagon className="h-4 w-4 sm:h-5 sm:w-5 text-red-500 shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-black text-slate-900">{risikoPrioritas}</div>
-            <p className="text-xs text-slate-500 mt-1 font-medium">Nilai Sedang - Sangat Tinggi</p>
+          <CardContent className="p-3.5 sm:p-5 pt-0">
+            <div className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">{risikoPrioritas}</div>
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1 font-medium truncate">Nilai Sedang - Sangat Tinggi</p>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-emerald-500 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wider">Risiko Terkendali</CardTitle>
-            <CheckCircle className="h-5 w-5 text-emerald-500" />
+          <CardHeader className="flex flex-row items-center justify-between p-3.5 sm:p-5 pb-1 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider truncate">Risiko Terkendali</CardTitle>
+            <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-500 shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-black text-slate-900">{risikoTerkendali}</div>
-            <p className="text-xs text-slate-500 mt-1 font-medium">Pengendalian sudah memadai</p>
+          <CardContent className="p-3.5 sm:p-5 pt-0">
+            <div className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">{risikoTerkendali}</div>
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1 font-medium truncate">Pengendalian sudah memadai</p>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-indigo-500 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wider">Total RTP</CardTitle>
-            <ShieldCheck className="h-5 w-5 text-indigo-500" />
+          <CardHeader className="flex flex-row items-center justify-between p-3.5 sm:p-5 pb-1 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider truncate">Total RTP</CardTitle>
+            <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-500 shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-black text-slate-900">{totalRtp}</div>
-            <p className="text-xs text-slate-500 mt-1 font-medium">Tindakan mitigasi direncanakan</p>
+          <CardContent className="p-3.5 sm:p-5 pt-0">
+            <div className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">{totalRtp}</div>
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1 font-medium truncate">Tindakan mitigasi direncanakan</p>
           </CardContent>
         </Card>
       </div>
 
-            {/* Area Konten Tambahan */}
-      <div className="mt-8">
+      {/* Area Konten Tambahan */}
+      <div className="mt-6 sm:mt-8">
         <DashboardCharts risks={data} />
       </div>
 

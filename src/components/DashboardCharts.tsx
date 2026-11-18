@@ -328,48 +328,48 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
   const renderHeatMap = (isFullView = false) => {
     return (
       <Card className="shadow-sm border-slate-200 overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <CardHeader className="bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white p-3 sm:p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
             <div>
-              <div className="flex items-center gap-2">
-                <Flame className="w-5 h-5 text-amber-400 animate-pulse" />
-                <CardTitle className="text-base sm:text-lg font-bold tracking-wide">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 animate-pulse shrink-0" />
+                <CardTitle className="text-sm sm:text-base md:text-lg font-bold tracking-wide">
                   Heat Map Matriks 5×5 (Peta Panas Risiko)
                 </CardTitle>
-                <span className="text-[10px] bg-emerald-500/30 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/30 font-medium">
+                <span className="text-[9px] sm:text-[10px] bg-emerald-500/30 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/30 font-medium">
                   Permenpan RB No. 5/2020
                 </span>
               </div>
-              <CardDescription className="text-xs text-slate-300 mt-1">
+              <CardDescription className="text-[11px] sm:text-xs text-slate-300 mt-0.5 sm:mt-1">
                 Distribusi risiko berdasarkan koordinat Tingkat Kemungkinan (Sumbu Y) vs Tingkat Dampak (Sumbu X). Klik pada kotak untuk melihat rincian risiko.
               </CardDescription>
             </div>
 
             {/* Quick Summary Pill Counters */}
-            <div className="flex flex-wrap items-center gap-1.5 text-xs">
-              <span className="px-2 py-1 rounded-md bg-red-600/90 text-white font-bold flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1 text-[10px] sm:text-xs">
+              <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-red-600/90 text-white font-bold flex items-center gap-1">
                 ST: {risks.filter(r => (r.besaranRisiko || 0) >= 20).length}
               </span>
-              <span className="px-2 py-1 rounded-md bg-orange-600/90 text-white font-bold flex items-center gap-1">
+              <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-orange-600/90 text-white font-bold flex items-center gap-1">
                 T: {risks.filter(r => (r.besaranRisiko || 0) >= 16 && (r.besaranRisiko || 0) < 20).length}
               </span>
-              <span className="px-2 py-1 rounded-md bg-yellow-500 text-slate-950 font-bold flex items-center gap-1">
+              <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-yellow-500 text-slate-950 font-bold flex items-center gap-1">
                 S: {risks.filter(r => (r.besaranRisiko || 0) >= 12 && (r.besaranRisiko || 0) < 16).length}
               </span>
-              <span className="px-2 py-1 rounded-md bg-emerald-600/90 text-white font-bold flex items-center gap-1">
+              <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-emerald-600/90 text-white font-bold flex items-center gap-1">
                 R: {risks.filter(r => (r.besaranRisiko || 0) >= 6 && (r.besaranRisiko || 0) < 12).length}
               </span>
-              <span className="px-2 py-1 rounded-md bg-blue-600/90 text-white font-bold flex items-center gap-1">
+              <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-blue-600/90 text-white font-bold flex items-center gap-1">
                 SR: {risks.filter(r => (r.besaranRisiko || 0) >= 1 && (r.besaranRisiko || 0) < 6).length}
               </span>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className="p-4 sm:p-6 space-y-6">
+        <CardContent className="p-3 sm:p-5 space-y-4 sm:space-y-6">
           {/* Unanalyzed Warning if any */}
           {heatMapData.unanalyzed.length > 0 && (
-            <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+            <div className="flex items-center gap-2 p-2.5 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg text-[11px] sm:text-xs text-amber-800">
               <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
               <span>
                 Terdapat <strong>{heatMapData.unanalyzed.length} risiko</strong> yang belum memiliki nilai Kemungkinan atau Dampak lengkap sehingga belum terpetakan di Heat Map. Lengkapi di menu <em>Analisis Risiko</em>.
@@ -379,33 +379,33 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
 
           {/* THE 5x5 INTERACTIVE GRID */}
           <div className="overflow-x-auto pb-2 custom-scrollbar">
-            <div className="min-w-[560px]">
+            <div className="min-w-[480px] sm:min-w-[540px] lg:min-w-full">
               {/* Outer Container with Y-Axis label */}
-              <div className="flex items-stretch gap-2">
+              <div className="flex items-stretch gap-1 sm:gap-2">
                 {/* Vertical Y-Axis Label */}
-                <div className="flex items-center justify-center writing-mode-vertical text-xs font-bold text-slate-500 uppercase tracking-widest px-1 py-4 select-none shrink-0 border-r border-slate-200 rotate-180 [writing-mode:vertical-lr]">
+                <div className="flex items-center justify-center writing-mode-vertical text-[9px] sm:text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider sm:tracking-widest px-0.5 sm:px-1 py-1 sm:py-2 select-none shrink-0 border-r border-slate-200 rotate-180 [writing-mode:vertical-lr]">
                   Tingkat Kemungkinan (Frekuensi)
                 </div>
 
                 {/* Grid Rows (k = 5, 4, 3, 2, 1) */}
-                <div className="flex-1 space-y-2">
+                <div className="flex-1 space-y-1 sm:space-y-1.5 md:space-y-2">
                   {[5, 4, 3, 2, 1].map((k) => {
                     const kInfo = KEMUNGKINAN_LABELS[k];
 
                     return (
-                      <div key={k} className="flex items-center gap-2">
+                      <div key={k} className="flex items-center gap-1 sm:gap-2">
                         {/* Row Y Label */}
-                        <div className="w-28 sm:w-36 text-right shrink-0 select-none">
-                          <span className="font-bold text-xs sm:text-sm text-slate-800 block leading-tight">
+                        <div className="w-20 sm:w-28 md:w-36 text-right shrink-0 select-none pr-1">
+                          <span className="font-bold text-[10px] sm:text-xs md:text-sm text-slate-800 block leading-tight">
                             {kInfo.label}
                           </span>
-                          <span className="text-[10px] text-slate-500 hidden sm:block">
+                          <span className="text-[8px] sm:text-[9px] md:text-[10px] text-slate-500 hidden sm:block">
                             ({kInfo.desc})
                           </span>
                         </div>
 
                         {/* 5 Column Cells for this Row (d = 1..5) */}
-                        <div className="grid grid-cols-5 gap-2 flex-1">
+                        <div className="grid grid-cols-5 gap-1 sm:gap-1.5 md:gap-2 flex-1">
                           {[1, 2, 3, 4, 5].map((d) => {
                             const score = RISK_MATRIX[k][d];
                             const level = getRiskLevelInfo(score);
@@ -430,19 +430,19 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
                                     });
                                   }
                                 }}
-                                className={`relative h-16 sm:h-20 rounded-xl p-1.5 flex flex-col justify-between items-center text-center transition-all duration-200 border cursor-pointer select-none group shadow-xs ${
+                                className={`relative h-12 sm:h-14 md:h-16 lg:h-18 rounded-lg sm:rounded-xl p-1 sm:p-1.5 flex flex-col justify-between items-center text-center transition-all duration-200 border cursor-pointer select-none group shadow-xs ${
                                   level.color
                                 } ${
                                   isCellSelected
-                                    ? "ring-4 ring-slate-900 ring-offset-2 scale-102 z-20 shadow-xl"
-                                    : "hover:scale-[1.03] hover:shadow-md"
+                                    ? "ring-2 sm:ring-4 ring-slate-900 ring-offset-1 sm:ring-offset-2 scale-102 z-20 shadow-xl"
+                                    : "hover:scale-[1.02] sm:hover:scale-[1.03] hover:shadow-md"
                                 }`}
                                 title={`K=${k}, D=${d} | Skor ${score} (${level.label}) | ${matchingRisks.length} Risiko`}
                               >
                                 {/* Top: Score badge */}
-                                <div className="w-full flex items-center justify-between text-[10px] opacity-85 px-0.5">
+                                <div className="w-full flex items-center justify-between text-[8px] sm:text-[9px] md:text-[10px] opacity-85 px-0.5 leading-none">
                                   <span className="font-mono font-bold">{k}×{d}</span>
-                                  <span className="font-black bg-black/20 px-1 rounded text-[9px]">
+                                  <span className="font-black bg-black/20 px-0.5 sm:px-1 rounded text-[7px] sm:text-[8px] md:text-[9px]">
                                     {score}
                                   </span>
                                 </div>
@@ -450,20 +450,20 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
                                 {/* Center: Risk Count Badge */}
                                 <div className="my-auto">
                                   {hasRisks ? (
-                                    <div className="inline-flex items-center gap-1 bg-white text-slate-900 font-extrabold text-xs sm:text-sm px-2 py-0.5 rounded-full shadow-sm ring-2 ring-black/10 group-hover:scale-110 transition-transform">
-                                      <Target className="w-3 h-3 text-emerald-600 shrink-0" />
+                                    <div className="inline-flex items-center gap-0.5 sm:gap-1 bg-white text-slate-900 font-extrabold text-[10px] sm:text-xs md:text-sm px-1.5 sm:px-2 py-0.2 sm:py-0.5 rounded-full shadow-sm ring-1 sm:ring-2 ring-black/10 group-hover:scale-110 transition-transform">
+                                      <Target className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-emerald-600 shrink-0" />
                                       <span>{matchingRisks.length}</span>
-                                      <span className="hidden sm:inline text-[10px] font-medium text-slate-600">
+                                      <span className="hidden md:inline text-[9px] sm:text-[10px] font-medium text-slate-600">
                                         Risiko
                                       </span>
                                     </div>
                                   ) : (
-                                    <span className="text-xs opacity-40 font-mono font-semibold">0</span>
+                                    <span className="text-[10px] sm:text-xs opacity-40 font-mono font-semibold">0</span>
                                   )}
                                 </div>
 
                                 {/* Bottom: Level Label mini */}
-                                <div className="text-[9px] font-semibold tracking-tight uppercase truncate max-w-full opacity-90">
+                                <div className="text-[7px] sm:text-[8px] md:text-[9px] font-semibold tracking-tight uppercase truncate max-w-full opacity-90 leading-none">
                                   {level.label}
                                 </div>
                               </button>
@@ -475,21 +475,21 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
                   })}
 
                   {/* Horizontal X-Axis Header (Labels for d = 1..5) */}
-                  <div className="flex items-start gap-2 pt-1 border-t border-slate-200 mt-2">
-                    <div className="w-28 sm:w-36 text-right shrink-0 select-none">
-                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                        Dampak $\rightarrow$
+                  <div className="flex items-start gap-1 sm:gap-2 pt-1 border-t border-slate-200 mt-1.5 sm:mt-2">
+                    <div className="w-20 sm:w-28 md:w-36 text-right shrink-0 select-none pr-1">
+                      <span className="text-[9px] sm:text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                        Dampak →
                       </span>
                     </div>
-                    <div className="grid grid-cols-5 gap-2 flex-1 text-center select-none">
+                    <div className="grid grid-cols-5 gap-1 sm:gap-1.5 md:gap-2 flex-1 text-center select-none">
                       {[1, 2, 3, 4, 5].map((d) => {
                         const dInfo = DAMPAK_LABELS[d];
                         return (
-                          <div key={d} className="px-1 py-1">
-                            <span className="block font-bold text-xs sm:text-sm text-slate-800 leading-tight">
+                          <div key={d} className="px-0.5 sm:px-1 py-0.5 sm:py-1">
+                            <span className="block font-bold text-[10px] sm:text-xs md:text-sm text-slate-800 leading-tight">
                               {dInfo.label}
                             </span>
-                            <span className="text-[10px] text-slate-400 font-mono block">
+                            <span className="text-[8px] sm:text-[9px] md:text-[10px] text-slate-400 font-mono block">
                               Skala {d}
                             </span>
                           </div>
@@ -499,8 +499,8 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
                   </div>
 
                   {/* Horizontal X-Axis Main Title */}
-                  <div className="text-center pt-2">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                  <div className="text-center pt-1 sm:pt-2">
+                    <span className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider sm:tracking-widest">
                       Tingkat Dampak (Konsekuensi)
                     </span>
                   </div>
@@ -510,30 +510,30 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
           </div>
 
           {/* HEAT MAP LEGEND & INFORMATION */}
-          <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="bg-slate-50 p-2.5 sm:p-3.5 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-2 sm:gap-3 text-[11px] sm:text-xs">
             <div className="flex items-center gap-1.5 font-bold text-slate-700">
-              <Info className="w-4 h-4 text-emerald-600" />
+              <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 shrink-0" />
               <span>Legenda Level Besaran Risiko:</span>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-100 text-blue-800 font-semibold border border-blue-200">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md bg-blue-100 text-blue-800 font-semibold border border-blue-200 text-[10px] sm:text-xs">
+                <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-blue-500" />
                 Sangat Rendah (1-5)
               </span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 font-semibold border border-emerald-200">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+              <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md bg-emerald-100 text-emerald-800 font-semibold border border-emerald-200 text-[10px] sm:text-xs">
+                <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-500" />
                 Rendah (6-11)
               </span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-yellow-100 text-yellow-800 font-semibold border border-yellow-200">
-                <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+              <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md bg-yellow-100 text-yellow-800 font-semibold border border-yellow-200 text-[10px] sm:text-xs">
+                <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-yellow-400" />
                 Sedang (12-15)
               </span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-orange-100 text-orange-800 font-semibold border border-orange-200">
-                <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+              <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md bg-orange-100 text-orange-800 font-semibold border border-orange-200 text-[10px] sm:text-xs">
+                <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-orange-500" />
                 Tinggi (16-19)
               </span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-100 text-red-800 font-semibold border border-red-200">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+              <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md bg-red-100 text-red-800 font-semibold border border-red-200 text-[10px] sm:text-xs">
+                <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-500" />
                 Sangat Tinggi (20-25)
               </span>
             </div>
@@ -541,49 +541,49 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
 
           {/* DRILLDOWN DETAIL INSPECTOR (Jika user klik sel di matriks) */}
           {selectedCell && (
-            <div className="animate-in fade-in slide-in-from-top-3 duration-300 bg-white border-2 border-emerald-600/40 rounded-xl p-4 shadow-md space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div className={`p-2 rounded-lg ${selectedCell.level.color} shadow-xs`}>
-                    <Flame className="w-5 h-5" />
+            <div className="animate-in fade-in slide-in-from-top-3 duration-300 bg-white border-2 border-emerald-600/40 rounded-xl p-3 sm:p-4 shadow-md space-y-2.5 sm:space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2.5 sm:pb-3 border-b border-slate-200 gap-2">
+                <div className="flex items-center gap-2 sm:gap-2.5">
+                  <div className={`p-1.5 sm:p-2 rounded-lg ${selectedCell.level.color} shadow-xs`}>
+                    <Flame className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-sm sm:text-base text-slate-900 flex items-center gap-2">
-                      Rincian Koordinat: Kemungkinan {selectedCell.k} × Dampak {selectedCell.d}
-                      <span className={`text-xs px-2 py-0.5 rounded-md font-bold uppercase ${selectedCell.level.badge}`}>
+                    <h4 className="font-bold text-xs sm:text-sm md:text-base text-slate-900 flex flex-wrap items-center gap-1.5 sm:gap-2">
+                      <span>Rincian Koordinat: Kemungkinan {selectedCell.k} × Dampak {selectedCell.d}</span>
+                      <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-md font-bold uppercase ${selectedCell.level.badge}`}>
                         {selectedCell.level.label} (Skor: {selectedCell.score})
                       </span>
                     </h4>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-[11px] sm:text-xs text-slate-500">
                       Terdapat <strong>{selectedCell.risks.length} peristiwa risiko</strong> yang terdaftar pada tingkat kombinasi ini.
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setSelectedCell(null)}
-                  className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1 transition-colors self-end sm:self-auto shrink-0"
+                  className="px-2.5 sm:px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1 transition-colors self-end sm:self-auto shrink-0"
                 >
                   <X className="w-3.5 h-3.5" /> Tutup Rincian
                 </button>
               </div>
 
               {selectedCell.risks.length > 0 ? (
-                <div className="space-y-2.5 max-h-72 overflow-y-auto custom-scrollbar pr-1">
+                <div className="space-y-2 sm:space-y-2.5 max-h-72 overflow-y-auto custom-scrollbar pr-1">
                   {selectedCell.risks.map((r, i) => (
                     <div
                       key={r.id || i}
-                      className="p-3 bg-slate-50 hover:bg-emerald-50/50 rounded-lg border border-slate-200 transition-colors flex flex-col sm:flex-row sm:items-start justify-between gap-3"
+                      className="p-2.5 sm:p-3 bg-slate-50 hover:bg-emerald-50/50 rounded-lg border border-slate-200 transition-colors flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 sm:gap-3"
                     >
                       <div className="space-y-1 flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-xs text-slate-900">
                             #{i + 1}
                           </span>
-                          <span className="text-[11px] px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-700 font-medium">
+                          <span className="text-[10px] sm:text-[11px] px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-700 font-medium">
                             {r.kategori || "Tanpa Kategori"}
                           </span>
                           {r.unitName && (
-                            <span className="text-[11px] font-semibold text-emerald-800">
+                            <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-800">
                               • {r.unitName}
                             </span>
                           )}
@@ -593,11 +593,11 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
                         </p>
                       </div>
 
-                      <div className="flex sm:flex-col items-center sm:items-end justify-between gap-1 shrink-0 pt-1">
-                        <span className="text-[11px] text-slate-500">
+                      <div className="flex sm:flex-col items-center sm:items-end justify-between gap-1 shrink-0 pt-0.5 sm:pt-1">
+                        <span className="text-[10px] sm:text-[11px] text-slate-500">
                           {r.rtpList?.length || 0} Butir RTP
                         </span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${selectedCell.level.badge}`}>
+                        <span className={`text-[9px] sm:text-[10px] px-2 py-0.5 rounded font-bold uppercase ${selectedCell.level.badge}`}>
                           {selectedCell.level.label}
                         </span>
                       </div>
@@ -621,16 +621,16 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
   // ============================================================================
   const renderDistributionCharts = () => {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {/* CHART 1: KATEGORI RISIKO */}
         <Card className="shadow-sm border-slate-200">
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+          <CardHeader className="p-3.5 sm:p-5 pb-2 flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-sm font-bold text-slate-700 uppercase flex items-center gap-1.5">
+              <CardTitle className="text-xs sm:text-sm font-bold text-slate-700 uppercase flex items-center gap-1.5">
                 <Layers className="w-4 h-4 text-blue-600" />
                 Distribusi Kategori Risiko
               </CardTitle>
-              <CardDescription className="text-xs text-slate-500">
+              <CardDescription className="text-[11px] sm:text-xs text-slate-500">
                 Penyebaran risiko berdasarkan bidang tugas
               </CardDescription>
             </div>
@@ -660,8 +660,8 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
               </button>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="h-[300px] w-full pt-2">
+          <CardContent className="p-3.5 sm:p-5 pt-0">
+            <div className="h-[250px] sm:h-[300px] w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
                 {kategoriChartType === "donut" ? (
                   <PieChart>
@@ -669,8 +669,8 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
                       data={kategoriData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={65}
-                      outerRadius={95}
+                      innerRadius={55}
+                      outerRadius={85}
                       paddingAngle={3}
                       dataKey="value"
                       label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
@@ -692,8 +692,8 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
                     margin={{ top: 10, right: 30, left: 40, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.3} />
-                    <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
-                    <YAxis dataKey="name" type="category" width={110} tick={{ fontSize: 11 }} />
+                    <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
+                    <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 10 }} />
                     <Tooltip
                       formatter={(value: number) => [`${value} Risiko`, "Jumlah"]}
                       contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
@@ -712,13 +712,13 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
 
         {/* CHART 2: LEVEL RISIKO */}
         <Card className="shadow-sm border-slate-200">
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+          <CardHeader className="p-3.5 sm:p-5 pb-2 flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-sm font-bold text-slate-700 uppercase flex items-center gap-1.5">
+              <CardTitle className="text-xs sm:text-sm font-bold text-slate-700 uppercase flex items-center gap-1.5">
                 <BarChart3 className="w-4 h-4 text-emerald-600" />
                 Sebaran Level Risiko
               </CardTitle>
-              <CardDescription className="text-xs text-slate-500">
+              <CardDescription className="text-[11px] sm:text-xs text-slate-500">
                 Komposisi risiko menurut tingkat keparahan
               </CardDescription>
             </div>
@@ -748,8 +748,8 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
               </button>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="h-[300px] w-full pt-2">
+          <CardContent className="p-3.5 sm:p-5 pt-0">
+            <div className="h-[250px] sm:h-[300px] w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
                 {levelChartType === "bar" ? (
                   <BarChart
@@ -757,8 +757,8 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
                     margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
                     <Tooltip
                       cursor={{ fill: 'rgba(0,0,0,0.05)' }}
                       formatter={(value: number) => [`${value} Risiko`, "Jumlah"]}
@@ -776,7 +776,7 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
                       data={levelData}
                       cx="50%"
                       cy="50%"
-                      outerRadius={95}
+                      outerRadius={85}
                       paddingAngle={3}
                       dataKey="value"
                       label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
@@ -805,33 +805,33 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
   // ============================================================================
   const renderRtpSection = () => {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* RTP Status Chart */}
-        <Card className="shadow-sm border-slate-200 col-span-1 md:col-span-2">
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+        <Card className="shadow-sm border-slate-200 col-span-1 lg:col-span-2">
+          <CardHeader className="p-3.5 sm:p-5 pb-2 flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-sm font-bold text-slate-700 uppercase flex items-center gap-1.5">
+              <CardTitle className="text-xs sm:text-sm font-bold text-slate-700 uppercase flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
                 Status Pelaksanaan RTP
               </CardTitle>
-              <CardDescription className="text-xs text-slate-500">
+              <CardDescription className="text-[11px] sm:text-xs text-slate-500">
                 Progres realisasi mitigasi rencana tindak pengendalian
               </CardDescription>
             </div>
-            <div className="bg-slate-100 px-3 py-1 rounded-full text-xs font-bold text-slate-700 border border-slate-200">
+            <div className="bg-slate-100 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold text-slate-700 border border-slate-200">
               Total: {rtpStats.total} Butir RTP
             </div>
           </CardHeader>
-          <CardContent className="flex flex-col md:flex-row items-center gap-8 pt-4">
-            <div className="h-[220px] w-[220px] shrink-0">
+          <CardContent className="p-3.5 sm:p-5 pt-2 sm:pt-4 flex flex-col md:flex-row items-center gap-4 sm:gap-8">
+            <div className="h-[180px] w-[180px] sm:h-[220px] sm:w-[220px] shrink-0">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={rtpStats.chartData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={55}
-                    outerRadius={85}
+                    innerRadius={45}
+                    outerRadius={75}
                     paddingAngle={3}
                     dataKey="value"
                   >
@@ -847,38 +847,38 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
               </ResponsiveContainer>
             </div>
 
-            <div className="w-full space-y-3">
-              <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl border border-emerald-100 shadow-xs">
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+            <div className="w-full space-y-2.5 sm:space-y-3">
+              <div className="flex items-center justify-between p-2.5 sm:p-3 bg-emerald-50 rounded-xl border border-emerald-100 shadow-xs">
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 shrink-0" />
                   <div>
-                    <span className="font-semibold text-emerald-950 text-sm block">Sudah Selesai (100%)</span>
-                    <span className="text-[11px] text-emerald-700">Tindakan mitigasi tuntas</span>
+                    <span className="font-semibold text-emerald-950 text-xs sm:text-sm block">Sudah Selesai (100%)</span>
+                    <span className="text-[10px] sm:text-[11px] text-emerald-700">Tindakan mitigasi tuntas</span>
                   </div>
                 </div>
-                <span className="font-black text-xl text-emerald-700">{rtpStats.selesai}</span>
+                <span className="font-black text-lg sm:text-xl text-emerald-700">{rtpStats.selesai}</span>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-100 shadow-xs">
-                <div className="flex items-center gap-3">
-                  <Clock className="w-5 h-5 text-amber-600" />
+              <div className="flex items-center justify-between p-2.5 sm:p-3 bg-amber-50 rounded-xl border border-amber-100 shadow-xs">
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 shrink-0" />
                   <div>
-                    <span className="font-semibold text-amber-950 text-sm block">Sedang Berjalan</span>
-                    <span className="text-[11px] text-amber-700">Progres 1% - 99%</span>
+                    <span className="font-semibold text-amber-950 text-xs sm:text-sm block">Sedang Berjalan</span>
+                    <span className="text-[10px] sm:text-[11px] text-amber-700">Progres 1% - 99%</span>
                   </div>
                 </div>
-                <span className="font-black text-xl text-amber-700">{rtpStats.berjalan}</span>
+                <span className="font-black text-lg sm:text-xl text-amber-700">{rtpStats.berjalan}</span>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 shadow-xs">
-                <div className="flex items-center gap-3">
-                  <AlertCircle className="w-5 h-5 text-slate-500" />
+              <div className="flex items-center justify-between p-2.5 sm:p-3 bg-slate-50 rounded-xl border border-slate-200 shadow-xs">
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-slate-500 shrink-0" />
                   <div>
-                    <span className="font-semibold text-slate-800 text-sm block">Belum Dimulai</span>
-                    <span className="text-[11px] text-slate-500">Progres 0%</span>
+                    <span className="font-semibold text-slate-800 text-xs sm:text-sm block">Belum Dimulai</span>
+                    <span className="text-[10px] sm:text-[11px] text-slate-500">Progres 0%</span>
                   </div>
                 </div>
-                <span className="font-black text-xl text-slate-700">{rtpStats.belum}</span>
+                <span className="font-black text-lg sm:text-xl text-slate-700">{rtpStats.belum}</span>
               </div>
             </div>
           </CardContent>
@@ -886,35 +886,35 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
 
         {/* Reminder / Overdue Card */}
         <Card className="shadow-sm border-red-200 bg-red-50/20 col-span-1">
-          <CardHeader className="pb-2 border-b border-red-100">
-            <CardTitle className="text-sm font-bold text-red-700 uppercase flex items-center gap-2">
+          <CardHeader className="p-3.5 sm:p-5 pb-2 border-b border-red-100">
+            <CardTitle className="text-xs sm:text-sm font-bold text-red-700 uppercase flex items-center gap-2">
               <CalendarX2 className="w-4 h-4" />
               Peringatan Jatuh Tempo
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4 space-y-4">
-            <div className="text-center p-4 bg-white rounded-xl shadow-sm border border-red-100">
-              <span className="block text-4xl font-black text-red-600 mb-1">{rtpStats.terlambat}</span>
-              <span className="text-xs font-bold text-red-800 uppercase tracking-wide">
+          <CardContent className="p-3.5 sm:p-5 pt-3 sm:pt-4 space-y-3 sm:space-y-4">
+            <div className="text-center p-3 sm:p-4 bg-white rounded-xl shadow-sm border border-red-100">
+              <span className="block text-2xl sm:text-3xl md:text-4xl font-black text-red-600 mb-0.5 sm:mb-1">{rtpStats.terlambat}</span>
+              <span className="text-[10px] sm:text-xs font-bold text-red-800 uppercase tracking-wide">
                 RTP Melewati Batas Waktu
               </span>
             </div>
 
             {rtpStats.terlambat > 0 ? (
-              <div className="text-xs text-red-700 bg-red-50 p-3 rounded-lg border border-red-100 leading-relaxed font-medium space-y-2">
+              <div className="text-[11px] sm:text-xs text-red-700 bg-red-50 p-2.5 sm:p-3 rounded-lg border border-red-100 leading-relaxed font-medium space-y-2">
                 <p>
                   Terdapat <b>{rtpStats.terlambat}</b> rencana mitigasi yang target waktunya terlewati berdasarkan sistem tanggal.
                 </p>
                 <div className="max-h-32 overflow-y-auto space-y-1 custom-scrollbar pr-1">
                   {rtpStats.overdueList.slice(0, 5).map((item, idx) => (
-                    <div key={idx} className="p-1.5 bg-white rounded border border-red-200 text-[11px] truncate">
+                    <div key={idx} className="p-1.5 bg-white rounded border border-red-200 text-[10px] sm:text-[11px] truncate">
                       • {item.rtp.rencana || item.riskName}
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
-              <div className="text-xs text-emerald-700 bg-emerald-50 p-3 rounded-lg border border-emerald-100 leading-relaxed font-medium flex items-center gap-2">
+              <div className="text-[11px] sm:text-xs text-emerald-700 bg-emerald-50 p-2.5 sm:p-3 rounded-lg border border-emerald-100 leading-relaxed font-medium flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
                 Seluruh target waktu rencana mitigasi masih dalam batas waktu normal.
               </div>
@@ -931,21 +931,21 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
   const renderUnitComparison = () => {
     return (
       <Card className="shadow-sm border-slate-200">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-bold text-slate-700 uppercase flex items-center gap-2">
+        <CardHeader className="p-3.5 sm:p-5 pb-2">
+          <CardTitle className="text-xs sm:text-sm font-bold text-slate-700 uppercase flex items-center gap-2">
             <Building2 className="w-4 h-4 text-indigo-600" />
             Komparasi Risiko Antar Unit Kerja (Top 10 Unit)
           </CardTitle>
-          <CardDescription className="text-xs text-slate-500">
+          <CardDescription className="text-[11px] sm:text-xs text-slate-500">
             Perbandingan total risiko teridentifikasi dan jumlah risiko prioritas per unit
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="h-[340px] w-full pt-2">
+        <CardContent className="p-3.5 sm:p-5 pt-0">
+          <div className="h-[260px] sm:h-[320px] w-full pt-2">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={unitComparisonData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                margin={{ top: 20, right: 30, left: 10, bottom: 60 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                 <XAxis
@@ -953,10 +953,10 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
                   angle={-25}
                   textAnchor="end"
                   interval={0}
-                  tick={{ fontSize: 10 }}
+                  tick={{ fontSize: 9 }}
                   height={60}
                 />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
                 <Tooltip
                   formatter={(val: number, name: string) => [
                     `${val} Risiko`,
@@ -967,7 +967,7 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
                 <Legend
                   verticalAlign="top"
                   align="right"
-                  wrapperStyle={{ paddingBottom: '10px' }}
+                  wrapperStyle={{ paddingBottom: '10px', fontSize: '11px' }}
                 />
                 <Bar name="Total Risiko" dataKey="total" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                 <Bar name="Risiko Prioritas" dataKey="prioritas" fill="#ef4444" radius={[4, 4, 0, 0]} />
@@ -980,16 +980,16 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* ====================================================================== */}
       {/* OPSI PILIHAN DIAGRAM / TAB NAVIGASI INFOGRAFIS                         */}
       {/* ====================================================================== */}
-      <div className="bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200 flex flex-wrap items-center justify-between gap-2 shadow-xs">
+      <div className="bg-slate-100/80 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-slate-200 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 shadow-xs">
         <div className="flex flex-wrap items-center gap-1">
           <button
             type="button"
             onClick={() => setActiveTab("all")}
-            className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-semibold sm:font-bold text-[11px] sm:text-xs flex items-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${
               activeTab === "all"
                 ? "bg-white text-slate-900 shadow-sm border border-slate-200/80"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
@@ -1002,7 +1002,7 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
           <button
             type="button"
             onClick={() => setActiveTab("heatmap")}
-            className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-semibold sm:font-bold text-[11px] sm:text-xs flex items-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${
               activeTab === "heatmap"
                 ? "bg-gradient-to-r from-red-600 to-orange-600 text-white shadow-sm"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
@@ -1015,7 +1015,7 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
           <button
             type="button"
             onClick={() => setActiveTab("distribution")}
-            className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-semibold sm:font-bold text-[11px] sm:text-xs flex items-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${
               activeTab === "distribution"
                 ? "bg-white text-blue-700 shadow-sm border border-slate-200/80"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
@@ -1028,7 +1028,7 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
           <button
             type="button"
             onClick={() => setActiveTab("rtp")}
-            className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-semibold sm:font-bold text-[11px] sm:text-xs flex items-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${
               activeTab === "rtp"
                 ? "bg-white text-emerald-700 shadow-sm border border-slate-200/80"
                 : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
@@ -1042,7 +1042,7 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
             <button
               type="button"
               onClick={() => setActiveTab("units")}
-              className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+              className={`px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-semibold sm:font-bold text-[11px] sm:text-xs flex items-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${
                 activeTab === "units"
                   ? "bg-white text-indigo-700 shadow-sm border border-slate-200/80"
                   : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
@@ -1054,7 +1054,7 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
           )}
         </div>
 
-        <div className="px-3 py-1 text-[11px] text-slate-500 font-medium">
+        <div className="px-2 sm:px-3 py-1 text-[10px] sm:text-[11px] text-slate-500 font-medium">
           Menampilkan <strong className="text-slate-800">{risks.length}</strong> risiko terdaftar
         </div>
       </div>
