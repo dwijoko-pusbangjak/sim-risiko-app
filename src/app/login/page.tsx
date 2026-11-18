@@ -20,8 +20,69 @@ import {
   Check, 
   Info, 
   UserCheck, 
-  HelpCircle 
+  HelpCircle,
+  Volume2
 } from "lucide-react";
+
+interface CaptchaData {
+  code: string;
+  lines: Array<{ x1: number; y1: number; x2: number; y2: number; color: string; strokeWidth: number }>;
+  dots: Array<{ cx: number; cy: number; r: number; color: string }>;
+  charStyles: Array<{ rotate: number; y: number; color: string }>;
+}
+
+const generateCaptchaData = (): CaptchaData => {
+  const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+  let code = "";
+  for (let i = 0; i < 5; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+
+  const palette = ["#1e3a8a", "#0369a1", "#0f766e", "#4338ca", "#7c2d12", "#1e293b", "#0284c7"];
+  const linePalette = ["#94a3b8", "#60a5fa", "#818cf8", "#38bdf8", "#a5b4fc"];
+
+  const lines = [
+    {
+      x1: Math.floor(Math.random() * 20),
+      y1: 10 + Math.floor(Math.random() * 24),
+      x2: 140 + Math.floor(Math.random() * 20),
+      y2: 10 + Math.floor(Math.random() * 24),
+      color: linePalette[Math.floor(Math.random() * linePalette.length)],
+      strokeWidth: 1.5 + Math.random() * 0.8,
+    },
+    {
+      x1: Math.floor(Math.random() * 30),
+      y1: 15 + Math.floor(Math.random() * 20),
+      x2: 130 + Math.floor(Math.random() * 30),
+      y2: 15 + Math.floor(Math.random() * 20),
+      color: linePalette[Math.floor(Math.random() * linePalette.length)],
+      strokeWidth: 1.2 + Math.random() * 0.6,
+    },
+    {
+      x1: Math.floor(Math.random() * 40),
+      y1: 5 + Math.floor(Math.random() * 30),
+      x2: 120 + Math.floor(Math.random() * 40),
+      y2: 5 + Math.floor(Math.random() * 30),
+      color: linePalette[Math.floor(Math.random() * linePalette.length)],
+      strokeWidth: 1.0 + Math.random() * 0.5,
+    },
+  ];
+
+  const dots = Array.from({ length: 14 }).map(() => ({
+    cx: Math.floor(Math.random() * 160),
+    cy: Math.floor(Math.random() * 44),
+    r: 1 + Math.random() * 1.5,
+    color: palette[Math.floor(Math.random() * palette.length)],
+  }));
+
+  const charStyles = code.split("").map(() => ({
+    rotate: (Math.random() - 0.5) * 26,
+    y: 28 + (Math.random() - 0.5) * 6,
+    color: palette[Math.floor(Math.random() * palette.length)],
+  }));
+
+  return { code, lines, dots, charStyles };
+};
 
 const LOGIN_MESSAGES = [
   {
@@ -53,9 +114,44 @@ export default function LoginPage() {
   const [wallpaperUrl, setWallpaperUrl] = useState("");
   const [activeMsgIndex, setActiveMsgIndex] = useState(0);
   const [isMsgVisible, setIsMsgVisible] = useState(true);
+
+  // State CAPTCHA Visual
+  const [captchaData, setCaptchaData] = useState<CaptchaData>({
+    code: "",
+    lines: [],
+    dots: [],
+    charStyles: []
+  });
+  const [captchaInput, setCaptchaInput] = useState("");
+  const [isCaptchaRotating, setIsCaptchaRotating] = useState(false);
   
   const router = useRouter();
   const { setActiveYear, user } = useAuth();
+
+  // Inisialisasi Kode CAPTCHA pada saat halaman dibuka
+  useEffect(() => {
+    setCaptchaData(generateCaptchaData());
+  }, []);
+
+  const handleRefreshCaptcha = () => {
+    setIsCaptchaRotating(true);
+    setCaptchaData(generateCaptchaData());
+    setCaptchaInput("");
+    setTimeout(() => {
+      setIsCaptchaRotating(false);
+    }, 450);
+  };
+
+  const handleSpeakCaptcha = () => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      const textToSpeak = captchaData.code.split("").join(" . ");
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      utterance.lang = "id-ID";
+      utterance.rate = 0.8;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   // Efek Animasi Timbul Tenggelam bergantian per kalimat
   useEffect(() => {
@@ -106,6 +202,22 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
+    // 1. Verifikasi Keamanan CAPTCHA
+    if (!captchaInput.trim()) {
+      setError("Silakan masukkan kode keamanan (CAPTCHA) terlebih dahulu.");
+      setLoading(false);
+      return;
+    }
+
+    if (captchaInput.trim().toUpperCase() !== captchaData.code.toUpperCase()) {
+      setError("Kode keamanan (CAPTCHA) tidak sesuai. Silakan masukkan kode baru yang muncul.");
+      setCaptchaInput("");
+      handleRefreshCaptcha();
+      setLoading(false);
+      return;
+    }
+
+    // 2. Lanjutkan Proses Autentikasi
     try {
       setActiveYear(selectedYear);
       try {
@@ -116,6 +228,8 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email.trim(), password);
     } catch (err: any) {
       setError("Email atau kata sandi tidak sesuai. Silakan periksa kembali akun Anda.");
+      setCaptchaInput("");
+      handleRefreshCaptcha();
       setLoading(false);
     }
   };
@@ -128,6 +242,8 @@ export default function LoginPage() {
   const handleResetForm = () => {
     setEmail("");
     setPassword("");
+    setCaptchaInput("");
+    handleRefreshCaptcha();
     setError("");
   };
 
@@ -373,6 +489,128 @@ export default function LoginPage() {
                         <Eye className="w-4 h-4" />
                       )}
                     </button>
+                  </div>
+                </div>
+
+                {/* Kolom Verifikasi Keamanan CAPTCHA */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="captcha-input" className="text-slate-700 text-xs font-semibold flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Kode Keamanan (CAPTCHA)</span>
+                    </Label>
+                    <span className="text-[10px] text-slate-400 font-medium">Bebas besar/kecil</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {/* Kotak Visual Gambar CAPTCHA (SVG) */}
+                    <div 
+                      className="relative flex-1 overflow-hidden rounded-xl border border-slate-200/90 bg-gradient-to-r from-slate-100 via-sky-50 to-blue-50 select-none shadow-2xs h-11 flex items-center justify-center cursor-pointer group"
+                      onClick={handleRefreshCaptcha}
+                      title="Klik gambar untuk mengganti kode keamanan baru"
+                    >
+                      {captchaData.code ? (
+                        <svg
+                          viewBox="0 0 160 44"
+                          className="w-full h-full max-h-11"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <defs>
+                            <linearGradient id="captchaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stopColor="#f8fafc" />
+                              <stop offset="50%" stopColor="#f0f9ff" />
+                              <stop offset="100%" stopColor="#e0f2fe" />
+                            </linearGradient>
+                          </defs>
+                          <rect width="160" height="44" fill="url(#captchaGrad)" />
+                          
+                          {/* Garis-garis acak pengaman */}
+                          {captchaData.lines.map((line, idx) => (
+                            <line
+                              key={`line-${idx}`}
+                              x1={line.x1}
+                              y1={line.y1}
+                              x2={line.x2}
+                              y2={line.y2}
+                              stroke={line.color}
+                              strokeWidth={line.strokeWidth}
+                              strokeOpacity={0.6}
+                            />
+                          ))}
+
+                          {/* Titik-titik acak pengaman */}
+                          {captchaData.dots.map((dot, idx) => (
+                            <circle
+                              key={`dot-${idx}`}
+                              cx={dot.cx}
+                              cy={dot.cy}
+                              r={dot.r}
+                              fill={dot.color}
+                              fillOpacity={0.4}
+                            />
+                          ))}
+
+                          {/* Karakter Teks CAPTCHA */}
+                          {captchaData.code.split("").map((char, idx) => {
+                            const style = captchaData.charStyles[idx] || { rotate: 0, y: 28, color: "#1e3a8a" };
+                            const xPos = 18 + idx * 28;
+                            return (
+                              <text
+                                key={`char-${idx}`}
+                                x={xPos}
+                                y={style.y}
+                                fill={style.color}
+                                fontSize="22"
+                                fontWeight="bold"
+                                fontFamily="monospace"
+                                transform={`rotate(${style.rotate}, ${xPos}, ${style.y})`}
+                                textAnchor="middle"
+                                className="select-none pointer-events-none drop-shadow-xs"
+                              >
+                                {char}
+                              </text>
+                            );
+                          })}
+                        </svg>
+                      ) : (
+                        <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      )}
+                    </div>
+
+                    {/* Tombol Segarkan Kode Acak */}
+                    <button
+                      type="button"
+                      onClick={handleRefreshCaptcha}
+                      className="h-11 w-11 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-700 border border-slate-200 transition-all cursor-pointer shrink-0"
+                      title="Ganti Kode Keamanan Baru"
+                    >
+                      <RotateCw className={`w-4 h-4 transition-transform ${isCaptchaRotating ? "animate-spin" : ""}`} />
+                    </button>
+
+                    {/* Tombol Suara (Audio Accessibility) */}
+                    <button
+                      type="button"
+                      onClick={handleSpeakCaptcha}
+                      className="h-11 w-11 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-700 border border-slate-200 transition-all cursor-pointer shrink-0"
+                      title="Dengarkan Suara Kode Keamanan"
+                    >
+                      <Volume2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Input Kode Keamanan Pengguna */}
+                  <div className="relative">
+                    <input
+                      id="captcha-input"
+                      type="text"
+                      required
+                      autoComplete="off"
+                      placeholder="Ketik 5 kode di atas..."
+                      value={captchaInput}
+                      onChange={(e) => setCaptchaInput(e.target.value)}
+                      className="w-full h-11 px-3.5 bg-[#f4f7fb] border border-transparent hover:border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl text-xs sm:text-sm font-bold tracking-[0.2em] text-slate-800 placeholder:text-slate-400 placeholder:font-normal placeholder:tracking-normal outline-none transition-all uppercase"
+                      maxLength={6}
+                    />
                   </div>
                 </div>
 
