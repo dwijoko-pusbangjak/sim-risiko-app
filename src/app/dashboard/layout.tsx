@@ -412,25 +412,98 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             // Submenu bertingkat (children)
             if (item.children) {
-              const isHovered = !isMobile && hoveredSidebarMenu === item.name;
-              const isPinned = openMenus[item.name];
-              const isOpen = isHovered || isPinned || (isPinned === undefined && Boolean(hasChildActive));
+              // Untuk Desktop: Menu Melayang ke Samping (Flyout Sideways)
+              if (!isMobile) {
+                return (
+                  <DropdownMenu key={item.name} modal={false}>
+                    <DropdownMenuTrigger
+                      openOnHover
+                      delay={60}
+                      closeDelay={180}
+                      className={`group flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[13.5px] font-semibold transition-all w-full cursor-pointer text-left border ${
+                        hasChildActive
+                          ? "bg-[#122b54] text-white border-[#1b4584] shadow-xs font-bold"
+                          : "bg-white/70 hover:bg-white text-[#122b54] border-white/80 shadow-2xs data-popup-open:bg-white data-popup-open:border-white/90 data-popup-open:shadow-xs"
+                      }`}
+                    >
+                      <div className="flex items-center flex-1 min-w-0 pr-2 gap-3">
+                        <Icon className={`h-4.5 w-4.5 shrink-0 ${hasChildActive ? "text-white" : "text-[#173f7c]"}`} />
+                        <span className="text-left leading-tight truncate flex-1 font-semibold">{item.name}</span>
+                      </div>
 
+                      <div className="flex items-center shrink-0">
+                        <ChevronRight
+                          className={`h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 ${
+                            hasChildActive ? "text-white" : "text-[#173f7c]/70 group-hover:text-[#173f7c]"
+                          }`}
+                        />
+                      </div>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuContent
+                      side="right"
+                      align="start"
+                      sideOffset={10}
+                      style={{ width: "280px" }}
+                      className="p-1.5 glass-dropdown-content text-white rounded-2xl shadow-2xl animate-in fade-in-50 zoom-in-95 duration-150 border border-[#204e92]/80"
+                    >
+                      <div className="px-3 py-2 text-[10.5px] font-bold uppercase tracking-wider text-sky-200 border-b border-white/15 mb-1.5 flex items-center justify-between">
+                        <span className="truncate">{item.name}</span>
+                        <span className="text-[9.5px] lowercase text-sky-300/80 font-normal">sub-menu</span>
+                      </div>
+
+                      <div className="flex flex-col space-y-1">
+                        {item.children.map((child) => {
+                          const isChildActive = pathname === child.href;
+                          return (
+                            <DropdownMenuItem
+                              key={child.name}
+                              onClick={() => router.push(child.href)}
+                              className={`cursor-pointer rounded-xl text-xs py-2 px-3 flex items-center justify-between transition-all border ${
+                                isChildActive
+                                  ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/25"
+                                  : "text-white/90 hover:bg-white/15 hover:text-white focus:bg-white/15 focus:text-white border-transparent font-medium"
+                              }`}
+                            >
+                              <div className="flex items-center min-w-0 flex-1 pr-2">
+                                <span
+                                  className={`w-2 h-2 rounded-full mr-2.5 shrink-0 transition-all ${
+                                    isChildActive ? "bg-sky-400 ring-2 ring-sky-300/50 scale-110" : "bg-sky-300/60"
+                                  }`}
+                                />
+                                <span className="truncate leading-tight">{child.name}</span>
+                              </div>
+
+                              {child.badge && (
+                                <span
+                                  className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 shadow-xs ${
+                                    isChildActive
+                                      ? "bg-white/25 text-white border border-white/40"
+                                      : "bg-white/15 text-sky-200 border border-white/20"
+                                  }`}
+                                >
+                                  {child.badge}
+                                </span>
+                              )}
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              }
+
+              // Untuk Tampilan Mobile (Drawer Layar Sentuh): Tetap accordion vertikal agar pas di layar HP
+              const isOpen = Boolean(openMenus[item.name]) || Boolean(hasChildActive);
               return (
-                <div
-                  key={item.name}
-                  onMouseEnter={!isMobile ? () => handleSidebarMenuEnter(item.name) : undefined}
-                  onMouseLeave={!isMobile ? () => handleSidebarMenuLeave(item.name) : undefined}
-                  className="flex flex-col space-y-1"
-                >
+                <div key={item.name} className="flex flex-col space-y-1">
                   <button
                     type="button"
                     onClick={() => toggleMenu(item.name, isOpen)}
                     className={`group flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[13.5px] font-semibold transition-all w-full cursor-pointer text-left border ${
                       hasChildActive
                         ? "bg-[#122b54] text-white border-[#1b4584] shadow-xs font-bold"
-                        : isHovered
-                        ? "bg-white text-[#122b54] border-white/90 shadow-2xs"
                         : "bg-white/70 hover:bg-white text-[#122b54] border-white/80 shadow-2xs"
                     }`}
                   >
@@ -448,7 +521,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </div>
                   </button>
 
-                  {/* Submenu Item List */}
+                  {/* Submenu Item List Accordion Vertikal Mobile */}
                   <div className={`grid transition-all duration-200 ease-in-out ${isOpen ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0"}`}>
                     <div className="overflow-hidden">
                       <div className="flex flex-col space-y-1 p-1.5 rounded-xl bg-white/60 border border-white/80 backdrop-blur-xs shadow-inner my-1">
@@ -458,7 +531,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             <Link
                               key={child.name}
                               href={child.href}
-                              onClick={() => isMobile && setIsSidebarOpen(false)}
+                              onClick={() => setIsSidebarOpen(false)}
                               className={`group relative flex items-center justify-between rounded-lg px-3 py-2 text-[13px] font-semibold transition-all border ${
                                 isChildActive
                                   ? "bg-[#173f7c] text-white font-bold shadow-xs border-[#122b54]"
