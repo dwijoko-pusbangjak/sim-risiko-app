@@ -209,10 +209,14 @@
 
 .glass-sidebar,
 .theme-sidebar-gradient {
-  background: linear-gradient(180deg, #122b54 0%, #163a72 38%, #1e4f9b 72%, #295fd1 100%) !important;
-  color: #ffffff !important;
-  border-right: 1px solid #14376b !important;
-  box-shadow: 4px 0 24px -4px rgba(18, 43, 84, 0.25) !important;
+  background-color: #ebf3fc !important;
+  background-image: url('/sidebar-bg.svg') !important;
+  background-size: cover !important;
+  background-position: center top !important;
+  background-repeat: no-repeat !important;
+  color: #122b54 !important;
+  border-right: 1px solid #c8ddfa !important;
+  box-shadow: 4px 0 24px -4px rgba(37, 91, 199, 0.12) !important;
 }
 
 .theme-header-dark {

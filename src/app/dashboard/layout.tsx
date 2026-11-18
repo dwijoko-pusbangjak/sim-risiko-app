@@ -397,13 +397,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const renderNavGroups = (groups: NavGroup[], isMobile = false) => {
     return groups.map((group, idx) => (
       <div key={group.title} className={idx > 0 ? "mt-5" : ""}>
-        <div className="flex items-center px-3.5 py-2.5 my-2.5 rounded-xl bg-[#0e2244]/50 border border-white/10 shadow-xs backdrop-blur-xs">
-          <h3 className="text-[13.5px] font-bold text-white tracking-normal flex items-center gap-2">
+        <div className="flex items-center px-3.5 py-2 my-2 rounded-xl bg-white/60 border border-white/80 shadow-2xs backdrop-blur-xs">
+          <h3 className="text-[12px] font-extrabold text-[#122b54] uppercase tracking-wider flex items-center gap-2">
             {group.title}
           </h3>
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {group.items.map((item) => {
             const Icon = item.icon;
             const isDirectActive = item.href ? pathname === item.href : false;
@@ -426,24 +426,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <button
                     type="button"
                     onClick={() => toggleMenu(item.name, isOpen)}
-                    className={`group flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[13.5px] font-medium transition-all w-full cursor-pointer text-left border ${
+                    className={`group flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[13.5px] font-semibold transition-all w-full cursor-pointer text-left border ${
                       hasChildActive
-                        ? "bg-[#173f7c]/90 text-white border-white/20 shadow-xs font-semibold"
+                        ? "bg-[#122b54] text-white border-[#1b4584] shadow-xs font-bold"
                         : isHovered
-                        ? "bg-white/15 text-white border-white/15 shadow-2xs font-medium"
-                        : "text-white/90 hover:bg-white/15 hover:text-white border-transparent"
+                        ? "bg-white text-[#122b54] border-white/90 shadow-2xs"
+                        : "bg-white/70 hover:bg-white text-[#122b54] border-white/80 shadow-2xs"
                     }`}
                   >
                     <div className="flex items-center flex-1 min-w-0 pr-2 gap-3">
-                      <Icon className="h-4.5 w-4.5 text-white shrink-0" />
-                      <span className="text-left leading-tight truncate flex-1 font-medium">{item.name}</span>
+                      <Icon className={`h-4.5 w-4.5 shrink-0 ${hasChildActive ? "text-white" : "text-[#173f7c]"}`} />
+                      <span className="text-left leading-tight truncate flex-1 font-semibold">{item.name}</span>
                     </div>
 
                     <div className="flex items-center shrink-0">
                       {isOpen ? (
-                        <ChevronDown className="h-4 w-4 text-white transition-transform duration-200" />
+                        <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${hasChildActive ? "text-white" : "text-[#173f7c]"}`} />
                       ) : (
-                        <ChevronRight className="h-4 w-4 text-white/70 group-hover:text-white transition-transform duration-200" />
+                        <ChevronRight className={`h-4 w-4 transition-transform duration-200 ${hasChildActive ? "text-white" : "text-[#173f7c]/70 group-hover:text-[#173f7c]"}`} />
                       )}
                     </div>
                   </button>
@@ -451,7 +451,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {/* Submenu Item List */}
                   <div className={`grid transition-all duration-200 ease-in-out ${isOpen ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0"}`}>
                     <div className="overflow-hidden">
-                      <div className="flex flex-col space-y-1 p-1.5 rounded-xl bg-[#0b1c36]/50 border border-white/10 backdrop-blur-xs shadow-inner my-1">
+                      <div className="flex flex-col space-y-1 p-1.5 rounded-xl bg-white/60 border border-white/80 backdrop-blur-xs shadow-inner my-1">
                         {item.children.map((child) => {
                           const isChildActive = pathname === child.href;
                           return (
@@ -459,16 +459,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                               key={child.name}
                               href={child.href}
                               onClick={() => isMobile && setIsSidebarOpen(false)}
-                              className={`group relative flex items-center justify-between rounded-lg px-3 py-2 text-[13px] font-medium transition-all border ${
+                              className={`group relative flex items-center justify-between rounded-lg px-3 py-2 text-[13px] font-semibold transition-all border ${
                                 isChildActive
-                                  ? "bg-white/25 text-white font-bold shadow-xs border-white/30"
-                                  : "text-white/85 hover:bg-white/15 hover:text-white border-transparent"
+                                  ? "bg-[#173f7c] text-white font-bold shadow-xs border-[#122b54]"
+                                  : "text-[#122b54] hover:bg-white/80 hover:text-[#0b1f3f] border-transparent"
                               }`}
                             >
                               <div className="flex items-center min-w-0 flex-1 pr-2">
                                 <span
                                   className={`w-1.5 h-1.5 rounded-full mr-2.5 shrink-0 transition-colors ${
-                                    isChildActive ? "bg-white scale-125" : "bg-white/50 group-hover:bg-white"
+                                    isChildActive ? "bg-white scale-125" : "bg-[#173f7c]/50 group-hover:bg-[#173f7c]"
                                   }`}
                                 />
                                 <span className="truncate leading-tight">{child.name}</span>
@@ -479,7 +479,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                   className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full shrink-0 ${
                                     isChildActive
                                       ? "bg-white/30 text-white border border-white/40"
-                                      : "bg-white/15 text-white border border-white/20"
+                                      : "bg-blue-100 text-blue-800 border border-blue-200"
                                   }`}
                                 >
                                   {child.badge}
@@ -505,14 +505,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 key={item.name}
                 href={item.href || "/dashboard"}
                 onClick={() => isMobile && setIsSidebarOpen(false)}
-                className={`group flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[13.5px] font-medium transition-all w-full cursor-pointer border ${
+                className={`group flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[13.5px] font-semibold transition-all w-full cursor-pointer border ${
                   isDirectActive
-                    ? "bg-[#173f7c]/90 text-white shadow-xs font-bold border-white/20"
-                    : "text-white/90 hover:bg-white/15 hover:text-white border-transparent"
+                    ? "bg-[#122b54] text-white shadow-xs font-bold border-[#1b4584]"
+                    : "bg-white/70 hover:bg-white text-[#122b54] hover:text-[#0b1f3f] border-white/80 shadow-2xs"
                 }`}
               >
                 <div className="flex items-center flex-1 min-w-0 pr-2 gap-3">
-                  <Icon className="h-4.5 w-4.5 text-white shrink-0" />
+                  <Icon className={`h-4.5 w-4.5 shrink-0 ${isDirectActive ? "text-white" : "text-[#173f7c]"}`} />
                   <span className="text-left leading-tight truncate flex-1">{item.name}</span>
                 </div>
 
@@ -523,7 +523,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         ? "bg-rose-500 text-white border border-rose-400 text-[10px] animate-pulse"
                         : isDirectActive
                         ? "bg-white/25 text-white border border-white/30 text-[9px] uppercase tracking-wider"
-                        : "bg-white/15 text-white border border-white/20 text-[9px] uppercase tracking-wider"
+                        : "bg-blue-100 text-blue-800 border border-blue-200 text-[9px] uppercase tracking-wider"
                     }`}
                   >
                     {item.badge}
@@ -572,32 +572,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* 1. SIDEBAR DESKTOP (Tampil HANYA jika menuPosition === "sidebar")        */}
       {/* ====================================================================== */}
       {menuPosition === "sidebar" && (
-        <aside className="hidden w-64 xl:w-72 flex-col glass-sidebar md:flex shrink-0 print:hidden animate-in fade-in duration-200 relative z-20 text-white">
+        <aside className="hidden w-64 xl:w-72 flex-col glass-sidebar md:flex shrink-0 print:hidden animate-in fade-in duration-200 relative z-20 text-slate-800">
           {/* Brand Header */}
-          <div className="flex h-16 items-center px-4 xl:px-6 border-b border-[#1b4584] shrink-0 bg-[#122b54]">
+          <div className="flex h-16 items-center px-4 xl:px-6 border-b border-[#c8ddfa] shrink-0 theme-header-wave">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-blue-500/25 border border-white/60">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-blue-500/25 border border-white/80">
                 <ShieldAlert className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-white tracking-tight leading-none">
-                  Si<span className="text-sky-300">-MaRi</span>
+                <h1 className="text-lg font-bold text-[#122b54] tracking-tight leading-none">
+                  Si<span className="text-blue-600">-MaRi</span>
                 </h1>
-                <p className="text-[10px] text-white/70 font-medium">Kemendes PDT</p>
+                <p className="text-[10px] text-slate-500 font-semibold">Kemendes PDT</p>
               </div>
             </div>
           </div>
           
           {/* Info Profil di Sidebar */}
-          <div className="border-b border-[#1b4584] px-4 xl:px-6 py-3.5 bg-[#0e2244]/60 shrink-0">
-            <p className="text-xs xl:text-sm font-bold text-white whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
+          <div className="border-b border-[#c8ddfa] px-4 xl:px-6 py-3.5 bg-white/70 backdrop-blur-sm shrink-0">
+            <p className="text-xs xl:text-sm font-bold text-[#122b54] whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
               {user.unitName || user.email}
             </p>
             <div className="flex flex-wrap items-center gap-2 mt-2">
-              <span className="text-[10px] font-semibold text-white uppercase tracking-wider border border-white/20 bg-white/15 inline-block px-2 py-0.5 rounded-lg">
+              <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider border border-blue-200 bg-blue-50/90 inline-block px-2 py-0.5 rounded-lg">
                 {getRoleLabel(user.role)}
               </span>
-              <span className="text-[10px] font-semibold text-white/90 bg-white/10 inline-block px-2 py-0.5 rounded-lg border border-white/15">
+              <span className="text-[10px] font-bold text-slate-700 bg-white/90 inline-block px-2 py-0.5 rounded-lg border border-slate-200">
                 TA {activeYear}
               </span>
             </div>
@@ -609,21 +609,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </nav>
           
           {/* Sidebar Footer dengan Pintasan Panduan Alur MR */}
-          <div className="border-t border-[#1b4584] p-3 shrink-0 bg-[#0e2244]/40 space-y-2">
+          <div className="border-t border-[#c8ddfa] p-3 shrink-0 bg-white/40 backdrop-blur-sm space-y-2">
             <Link
               href="/dashboard/modul"
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#0e2244]/70 hover:bg-white/15 border border-white/15 text-white transition-all text-xs group shadow-xs"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/85 hover:bg-white border border-white/90 text-[#122b54] transition-all text-xs group shadow-2xs font-semibold backdrop-blur-sm"
             >
               <div className="flex items-center gap-2.5">
-                <BookMarked className="w-4 h-4 text-sky-300 group-hover:scale-110 transition-transform" />
+                <BookMarked className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
                 <div className="text-left">
-                  <div className="font-semibold text-white">Panduan Alur MR</div>
-                  <div className="text-[10px] text-white/70">Diagram alur & petunjuk</div>
+                  <div className="font-bold text-[#122b54]">Panduan Alur MR</div>
+                  <div className="text-[10px] text-slate-500 font-medium">Diagram alur & petunjuk</div>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-white/70 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#122b54] group-hover:translate-x-0.5 transition-all" />
             </Link>
-            <p className="text-[10px] text-white/60 text-center font-medium pt-1">Kemendes PDT © 2026</p>
+            <p className="text-[10px] text-slate-500 text-center font-medium pt-1">Kemendes PDT © 2026</p>
           </div>
         </aside>
       )}
@@ -1217,34 +1217,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         />
       )}
       
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 xl:w-72 transform glass-sidebar shadow-2xl transition-transform duration-300 ease-in-out md:hidden flex flex-col text-white ${
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 xl:w-72 transform glass-sidebar shadow-2xl transition-transform duration-300 ease-in-out md:hidden flex flex-col text-slate-800 ${
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       }`}>
-        <div className="flex h-16 items-center justify-between border-b border-[#1b4584] px-4 xl:px-6 shrink-0 bg-[#122b54]">
+        <div className="flex h-16 items-center justify-between border-b border-[#c8ddfa] px-4 xl:px-6 shrink-0 theme-header-wave">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-blue-500/25 border border-white/60">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-blue-500/25 border border-white/80">
               <ShieldAlert className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white tracking-tight leading-none">
-                Si<span className="text-sky-300">-MaRi</span>
+              <h1 className="text-lg font-bold text-[#122b54] tracking-tight leading-none">
+                Si<span className="text-blue-600">-MaRi</span>
               </h1>
-              <p className="text-[10px] text-white/70 font-medium">Kemendes PDT</p>
+              <p className="text-[10px] text-slate-500 font-semibold">Kemendes PDT</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)} className="text-white/80 hover:text-white hover:bg-white/10">
-            <Menu className="h-5 w-5" />
+          <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)} className="text-slate-700 hover:text-[#122b54] hover:bg-white/60">
+            <Menu className="h-6 w-6" />
           </Button>
         </div>
-        <div className="border-b border-[#1b4584] px-4 xl:px-6 py-3.5 bg-[#0e2244]/60 shrink-0">
-          <p className="text-xs xl:text-sm font-bold text-white whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
+        <div className="border-b border-[#c8ddfa] px-4 xl:px-6 py-3.5 bg-white/70 backdrop-blur-sm shrink-0">
+          <p className="text-xs xl:text-sm font-bold text-[#122b54] whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
             {user.unitName || user.email}
           </p>
           <div className="flex flex-wrap items-center gap-2 mt-2">
-            <span className="text-[10px] font-semibold text-white uppercase tracking-wider border border-white/20 bg-white/15 inline-block px-2 py-0.5 rounded-lg">
+            <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider border border-blue-200 bg-blue-50/90 inline-block px-2 py-0.5 rounded-lg">
               {getRoleLabel(user.role)}
             </span>
-            <span className="text-[10px] font-semibold text-white/90 bg-white/10 inline-block px-2 py-0.5 rounded-lg border border-white/15">
+            <span className="text-[10px] font-bold text-slate-700 bg-white/90 inline-block px-2 py-0.5 rounded-lg border border-slate-200">
               TA {activeYear}
             </span>
           </div>
@@ -1252,22 +1252,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav className="flex-1 overflow-y-auto px-3.5 py-4 custom-scrollbar">
           {renderNavGroups(navGroups, true)}
         </nav>
-        <div className="border-t border-[#1b4584] p-3 shrink-0 bg-[#0e2244]/40 space-y-2">
+        <div className="border-t border-[#c8ddfa] p-3 shrink-0 bg-white/40 backdrop-blur-sm space-y-2">
           <Link
             href="/dashboard/modul"
             onClick={() => setIsSidebarOpen(false)}
-            className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#0e2244]/70 hover:bg-white/15 border border-white/15 text-white transition-all text-xs group shadow-xs"
+            className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/85 hover:bg-white border border-white/90 text-[#122b54] transition-all text-xs group shadow-2xs font-semibold backdrop-blur-sm"
           >
             <div className="flex items-center gap-2.5">
-              <BookMarked className="w-4 h-4 text-sky-300 group-hover:scale-110 transition-transform" />
+              <BookMarked className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
               <div className="text-left">
-                <div className="font-semibold text-white">Panduan Alur MR</div>
-                <div className="text-[10px] text-white/70">Diagram alur & petunjuk</div>
+                <div className="font-bold text-[#122b54]">Panduan Alur MR</div>
+                <div className="text-[10px] text-slate-500 font-medium">Diagram alur & petunjuk</div>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-white/70 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+            <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#122b54] group-hover:translate-x-0.5 transition-all" />
           </Link>
-          <p className="text-[10px] text-white/60 text-center font-medium pt-1">Kemendes PDT © 2026</p>
+          <p className="text-[10px] text-slate-500 text-center font-medium pt-1">Kemendes PDT © 2026</p>
         </div>
       </aside>
 

@@ -1,0 +1,42 @@
+<svg width="320" height="1200" viewBox="0 0 320 1200" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <defs>
+    <!-- Background Vertical Gradient -->
+    <linearGradient id="sidebarBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f5f9fe" />
+      <stop offset="25%" stop-color="#ebf3fc" />
+      <stop offset="60%" stop-color="#d6e7fd" />
+      <stop offset="100%" stop-color="#bfdcfe" />
+    </linearGradient>
+
+    <!-- Wave 1: Soft Sky -->
+    <linearGradient id="sideWave1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#bad7fc" stop-opacity="0.65" />
+      <stop offset="100%" stop-color="#dbeafc" stop-opacity="0.4" />
+    </linearGradient>
+
+    <!-- Wave 2: Mid Azure -->
+    <linearGradient id="sideWave2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6ba0f5" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="#9fc6f9" stop-opacity="0.3" />
+    </linearGradient>
+
+    <!-- Wave 3: Lower Wave Depth -->
+    <linearGradient id="sideWave3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b78e7" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#73a7f7" stop-opacity="0.2" />
+    </linearGradient>
+  </defs>
+
+  <!-- Base Canvas -->
+  <rect width="320" height="1200" fill="url(#sidebarBgGrad)" />
+
+  <!-- Fluid Vertical/Diagonal Curved Waves -->
+  <!-- Wave 1 (Upper Flow) -->
+  <path d="M0,180 C120,240 220,160 320,210 L320,1200 L0,1200 Z" fill="url(#sideWave1)" />
+
+  <!-- Wave 2 (Middle Flow) -->
+  <path d="M0,520 C140,600 200,480 320,560 L320,1200 L0,1200 Z" fill="url(#sideWave2)" />
+
+  <!-- Wave 3 (Lower Flow) -->
+  <path d="M0,860 C130,940 210,840 320,910 L320,1200 L0,1200 Z" fill="url(#sideWave3)" />
+</svg>
