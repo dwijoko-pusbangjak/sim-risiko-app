@@ -633,7 +633,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-[#ebf3fc] via-[#f3f7fd] to-[#e4eefb] relative print:h-auto print:min-h-0 print:block print:overflow-visible font-sans text-slate-800">
+    <div className="flex flex-col h-screen overflow-hidden bg-gradient-to-br from-[#ebf3fc] via-[#f3f7fd] to-[#e4eefb] relative print:h-auto print:min-h-0 print:block print:overflow-visible font-sans text-slate-800">
       {/* Latar Belakang Gradien Halus Biru Langit & Cahaya Diffuse Sesuai Tampilan Login */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden print:hidden" aria-hidden="true">
         <div className="absolute -top-32 -left-32 w-[600px] h-[600px] bg-sky-200/50 rounded-full blur-[120px]" />
@@ -642,276 +642,260 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* ====================================================================== */}
-      {/* 1. SIDEBAR DESKTOP (Tampil HANYA jika menuPosition === "sidebar")        */}
+      {/* 1. TOPBAR HEADER (FULL-WIDTH 100% DI ATAS, SERAGAM DI SEMUA MODE)      */}
       {/* ====================================================================== */}
-      {menuPosition === "sidebar" && (
-        <aside className="hidden w-64 xl:w-72 flex-col glass-sidebar md:flex shrink-0 print:hidden animate-in fade-in duration-200 relative z-20 text-slate-800">
-          {/* Brand Header */}
-          <div className="flex h-16 items-center px-4 xl:px-6 border-b border-[#c8ddfa] shrink-0 theme-header-wave">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-blue-500/25 border border-white/80">
-                <ShieldAlert className="h-5 w-5" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-[#122b54] tracking-tight leading-none">
-                  Si<span className="text-blue-600">-MaRi</span>
-                </h1>
-                <p className="text-[10px] text-slate-500 font-semibold">Kemendes PDT</p>
-              </div>
+      <header className="flex h-16 w-full items-center justify-between border-b theme-header-wave px-4 md:px-6 shrink-0 print:hidden relative z-30 text-slate-800">
+        {/* Sisi Kiri Header: Logo Si-MaRi (Selalu Tampil di Desktop) + Breadcrumb */}
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Hamburger Button untuk Tampilan Mobile */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="md:hidden text-slate-700 hover:text-[#122b54] hover:bg-white/60"
+          >
+            <Menu className="h-6 w-6" />
+          </Button>
+
+          {/* Logo Si-MaRi Desktop (Selalu Tampil di Semua Mode Menu) */}
+          <div className="hidden md:flex items-center gap-2.5 pr-4 border-r border-slate-300/80 mr-1 shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-blue-500/25 border border-white/80">
+              <ShieldAlert className="h-5 w-5" />
             </div>
-          </div>
-          
-          {/* Info Profil di Sidebar */}
-          <div className="border-b border-[#c8ddfa] px-4 xl:px-6 py-3.5 bg-white/70 backdrop-blur-sm shrink-0">
-            <p className="text-xs xl:text-sm font-bold text-[#122b54] whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
-              {user.unitName || user.email}
-            </p>
-            <div className="flex flex-wrap items-center gap-2 mt-2">
-              <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider border border-blue-200 bg-blue-50/90 inline-block px-2 py-0.5 rounded-lg">
-                {getRoleLabel(user.role)}
-              </span>
-              <span className="text-[10px] font-bold text-slate-700 bg-white/90 inline-block px-2 py-0.5 rounded-lg border border-slate-200">
-                TA {activeYear}
-              </span>
+            <div>
+              <h1 className="text-lg font-bold text-[#122b54] tracking-tight leading-none">
+                Si<span className="text-blue-600">-MaRi</span>
+              </h1>
+              <p className="text-[10px] text-slate-500 font-semibold">Kemendes PDT</p>
             </div>
           </div>
 
-          {/* List Menu Scrollable */}
-          <nav className="flex-1 overflow-y-auto px-3.5 py-4 custom-scrollbar">
-            {renderNavGroups(navGroups)}
-          </nav>
+          {/* Mobile Logo */}
+          <div className="flex items-center gap-2 md:hidden">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white shadow-xs border border-white/60">
+              <ShieldAlert className="h-4 w-4" />
+            </div>
+            <h1 className="text-lg font-bold text-[#122b54]">Si<span className="text-blue-600">-MaRi</span></h1>
+          </div>
           
-          {/* Sidebar Footer dengan Pintasan Panduan Alur MR */}
-          <div className="border-t border-[#c8ddfa] p-3 shrink-0 bg-white/40 backdrop-blur-sm space-y-2">
-            <Link
-              href="/dashboard/modul"
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/85 hover:bg-white border border-white/90 text-[#122b54] transition-all text-xs group shadow-2xs font-semibold backdrop-blur-sm"
-            >
-              <div className="flex items-center gap-2.5">
-                <BookMarked className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
-                <div className="text-left">
-                  <div className="font-bold text-[#122b54]">Panduan Alur MR</div>
-                  <div className="text-[10px] text-slate-500 font-medium">Diagram alur & petunjuk</div>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#122b54] group-hover:translate-x-0.5 transition-all" />
+          {/* Breadcrumb Persis Contoh: Home > Nama Menu */}
+          <div className="hidden md:flex items-center gap-2 text-[13.5px] font-medium text-slate-700">
+            <Link href="/dashboard" className="flex items-center gap-1.5 text-[#122b54] font-semibold hover:text-blue-600 transition-colors">
+              <Home className="h-4 w-4 text-[#173f7c] shrink-0" />
+              <span>Home</span>
             </Link>
-            <p className="text-[10px] text-slate-500 text-center font-medium pt-1">Kemendes PDT © 2026</p>
+            <span className="text-slate-400">›</span>
+            <span className="text-[#122b54] font-bold truncate max-w-[280px]">{currentPageName}</span>
           </div>
-        </aside>
-      )}
+          <div className="md:hidden font-bold text-[#122b54] text-sm truncate">
+            {currentPageName}
+          </div>
+        </div>
 
-      {/* ====================================================================== */}
-      {/* 2. AREA KONTEN UTAMA + TOPBAR HEADER                                   */}
-      {/* ====================================================================== */}
-      <div className="flex flex-1 flex-col min-w-0 overflow-hidden print:block print:overflow-visible">
-        {/* Header Baris 1: Grafis Gelombang Cairan Sesuai Tampilan Login */}
-        <header className="flex h-16 items-center justify-between border-b theme-header-wave px-4 md:px-6 shrink-0 print:hidden relative z-20 text-slate-800">
-          {/* Sisi Kiri Header */}
-          <div className="flex items-center gap-3 min-w-0">
-            {/* Hamburger Button untuk Tampilan Mobile */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="md:hidden text-slate-700 hover:text-[#122b54] hover:bg-white/60"
-            >
-              <Menu className="h-6 w-6" />
-            </Button>
-
-            {/* Logo untuk Mode Menu Atas (Top) pada Desktop */}
-            {menuPosition === "top" && (
-              <div className="hidden md:flex items-center gap-2.5 pr-4 border-r border-slate-300/80 mr-1">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-blue-500/25 border border-white/80">
-                  <ShieldAlert className="h-5 w-5" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-bold text-[#122b54] tracking-tight leading-none">
-                    Si<span className="text-blue-600">-MaRi</span>
-                  </h1>
-                  <p className="text-[10px] text-slate-500 font-semibold">Kemendes PDT</p>
-                </div>
-              </div>
-            )}
-
-            {/* Mobile Logo */}
-            <div className="flex items-center gap-2 md:hidden">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white shadow-xs border border-white/60">
-                <ShieldAlert className="h-4 w-4" />
-              </div>
-              <h1 className="text-lg font-bold text-[#122b54]">Si<span className="text-blue-600">-MaRi</span></h1>
-            </div>
-            
-            {/* Breadcrumb Persis Contoh: Home > Nama Menu */}
-            <div className="hidden md:flex items-center gap-2 text-[13.5px] font-medium text-slate-700">
-              <Link href="/dashboard" className="flex items-center gap-1.5 text-[#122b54] font-semibold hover:text-blue-600 transition-colors">
-                <Home className="h-4 w-4 text-[#173f7c] shrink-0" />
-                <span>Home</span>
-              </Link>
-              <span className="text-slate-400">›</span>
-              <span className="text-[#122b54] font-bold truncate max-w-[280px]">{currentPageName}</span>
-            </div>
-            <div className="md:hidden font-bold text-[#122b54] text-sm truncate">
-              {currentPageName}
-            </div>
+        {/* Sisi Kanan Header: Info Unit, Switcher Posisi Menu, Panduan, Profil */}
+        <div className="flex items-center gap-2.5 sm:gap-3 ml-auto">
+          {/* Chip Info Unit & Tahun Anggaran */}
+          <div className="hidden lg:flex items-center gap-2 bg-white/75 border border-white/90 shadow-2xs px-3 py-1.5 rounded-xl text-xs backdrop-blur-sm text-slate-700">
+            <Building2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+            <span className="font-bold text-[#122b54] max-w-[160px] truncate" title={user.unitName || ""}>
+              {user.unitName || "Semua Unit"}
+            </span>
+            <span className="text-slate-300">•</span>
+            <span className="font-bold text-blue-800 bg-blue-50/90 border border-blue-200 px-2 py-0.5 rounded-md text-[11px]">
+              TA {activeYear}
+            </span>
           </div>
 
-          {/* Sisi Kanan Header: Info Unit, Switcher Posisi Menu, Panduan, Profil */}
-          <div className="flex items-center gap-2.5 sm:gap-3 ml-auto">
-            {/* Chip Info Unit & Tahun Anggaran */}
-            <div className="hidden lg:flex items-center gap-2 bg-white/75 border border-white/90 shadow-2xs px-3 py-1.5 rounded-xl text-xs backdrop-blur-sm text-slate-700">
-              <Building2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-              <span className="font-bold text-[#122b54] max-w-[160px] truncate" title={user.unitName || ""}>
-                {user.unitName || "Semua Unit"}
-              </span>
-              <span className="text-slate-300">•</span>
-              <span className="font-bold text-blue-800 bg-blue-50/90 border border-blue-200 px-2 py-0.5 rounded-md text-[11px]">
-                TA {activeYear}
-              </span>
-            </div>
-
-            {/* Switcher Posisi Penempatan Menu (Samping / Atas) */}
-            <div className="hidden md:flex items-center bg-white/70 p-0.5 rounded-xl border border-white/80 shadow-2xs backdrop-blur-sm" title="Atur Posisi Tata Letak Menu">
-              <button
-                type="button"
-                onClick={() => handleToggleMenuPosition("sidebar")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  menuPosition === "sidebar"
-                    ? "bg-[#122b54] text-white shadow-xs border border-[#1b4584] font-bold"
-                    : "text-slate-600 hover:text-[#122b54] hover:bg-white/60"
-                }`}
-                title="Posisikan Menu di Samping Kiri"
-              >
-                <PanelLeft className="w-3.5 h-3.5" />
-                <span className="hidden xl:inline">Menu Kiri</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleToggleMenuPosition("top")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  menuPosition === "top"
-                    ? "bg-[#122b54] text-white shadow-xs border border-[#1b4584] font-bold"
-                    : "text-slate-600 hover:text-[#122b54] hover:bg-white/60"
-                }`}
-                title="Posisikan Menu di Atas (Horizontal)"
-              >
-                <PanelTop className="w-3.5 h-3.5" />
-                <span className="hidden xl:inline">Menu Atas</span>
-              </button>
-            </div>
-
-            {/* Tombol Pintasan Chat Pengguna (Pojok Kanan Atas) */}
-            <Link
-              href="/dashboard/chat"
-              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all relative cursor-pointer border ${
-                pathname === "/dashboard/chat"
-                  ? "bg-[#122b54] text-white shadow-xs font-bold border-[#122b54]"
-                  : "text-[#122b54] hover:text-[#0b1f3f] bg-white/75 hover:bg-white border-white/90 shadow-2xs backdrop-blur-sm"
+          {/* Switcher Posisi Penempatan Menu (Samping / Atas) */}
+          <div className="hidden md:flex items-center bg-white/70 p-0.5 rounded-xl border border-white/80 shadow-2xs backdrop-blur-sm" title="Atur Posisi Tata Letak Menu">
+            <button
+              type="button"
+              onClick={() => handleToggleMenuPosition("sidebar")}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                menuPosition === "sidebar"
+                  ? "bg-[#122b54] text-white shadow-xs border border-[#1b4584] font-bold"
+                  : "text-slate-600 hover:text-[#122b54] hover:bg-white/60"
               }`}
-              title="Pusat Chat Antar Pengguna"
+              title="Posisikan Menu di Samping Kiri"
             >
-              <div className="relative flex items-center">
-                <MessageSquare className="w-3.5 h-3.5 text-[#173f7c]" />
-                {unreadChatCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-xs">
-                    {unreadChatCount > 99 ? "99+" : unreadChatCount}
-                  </span>
-                )}
-              </div>
-              <span className="hidden sm:inline">Chat</span>
-              {unreadChatCount > 0 ? (
-                <span className="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full animate-pulse shadow-xs">
-                  {unreadChatCount}
-                </span>
-              ) : (
-                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${pathname === "/dashboard/chat" ? "bg-white" : "bg-blue-600"}`} />
-              )}
-            </Link>
+              <PanelLeft className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Menu Kiri</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleToggleMenuPosition("top")}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                menuPosition === "top"
+                  ? "bg-[#122b54] text-white shadow-xs border border-[#1b4584] font-bold"
+                  : "text-slate-600 hover:text-[#122b54] hover:bg-white/60"
+              }`}
+              title="Posisikan Menu di Atas (Horizontal)"
+            >
+              <PanelTop className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Menu Atas</span>
+            </button>
+          </div>
 
-            {/* Tombol Pintasan Panduan (Khusus jika mode sidebar) */}
-            {menuPosition === "sidebar" && (
+          {/* Tombol Pintasan Chat Pengguna (Pojok Kanan Atas) */}
+          <Link
+            href="/dashboard/chat"
+            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all relative cursor-pointer border ${
+              pathname === "/dashboard/chat"
+                ? "bg-[#122b54] text-white shadow-xs font-bold border-[#122b54]"
+                : "text-[#122b54] hover:text-[#0b1f3f] bg-white/75 hover:bg-white border-white/90 shadow-2xs backdrop-blur-sm"
+            }`}
+            title="Pusat Chat Antar Pengguna"
+          >
+            <div className="relative flex items-center">
+              <MessageSquare className="w-3.5 h-3.5 text-[#173f7c]" />
+              {unreadChatCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-xs">
+                  {unreadChatCount > 99 ? "99+" : unreadChatCount}
+                </span>
+              )}
+            </div>
+            <span className="hidden sm:inline">Chat</span>
+            {unreadChatCount > 0 ? (
+              <span className="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full animate-pulse shadow-xs">
+                {unreadChatCount}
+              </span>
+            ) : (
+              <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${pathname === "/dashboard/chat" ? "bg-white" : "bg-blue-600"}`} />
+            )}
+          </Link>
+
+          {/* Tombol Pintasan Panduan (Selalu Tampil di Semua Mode) */}
+          <Link
+            href="/dashboard/modul"
+            className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-[#122b54] hover:text-[#0b1f3f] bg-white/75 hover:bg-white border border-white/90 shadow-2xs px-3 py-1.5 rounded-xl transition-all backdrop-blur-sm"
+            title="Panduan Alur Sistem Manajemen Risiko"
+          >
+            <BookMarked className="w-3.5 h-3.5 text-blue-600" />
+            <span>Panduan</span>
+          </Link>
+
+          {/* User Avatar Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-white transition-all cursor-pointer outline-none border border-white/90 bg-white/75 shadow-2xs text-[#122b54]">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white font-bold text-xs shadow-xs border border-white/80">
+                {(user.displayName || user.email || "U").charAt(0).toUpperCase()}
+              </div>
+              <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80 p-2 rounded-2xl shadow-2xl max-w-[90vw] border border-[#204e92] bg-[#122b54] text-white">
+              <div className="px-3 py-2 bg-[#0e2244]/70 rounded-xl border border-white/10 mb-1">
+                <div className="flex flex-col space-y-0.5">
+                  <p className="text-xs xl:text-sm font-semibold text-white whitespace-normal break-words" title={user.unitName || user.email || ""}>
+                    {user.unitName || user.email}
+                  </p>
+                  <p className="text-xs font-medium text-sky-300">
+                    {getRoleLabel(user.role)} • TA: {activeYear}
+                  </p>
+                </div>
+              </div>
+
+              <DropdownMenuSeparator className="my-1.5 border-white/10" />
+
+              {/* Pengaturan Penempatan Menu di dalam Dropdown */}
+              <div className="px-2 pt-1 pb-1 text-[10px] font-bold text-white/50 uppercase tracking-wider">
+                Posisi Penempatan Menu
+              </div>
+              <DropdownMenuItem
+                onClick={() => handleToggleMenuPosition("sidebar")}
+                className="cursor-pointer rounded-lg text-xs py-1.5 flex items-center justify-between text-white/90 hover:bg-white/15 hover:text-white"
+              >
+                <div className="flex items-center gap-2 text-white/90">
+                  <PanelLeft className="h-4 w-4 text-sky-300" />
+                  <span>Sebelah Kiri (Sidebar)</span>
+                </div>
+                {menuPosition === "sidebar" && <Check className="h-4 w-4 text-sky-400 font-bold" />}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleToggleMenuPosition("top")}
+                className="cursor-pointer rounded-lg text-xs py-1.5 flex items-center justify-between text-white/90 hover:bg-white/15 hover:text-white"
+              >
+                <div className="flex items-center gap-2 text-white/90">
+                  <PanelTop className="h-4 w-4 text-sky-300" />
+                  <span>Sebelah Atas (Navbar)</span>
+                </div>
+                {menuPosition === "top" && <Check className="h-4 w-4 text-sky-400 font-bold" />}
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator className="my-1.5 border-white/10" />
+              <DropdownMenuItem onClick={() => router.push("/dashboard/chat")} className="cursor-pointer rounded-lg text-xs py-2 text-white/90 hover:bg-white/15 hover:text-white">
+                <MessageSquare className="mr-2 h-4 w-4 text-sky-300" />
+                <span className="font-medium">Buka Chat Pengguna</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsPasswordModalOpen(true)} className="cursor-pointer rounded-lg text-xs py-2 text-white/90 hover:bg-white/15 hover:text-white">
+                <KeyRound className="mr-2 h-4 w-4 text-sky-300" />
+                <span className="font-medium">Ubah Password Akun</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/dashboard/modul")} className="cursor-pointer rounded-lg text-xs py-2 text-white/90 hover:bg-white/15 hover:text-white">
+                <BookMarked className="mr-2 h-4 w-4 text-sky-300" />
+                <span className="font-medium">Buka Panduan Alur MR</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="my-1.5 border-white/10" />
+              <DropdownMenuItem onClick={handleLogout} className="text-rose-300 hover:bg-rose-500/20 hover:text-rose-200 cursor-pointer rounded-lg text-xs py-2">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span className="font-medium">Keluar dari Sistem</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+
+      {/* ====================================================================== */}
+      {/* 2. BODY CONTAINER: SIDEBAR + KONTEN UTAMA (DI BAWAH HEADER)            */}
+      {/* ====================================================================== */}
+      <div className="flex flex-1 min-h-0 overflow-hidden relative z-20 print:block print:overflow-visible print:h-auto">
+        {/* SIDEBAR DESKTOP (Tampil HANYA jika menuPosition === "sidebar") */}
+        {menuPosition === "sidebar" && (
+          <aside className="hidden w-64 xl:w-72 flex-col glass-sidebar md:flex shrink-0 print:hidden animate-in fade-in duration-200 relative z-20 text-slate-800 border-r border-[#c8ddfa]">
+            {/* Info Profil di Sidebar */}
+            <div className="border-b border-[#c8ddfa] px-4 xl:px-6 py-3.5 bg-white/70 backdrop-blur-sm shrink-0">
+              <p className="text-xs xl:text-sm font-bold text-[#122b54] whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
+                {user.unitName || user.email}
+              </p>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider border border-blue-200 bg-blue-50/90 inline-block px-2 py-0.5 rounded-lg">
+                  {getRoleLabel(user.role)}
+                </span>
+                <span className="text-[10px] font-bold text-slate-700 bg-white/90 inline-block px-2 py-0.5 rounded-lg border border-slate-200">
+                  TA {activeYear}
+                </span>
+              </div>
+            </div>
+
+            {/* List Menu Scrollable */}
+            <nav className="flex-1 overflow-y-auto px-3.5 py-4 custom-scrollbar">
+              {renderNavGroups(navGroups)}
+            </nav>
+            
+            {/* Sidebar Footer dengan Pintasan Panduan Alur MR */}
+            <div className="border-t border-[#c8ddfa] p-3 shrink-0 bg-white/40 backdrop-blur-sm space-y-2">
               <Link
                 href="/dashboard/modul"
-                className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-[#122b54] hover:text-[#0b1f3f] bg-white/75 hover:bg-white border border-white/90 shadow-2xs px-3 py-1.5 rounded-xl transition-all backdrop-blur-sm"
+                className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/85 hover:bg-white border border-white/90 text-[#122b54] transition-all text-xs group shadow-2xs font-semibold backdrop-blur-sm"
               >
-                <BookMarked className="w-3.5 h-3.5 text-blue-600" />
-                <span>Panduan</span>
+                <div className="flex items-center gap-2.5">
+                  <BookMarked className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
+                  <div className="text-left">
+                    <div className="font-bold text-[#122b54]">Panduan Alur MR</div>
+                    <div className="text-[10px] text-slate-500 font-medium">Diagram alur & petunjuk</div>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#122b54] group-hover:translate-x-0.5 transition-all" />
               </Link>
-            )}
+              <p className="text-[10px] text-slate-500 text-center font-medium pt-1">Kemendes PDT © 2026</p>
+            </div>
+          </aside>
+        )}
 
-            {/* User Avatar Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-white transition-all cursor-pointer outline-none border border-white/90 bg-white/75 shadow-2xs text-[#122b54]">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white font-bold text-xs shadow-xs border border-white/80">
-                  {(user.displayName || user.email || "U").charAt(0).toUpperCase()}
-                </div>
-                <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80 p-2 rounded-2xl shadow-2xl max-w-[90vw] border border-[#204e92] bg-[#122b54] text-white">
-                <div className="px-3 py-2 bg-[#0e2244]/70 rounded-xl border border-white/10 mb-1">
-                  <div className="flex flex-col space-y-0.5">
-                    <p className="text-xs xl:text-sm font-semibold text-white whitespace-normal break-words" title={user.unitName || user.email || ""}>
-                      {user.unitName || user.email}
-                    </p>
-                    <p className="text-xs font-medium text-sky-300">
-                      {getRoleLabel(user.role)} • TA: {activeYear}
-                    </p>
-                  </div>
-                </div>
-
-                <DropdownMenuSeparator className="my-1.5 border-white/10" />
-
-                {/* Pengaturan Penempatan Menu di dalam Dropdown */}
-                <div className="px-2 pt-1 pb-1 text-[10px] font-bold text-white/50 uppercase tracking-wider">
-                  Posisi Penempatan Menu
-                </div>
-                <DropdownMenuItem
-                  onClick={() => handleToggleMenuPosition("sidebar")}
-                  className="cursor-pointer rounded-lg text-xs py-1.5 flex items-center justify-between text-white/90 hover:bg-white/15 hover:text-white"
-                >
-                  <div className="flex items-center gap-2 text-white/90">
-                    <PanelLeft className="h-4 w-4 text-sky-300" />
-                    <span>Sebelah Kiri (Sidebar)</span>
-                  </div>
-                  {menuPosition === "sidebar" && <Check className="h-4 w-4 text-sky-400 font-bold" />}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => handleToggleMenuPosition("top")}
-                  className="cursor-pointer rounded-lg text-xs py-1.5 flex items-center justify-between text-white/90 hover:bg-white/15 hover:text-white"
-                >
-                  <div className="flex items-center gap-2 text-white/90">
-                    <PanelTop className="h-4 w-4 text-sky-300" />
-                    <span>Sebelah Atas (Navbar)</span>
-                  </div>
-                  {menuPosition === "top" && <Check className="h-4 w-4 text-sky-400 font-bold" />}
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator className="my-1.5 border-white/10" />
-                <DropdownMenuItem onClick={() => router.push("/dashboard/chat")} className="cursor-pointer rounded-lg text-xs py-2 text-white/90 hover:bg-white/15 hover:text-white">
-                  <MessageSquare className="mr-2 h-4 w-4 text-sky-300" />
-                  <span className="font-medium">Buka Chat Pengguna</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsPasswordModalOpen(true)} className="cursor-pointer rounded-lg text-xs py-2 text-white/90 hover:bg-white/15 hover:text-white">
-                  <KeyRound className="mr-2 h-4 w-4 text-sky-300" />
-                  <span className="font-medium">Ubah Password Akun</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/dashboard/modul")} className="cursor-pointer rounded-lg text-xs py-2 text-white/90 hover:bg-white/15 hover:text-white">
-                  <BookMarked className="mr-2 h-4 w-4 text-sky-300" />
-                  <span className="font-medium">Buka Panduan Alur MR</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="my-1.5 border-white/10" />
-                <DropdownMenuItem onClick={handleLogout} className="text-rose-300 hover:bg-rose-500/20 hover:text-rose-200 cursor-pointer rounded-lg text-xs py-2">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span className="font-medium">Keluar dari Sistem</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
-
-        {/* ====================================================================== */}
-        {/* 3. NAVBAR HORIZONTAL (Tampil HANYA jika menuPosition === "top")        */}
-        {/* ====================================================================== */}
+        {/* AREA KONTEN UTAMA */}
+        <div className="flex flex-1 flex-col min-w-0 overflow-hidden print:block print:overflow-visible">
+          {/* ====================================================================== */}
+          {/* 3. NAVBAR HORIZONTAL (Tampil HANYA jika menuPosition === "top")        */}
+          {/* ====================================================================== */}
         {menuPosition === "top" && (
           <nav className="hidden md:flex items-center justify-between glass-menu-bar text-slate-800 px-4 md:px-6 py-2 shrink-0 overflow-x-auto shadow-xs custom-scrollbar relative z-10 animate-in fade-in duration-200">
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -1279,6 +1263,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </main>
       </div>
+    </div>
 
       {/* ====================================================================== */}
       {/* 4. DRAWER SIDEBAR MOBILE (Untuk Perangkat Smartphone/Tablet)           */}
