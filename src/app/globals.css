@@ -221,6 +221,17 @@
   color: #ffffff !important;
 }
 
+.theme-header-wave {
+  background-color: #ebf3fc !important;
+  background-image: url('/menu-bg.svg') !important;
+  background-size: cover !important;
+  background-position: center top !important;
+  background-repeat: no-repeat !important;
+  border-bottom: 1px solid #c8ddfa !important;
+  box-shadow: 0 2px 14px -2px rgba(37, 91, 199, 0.1) !important;
+  color: #122b54 !important;
+}
+
 /* ========================================================================= */
 /* CUSTOM SCROLLBAR UNTUK TABEL HORIZONTAL & BILAH SCROLL ATAS */
 /* ========================================================================= */

@@ -632,8 +632,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* 2. AREA KONTEN UTAMA + TOPBAR HEADER                                   */}
       {/* ====================================================================== */}
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden print:block print:overflow-visible">
-        {/* Header Baris 1: Sesuai Palet Royal Sapphire & Fluid Azure Halaman Login */}
-        <header className="flex h-16 items-center justify-between border-b bg-gradient-to-r from-[#122b54] via-[#173f7c] to-[#1e4f9b] border-[#1b4584] px-4 md:px-6 shrink-0 shadow-sm print:hidden relative z-20 text-white">
+        {/* Header Baris 1: Grafis Gelombang Cairan Sesuai Tampilan Login */}
+        <header className="flex h-16 items-center justify-between border-b theme-header-wave px-4 md:px-6 shrink-0 print:hidden relative z-20 text-slate-800">
           {/* Sisi Kiri Header */}
           <div className="flex items-center gap-3 min-w-0">
             {/* Hamburger Button untuk Tampilan Mobile */}
@@ -641,44 +641,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               variant="ghost"
               size="icon"
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="md:hidden text-white/80 hover:text-white hover:bg-white/10"
+              className="md:hidden text-slate-700 hover:text-[#122b54] hover:bg-white/60"
             >
               <Menu className="h-6 w-6" />
             </Button>
 
             {/* Logo untuk Mode Menu Atas (Top) pada Desktop */}
             {menuPosition === "top" && (
-              <div className="hidden md:flex items-center gap-2.5 pr-4 border-r border-white/15 mr-1">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-blue-500/25 border border-white/60">
+              <div className="hidden md:flex items-center gap-2.5 pr-4 border-r border-slate-300/80 mr-1">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-blue-500/25 border border-white/80">
                   <ShieldAlert className="h-5 w-5" />
                 </div>
                 <div>
-                  <h1 className="text-lg font-bold text-white tracking-tight leading-none">
-                    Si<span className="text-sky-300">-MaRi</span>
+                  <h1 className="text-lg font-bold text-[#122b54] tracking-tight leading-none">
+                    Si<span className="text-blue-600">-MaRi</span>
                   </h1>
-                  <p className="text-[10px] text-white/70 font-medium">Kemendes PDT</p>
+                  <p className="text-[10px] text-slate-500 font-semibold">Kemendes PDT</p>
                 </div>
               </div>
             )}
 
             {/* Mobile Logo */}
             <div className="flex items-center gap-2 md:hidden">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white shadow-xs border border-white/40">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white shadow-xs border border-white/60">
                 <ShieldAlert className="h-4 w-4" />
               </div>
-              <h1 className="text-lg font-bold text-white">Si<span className="text-sky-300">-MaRi</span></h1>
+              <h1 className="text-lg font-bold text-[#122b54]">Si<span className="text-blue-600">-MaRi</span></h1>
             </div>
             
             {/* Breadcrumb Persis Contoh: Home > Nama Menu */}
-            <div className="hidden md:flex items-center gap-2 text-[13.5px] font-medium text-white/90">
-              <Link href="/dashboard" className="flex items-center gap-1.5 text-white font-semibold hover:text-sky-200 transition-colors">
-                <Home className="h-4 w-4 text-white shrink-0" />
+            <div className="hidden md:flex items-center gap-2 text-[13.5px] font-medium text-slate-700">
+              <Link href="/dashboard" className="flex items-center gap-1.5 text-[#122b54] font-semibold hover:text-blue-600 transition-colors">
+                <Home className="h-4 w-4 text-[#173f7c] shrink-0" />
                 <span>Home</span>
               </Link>
-              <span className="text-white/40">›</span>
-              <span className="text-white font-semibold truncate max-w-[280px]">{currentPageName}</span>
+              <span className="text-slate-400">›</span>
+              <span className="text-[#122b54] font-bold truncate max-w-[280px]">{currentPageName}</span>
             </div>
-            <div className="md:hidden font-bold text-white text-sm truncate">
+            <div className="md:hidden font-bold text-[#122b54] text-sm truncate">
               {currentPageName}
             </div>
           </div>
@@ -686,26 +686,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Sisi Kanan Header: Info Unit, Switcher Posisi Menu, Panduan, Profil */}
           <div className="flex items-center gap-2.5 sm:gap-3 ml-auto">
             {/* Chip Info Unit & Tahun Anggaran */}
-            <div className="hidden lg:flex items-center gap-2 bg-[#0e2244]/60 border border-white/15 px-3 py-1.5 rounded-xl text-xs backdrop-blur-sm">
-              <Building2 className="w-3.5 h-3.5 text-sky-300 shrink-0" />
-              <span className="font-semibold text-white/95 max-w-[160px] truncate" title={user.unitName || ""}>
+            <div className="hidden lg:flex items-center gap-2 bg-white/75 border border-white/90 shadow-2xs px-3 py-1.5 rounded-xl text-xs backdrop-blur-sm text-slate-700">
+              <Building2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+              <span className="font-bold text-[#122b54] max-w-[160px] truncate" title={user.unitName || ""}>
                 {user.unitName || "Semua Unit"}
               </span>
-              <span className="text-white/30">•</span>
-              <span className="font-bold text-white bg-white/15 border border-white/20 px-2 py-0.5 rounded-md text-[11px]">
+              <span className="text-slate-300">•</span>
+              <span className="font-bold text-blue-800 bg-blue-50/90 border border-blue-200 px-2 py-0.5 rounded-md text-[11px]">
                 TA {activeYear}
               </span>
             </div>
 
             {/* Switcher Posisi Penempatan Menu (Samping / Atas) */}
-            <div className="hidden md:flex items-center bg-[#0e2244]/60 p-0.5 rounded-xl border border-white/15 shadow-xs" title="Atur Posisi Tata Letak Menu">
+            <div className="hidden md:flex items-center bg-white/70 p-0.5 rounded-xl border border-white/80 shadow-2xs backdrop-blur-sm" title="Atur Posisi Tata Letak Menu">
               <button
                 type="button"
                 onClick={() => handleToggleMenuPosition("sidebar")}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   menuPosition === "sidebar"
-                    ? "bg-white/20 text-white shadow-xs border border-white/30 font-bold"
-                    : "text-white/70 hover:text-white"
+                    ? "bg-[#122b54] text-white shadow-xs border border-[#1b4584] font-bold"
+                    : "text-slate-600 hover:text-[#122b54] hover:bg-white/60"
                 }`}
                 title="Posisikan Menu di Samping Kiri"
               >
@@ -717,8 +717,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 onClick={() => handleToggleMenuPosition("top")}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   menuPosition === "top"
-                    ? "bg-white/20 text-white shadow-xs border border-white/30 font-bold"
-                    : "text-white/70 hover:text-white"
+                    ? "bg-[#122b54] text-white shadow-xs border border-[#1b4584] font-bold"
+                    : "text-slate-600 hover:text-[#122b54] hover:bg-white/60"
                 }`}
                 title="Posisikan Menu di Atas (Horizontal)"
               >
@@ -732,13 +732,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               href="/dashboard/chat"
               className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all relative cursor-pointer border ${
                 pathname === "/dashboard/chat"
-                  ? "bg-blue-600 text-white shadow-xs font-bold border-white/20"
-                  : "text-white/90 hover:text-white bg-[#0e2244]/60 hover:bg-white/15 border-white/15"
+                  ? "bg-[#122b54] text-white shadow-xs font-bold border-[#122b54]"
+                  : "text-[#122b54] hover:text-[#0b1f3f] bg-white/75 hover:bg-white border-white/90 shadow-2xs backdrop-blur-sm"
               }`}
               title="Pusat Chat Antar Pengguna"
             >
               <div className="relative flex items-center">
-                <MessageSquare className="w-3.5 h-3.5 text-white" />
+                <MessageSquare className="w-3.5 h-3.5 text-[#173f7c]" />
                 {unreadChatCount > 0 && (
                   <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-xs">
                     {unreadChatCount > 99 ? "99+" : unreadChatCount}
@@ -751,7 +751,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {unreadChatCount}
                 </span>
               ) : (
-                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${pathname === "/dashboard/chat" ? "bg-white" : "bg-sky-300"}`} />
+                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${pathname === "/dashboard/chat" ? "bg-white" : "bg-blue-600"}`} />
               )}
             </Link>
 
@@ -759,20 +759,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {menuPosition === "sidebar" && (
               <Link
                 href="/dashboard/modul"
-                className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-white/90 hover:text-white bg-[#0e2244]/60 hover:bg-white/15 border border-white/15 px-3 py-1.5 rounded-xl transition-all"
+                className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-[#122b54] hover:text-[#0b1f3f] bg-white/75 hover:bg-white border border-white/90 shadow-2xs px-3 py-1.5 rounded-xl transition-all backdrop-blur-sm"
               >
-                <BookMarked className="w-3.5 h-3.5 text-sky-300" />
+                <BookMarked className="w-3.5 h-3.5 text-blue-600" />
                 <span>Panduan</span>
               </Link>
             )}
 
             {/* User Avatar Dropdown */}
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-white/15 transition-all cursor-pointer outline-none border border-white/15 bg-[#0e2244]/50 text-white">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white font-bold text-xs shadow-xs border border-white/30">
+              <DropdownMenuTrigger className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-white transition-all cursor-pointer outline-none border border-white/90 bg-white/75 shadow-2xs text-[#122b54]">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white font-bold text-xs shadow-xs border border-white/80">
                   {(user.displayName || user.email || "U").charAt(0).toUpperCase()}
                 </div>
-                <ChevronDown className="h-3.5 w-3.5 text-white/70" />
+                <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-80 p-2 rounded-2xl shadow-2xl max-w-[90vw] border border-[#204e92] bg-[#122b54] text-white">
                 <div className="px-3 py-2 bg-[#0e2244]/70 rounded-xl border border-white/10 mb-1">
