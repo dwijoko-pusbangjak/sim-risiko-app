@@ -19,9 +19,10 @@ import {
   RotateCw, 
   Check, 
   Info, 
-  UserCheck, 
   HelpCircle,
-  Volume2
+  Volume2,
+  TrendingUp,
+  Award
 } from "lucide-react";
 import { MASCOT_IMAGE_BASE64 } from "@/lib/mascot-data";
 
@@ -235,10 +236,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickFill = (roleEmail: string) => {
-    setEmail(roleEmail);
-    setActiveTab("login");
-  };
 
   const handleResetForm = () => {
     setEmail("");
@@ -690,57 +687,100 @@ export default function LoginPage() {
                     onClick={() => setActiveTab("info")}
                     className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
                   >
-                    Lupa kata sandi? Hubungi Administrator APIP
+                    Lupa kata sandi? Hubungi Administrator
                   </button>
                 </div>
               </form>
             )}
 
-            {/* TAB 2: PANDUAN & BANTUAN AKSES */}
+            {/* TAB 2: INFORMASI & BANTUAN */}
             {activeTab === "info" && (
-              <div className="space-y-4 animate-in fade-in duration-300">
-                <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 text-slate-700 text-xs space-y-2">
+              <div className="space-y-3.5 animate-in fade-in duration-300">
+                <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-100 text-slate-700 text-xs space-y-1.5">
                   <div className="flex items-center gap-2 font-bold text-blue-900">
                     <Info className="w-4 h-4 text-blue-600 shrink-0" />
                     <span>Panduan Masuk Sistem</span>
                   </div>
-                  <p className="text-[11.5px] text-slate-600 leading-relaxed">
-                    Gunakan alamat email dinas resmi yang telah didaftarkan oleh Administrator Inspektorat Jenderal / APIP Kemendes PDT.
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                    Gunakan alamat email dinas resmi yang telah didaftarkan oleh Administrator Kemendes PDT. Jika mengalami kendala akses atau lupa kata sandi, silakan berkoordinasi dengan tim Administrator.
                   </p>
                 </div>
 
+                {/* Informasi Indeks Kinerja SPIP, MRI, dan IEPK Kemendes PDT */}
                 <div className="space-y-2">
-                  <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
-                    Pintasan Contoh Pengguna (Uji Coba):
-                  </span>
-                  <div className="grid grid-cols-1 gap-1.5">
-                    {[
-                      { role: "Administrator Sistem", email: "admin@kemendesa.go.id" },
-                      { role: "Auditor APIP", email: "auditor@kemendesa.go.id" },
-                      { role: "Pimpinan / Irjen", email: "pimpinan@kemendesa.go.id" },
-                      { role: "Pengelola Unit Kerja", email: "pusbangjak@kemendesa.go.id" }
-                    ].map((item) => (
-                      <button
-                        key={item.email}
-                        type="button"
-                        onClick={() => handleQuickFill(item.email)}
-                        className="flex items-center justify-between p-2.5 rounded-xl bg-[#f4f7fb] hover:bg-blue-50 border border-slate-100 hover:border-blue-200 transition-all text-left text-xs cursor-pointer group"
-                      >
-                        <div>
-                          <p className="font-bold text-slate-800 group-hover:text-blue-700">{item.role}</p>
-                          <p className="text-[11px] text-slate-500">{item.email}</p>
-                        </div>
-                        <UserCheck className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
-                      </button>
-                    ))}
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                      <Award className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Indeks Pengendalian & Risiko Kemendes PDT</span>
+                    </span>
+                    <span className="text-[9px] font-semibold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-100">
+                      Evaluasi BPKP RI
+                    </span>
                   </div>
+
+                  <div className="grid grid-cols-1 gap-2">
+                    {/* 1. NILAI SPIP */}
+                    <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100 flex items-center justify-between gap-3 shadow-2xs">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                          <ShieldCheck className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-xs text-slate-800 truncate">Maturitas SPIP Terintegrasi</p>
+                          <p className="text-[10px] text-slate-500 leading-tight">Level 3 (Terdefinisi)</p>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-base font-black text-emerald-700 block leading-none">3,018</span>
+                        <span className="text-[9px] text-emerald-600 font-medium">Skala 5.00</span>
+                      </div>
+                    </div>
+
+                    {/* 2. MANAJEMEN RISIKO INDEKS (MRI) */}
+                    <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-100 flex items-center justify-between gap-3 shadow-2xs">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                          <TrendingUp className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-xs text-slate-800 truncate">Manajemen Risiko Indeks (MRI)</p>
+                          <p className="text-[10px] text-slate-500 leading-tight">Level 2+ (Menuju Terdefinisi)</p>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-base font-black text-blue-700 block leading-none">2,894</span>
+                        <span className="text-[9px] text-blue-600 font-medium">Skala 5.00</span>
+                      </div>
+                    </div>
+
+                    {/* 3. INDEKS EFEKTIVITAS PENCEGAHAN KORUPSI (IEPK) */}
+                    <div className="p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-100 flex items-center justify-between gap-3 shadow-2xs">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                          <Sparkles className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-xs text-slate-800 truncate">Indeks Pencegahan Korupsi (IEPK)</p>
+                          <p className="text-[10px] text-slate-500 leading-tight">Level 2+ (Terkelola)</p>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-base font-black text-indigo-700 block leading-none">2,814</span>
+                        <span className="text-[9px] text-indigo-600 font-medium">Skala 5.00</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-[9.5px] text-slate-400 text-center pt-0.5">
+                    * Data evaluasi resmi SPIP Terintegrasi Kemendesa PDT periode sebelumnya.
+                  </p>
                 </div>
 
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setActiveTab("login")}
-                  className="w-full h-10 rounded-xl text-xs font-semibold cursor-pointer border-slate-200 hover:bg-slate-50"
+                  className="w-full h-10 rounded-xl text-xs font-semibold cursor-pointer border-slate-200 hover:bg-slate-50 transition-colors"
                 >
                   Kembali ke Formulir Masuk
                 </Button>
