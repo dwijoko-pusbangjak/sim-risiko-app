@@ -390,10 +390,18 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Deskripsi Pendukung */}
-          <p className="text-xs text-slate-500 font-medium leading-relaxed mt-5 max-w-sm">
-            Kementerian Desa dan Pembangunan Daerah Tertinggal Republik Indonesia.
-          </p>
+          {/* Deskripsi Pendukung (3 Baris) */}
+          <div className="mt-5 space-y-0.5 max-w-md">
+            <p className="text-xs sm:text-sm font-semibold text-slate-700 leading-snug">
+              Sistem Informasi Manajemen Risiko
+            </p>
+            <p className="text-xs text-slate-500 font-medium leading-relaxed">
+              Kementerian Desa dan Pembangunan Daerah Tertinggal
+            </p>
+            <p className="text-xs text-slate-500 font-medium leading-relaxed">
+              Republik Indonesia
+            </p>
+          </div>
         </section>
 
         {/* SISI KANAN: KARTU LOGIN PUTIH MODERN BERKELAS (Persis Screenshot) */}
