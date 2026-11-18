@@ -29,7 +29,10 @@ import {
   PanelTop,
   Check,
   MessageSquare,
-  Home
+  Home,
+  Search,
+  Bell,
+  Plus
 } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -397,10 +400,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const renderNavGroups = (groups: NavGroup[], isMobile = false) => {
     return groups.map((group, idx) => (
       <div key={group.title} className={idx > 0 ? "mt-5" : ""}>
-        <div className="flex items-center px-3.5 py-2.5 my-2.5 rounded-xl bg-[#122842]/50 border border-white/10 shadow-xs backdrop-blur-xs">
-          <h3 className="text-[13.5px] font-bold text-white tracking-normal flex items-center gap-2">
-            {group.title}
-          </h3>
+        <div className="px-3.5 py-1.5 my-1 text-[11px] font-bold uppercase tracking-wider text-white/50">
+          {group.title}
         </div>
 
         <div className="space-y-1">
@@ -426,24 +427,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <button
                     type="button"
                     onClick={() => toggleMenu(item.name, isOpen)}
-                    className={`group flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[13.5px] font-medium transition-all w-full cursor-pointer text-left border ${
+                    className={`group flex items-center justify-between rounded-2xl px-3.5 py-2.5 text-[13.5px] font-medium transition-all w-full cursor-pointer text-left border ${
                       hasChildActive
-                        ? "bg-[#0e243d]/90 text-white border-white/20 shadow-xs font-semibold"
+                        ? "bg-white text-[#414594] border-white shadow-sm font-bold"
                         : isHovered
-                        ? "bg-white/15 text-white border-white/15 shadow-2xs font-medium"
-                        : "text-white/90 hover:bg-white/15 hover:text-white border-transparent"
+                        ? "bg-white/15 text-white border-white/10"
+                        : "text-white/85 hover:bg-white/10 hover:text-white border-transparent"
                     }`}
                   >
                     <div className="flex items-center flex-1 min-w-0 pr-2 gap-3">
-                      <Icon className="h-4.5 w-4.5 text-white shrink-0" />
-                      <span className="text-left leading-tight truncate flex-1 font-medium">{item.name}</span>
+                      <Icon className={`h-4.5 w-4.5 shrink-0 ${hasChildActive ? "text-[#414594]" : "text-white"}`} />
+                      <span className="text-left leading-tight truncate flex-1">{item.name}</span>
                     </div>
 
                     <div className="flex items-center shrink-0">
                       {isOpen ? (
-                        <ChevronDown className="h-4 w-4 text-white transition-transform duration-200" />
+                        <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${hasChildActive ? "text-[#414594]" : "text-white/60"}`} />
                       ) : (
-                        <ChevronRight className="h-4 w-4 text-white/70 group-hover:text-white transition-transform duration-200" />
+                        <ChevronRight className={`h-4 w-4 transition-transform duration-200 ${hasChildActive ? "text-[#414594]" : "text-white/40 group-hover:text-white"}`} />
                       )}
                     </div>
                   </button>
@@ -451,7 +452,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {/* Submenu Item List */}
                   <div className={`grid transition-all duration-200 ease-in-out ${isOpen ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0"}`}>
                     <div className="overflow-hidden">
-                      <div className="flex flex-col space-y-1 p-1.5 rounded-xl bg-[#0e2137]/50 border border-white/10 backdrop-blur-xs shadow-inner my-1">
+                      <div className="flex flex-col space-y-1 p-1.5 rounded-2xl bg-[#343777]/60 border border-white/10 backdrop-blur-xs shadow-inner my-1">
                         {item.children.map((child) => {
                           const isChildActive = pathname === child.href;
                           return (
@@ -459,16 +460,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                               key={child.name}
                               href={child.href}
                               onClick={() => isMobile && setIsSidebarOpen(false)}
-                              className={`group relative flex items-center justify-between rounded-lg px-3 py-2 text-[13px] font-medium transition-all border ${
+                              className={`group relative flex items-center justify-between rounded-xl px-3 py-2 text-[13px] font-medium transition-all border ${
                                 isChildActive
-                                  ? "bg-white/25 text-white font-bold shadow-xs border-white/30"
+                                  ? "bg-white text-[#414594] font-bold shadow-xs border-white"
                                   : "text-white/85 hover:bg-white/15 hover:text-white border-transparent"
                               }`}
                             >
                               <div className="flex items-center min-w-0 flex-1 pr-2">
                                 <span
                                   className={`w-1.5 h-1.5 rounded-full mr-2.5 shrink-0 transition-colors ${
-                                    isChildActive ? "bg-white scale-125" : "bg-white/50 group-hover:bg-white"
+                                    isChildActive ? "bg-[#414594] scale-125" : "bg-white/50 group-hover:bg-white"
                                   }`}
                                 />
                                 <span className="truncate leading-tight">{child.name}</span>
@@ -478,16 +479,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 <span
                                   className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full shrink-0 ${
                                     isChildActive
-                                      ? "bg-white/30 text-white border border-white/40"
+                                      ? "bg-[#414594]/15 text-[#414594] font-bold"
                                       : "bg-white/15 text-white border border-white/20"
                                   }`}
                                 >
                                   {child.badge}
                                 </span>
-                              )}
-
-                              {isChildActive && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-white ml-1 shrink-0 animate-pulse" />
                               )}
                             </Link>
                           );
@@ -505,29 +502,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 key={item.name}
                 href={item.href || "/dashboard"}
                 onClick={() => isMobile && setIsSidebarOpen(false)}
-                className={`group flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[13.5px] font-medium transition-all w-full cursor-pointer border ${
+                className={`group flex items-center justify-between rounded-2xl px-3.5 py-2.5 text-[13.5px] font-medium transition-all w-full cursor-pointer border ${
                   isDirectActive
-                    ? "bg-[#0e243d]/90 text-white shadow-xs font-bold border-white/20"
-                    : "text-white/90 hover:bg-white/15 hover:text-white border-transparent"
+                    ? "bg-white text-[#414594] shadow-sm font-bold border-white"
+                    : "text-white/85 hover:bg-white/10 hover:text-white border-transparent"
                 }`}
               >
                 <div className="flex items-center flex-1 min-w-0 pr-2 gap-3">
-                  <Icon className="h-4.5 w-4.5 text-white shrink-0" />
+                  <Icon className={`h-4.5 w-4.5 shrink-0 ${isDirectActive ? "text-[#414594]" : "text-white"}`} />
                   <span className="text-left leading-tight truncate flex-1">{item.name}</span>
                 </div>
 
-                {item.badge && (
-                  <span
-                    className={`font-bold px-2 py-0.5 rounded-full shrink-0 shadow-xs ${
-                      item.name === "Chat Pengguna" && unreadChatCount > 0
-                        ? "bg-rose-500 text-white border border-rose-400 text-[10px] animate-pulse"
-                        : isDirectActive
-                        ? "bg-white/25 text-white border border-white/30 text-[9px] uppercase tracking-wider"
-                        : "bg-white/15 text-white border border-white/20 text-[9px] uppercase tracking-wider"
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
+                {!isDirectActive && (
+                  <ChevronRight className="h-4 w-4 text-white/40 group-hover:text-white transition-all shrink-0" />
                 )}
               </Link>
             );
@@ -576,14 +563,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {menuPosition === "sidebar" && (
         <aside className="hidden w-64 xl:w-72 flex-col glass-sidebar md:flex shrink-0 print:hidden animate-in fade-in duration-200 relative z-20 text-white">
           {/* Brand Header */}
-          <div className="flex h-16 items-center px-4 xl:px-6 border-b border-[#22466e] shrink-0 bg-[#183658]">
+          <div className="flex h-16 items-center px-4 xl:px-6 border-b border-white/10 shrink-0 bg-[#383b86]">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white shadow-sm border border-sky-300/40">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-400 to-indigo-600 flex items-center justify-center text-white shadow-sm border border-white/20">
                 <ShieldAlert className="h-5 w-5" />
               </div>
               <div>
                 <h1 className="text-lg font-bold text-white tracking-tight leading-none">
-                  Si<span className="text-sky-300">-MaRi</span>
+                  Si<span className="text-amber-300">-MaRi</span>
                 </h1>
                 <p className="text-[10px] text-white/70 font-medium">Kemendes PDT</p>
               </div>
@@ -591,7 +578,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           
           {/* Info Profil di Sidebar */}
-          <div className="border-b border-[#22466e] px-4 xl:px-6 py-3.5 bg-[#142f4e]/60 shrink-0">
+          <div className="border-b border-white/10 px-4 xl:px-6 py-3.5 bg-[#343777]/60 shrink-0">
             <p className="text-xs xl:text-sm font-bold text-white whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
               {user.unitName || user.email}
             </p>
@@ -610,22 +597,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {renderNavGroups(navGroups)}
           </nav>
           
-          {/* Sidebar Footer dengan Pintasan Panduan Alur MR */}
-          <div className="border-t border-[#22466e] p-3 shrink-0 bg-[#142f4e]/40 space-y-2">
+          {/* Sidebar Footer */}
+          <div className="border-t border-white/10 p-3 shrink-0 bg-[#343777]/40 space-y-2 text-center">
             <Link
               href="/dashboard/modul"
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#122b48]/60 hover:bg-white/15 border border-white/15 text-white transition-all text-xs group shadow-xs"
+              className="flex items-center justify-between px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white transition-all text-xs group shadow-xs"
             >
-              <div className="flex items-center gap-2.5">
-                <BookMarked className="w-4 h-4 text-sky-300 group-hover:scale-110 transition-transform" />
-                <div className="text-left">
-                  <div className="font-semibold text-white">Panduan Alur MR</div>
-                  <div className="text-[10px] text-white/70">Diagram alur & petunjuk</div>
-                </div>
+              <div className="flex items-center gap-2">
+                <BookMarked className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
+                <span className="font-semibold text-white">Panduan Alur MR</span>
               </div>
-              <ChevronRight className="w-4 h-4 text-white/70 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+              <ChevronRight className="w-3.5 h-3.5 text-white/60 group-hover:text-white" />
             </Link>
-            <p className="text-[10px] text-white/60 text-center font-medium pt-1">Kemendes PDT © 2026</p>
+            <p className="text-[10px] text-white/60 font-medium">Powered by <strong className="text-white font-bold">Si-MaRi</strong> Kemendes PDT</p>
           </div>
         </aside>
       )}
@@ -634,202 +618,235 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* 2. AREA KONTEN UTAMA + TOPBAR HEADER                                   */}
       {/* ====================================================================== */}
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden print:block print:overflow-visible">
-        {/* Header Baris 1: Brand (jika top mode), Title, Info Unit, Switcher, Profil */}
-        <header className="flex h-16 items-center justify-between border-b bg-[#183658] border-[#22466e] px-4 md:px-6 shrink-0 shadow-sm print:hidden relative z-20 text-white">
-          {/* Sisi Kiri Header */}
+        {/* Header Baris 1: Atica Style - Clean White Topbar Header with Search & Quick Actions */}
+        <header className="flex h-16 items-center justify-between border-b bg-white border-slate-200/80 px-4 md:px-6 shrink-0 shadow-xs print:hidden relative z-20 text-slate-800">
+          {/* Sisi Kiri Header: Mobile Hamburger, Logo (jika top mode), atau Search Input Pill (persis screenshot Atica) */}
           <div className="flex items-center gap-3 min-w-0">
             {/* Hamburger Button untuk Tampilan Mobile */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="md:hidden text-white/80 hover:text-white hover:bg-white/10"
+              className="md:hidden text-slate-600 hover:text-slate-900 hover:bg-slate-100"
             >
               <Menu className="h-6 w-6" />
             </Button>
 
             {/* Logo untuk Mode Menu Atas (Top) pada Desktop */}
             {menuPosition === "top" && (
-              <div className="hidden md:flex items-center gap-2.5 pr-4 border-r border-white/15 mr-1">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white shadow-md border border-white/20">
+              <div className="hidden md:flex items-center gap-2.5 pr-4 border-r border-slate-200 mr-1">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#414594] to-[#6065d0] flex items-center justify-center text-white shadow-sm">
                   <ShieldAlert className="h-5 w-5" />
                 </div>
                 <div>
-                  <h1 className="text-lg font-bold text-white tracking-tight leading-none">
-                    Si<span className="text-sky-300">-MaRi</span>
+                  <h1 className="text-lg font-bold text-[#414594] tracking-tight leading-none">
+                    Si<span className="text-sky-600">-MaRi</span>
                   </h1>
-                  <p className="text-[10px] text-white/70 font-medium">Kemendes PDT</p>
+                  <p className="text-[10px] text-slate-400 font-medium">Kemendes PDT</p>
                 </div>
               </div>
             )}
 
             {/* Mobile Logo */}
             <div className="flex items-center gap-2 md:hidden">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white shadow-sm border border-white/20">
+              <div className="w-7 h-7 rounded-lg bg-[#414594] flex items-center justify-center text-white shadow-xs">
                 <ShieldAlert className="h-4 w-4" />
               </div>
-              <h1 className="text-lg font-bold text-white">Si<span className="text-sky-300">-MaRi</span></h1>
+              <h1 className="text-lg font-bold text-[#414594]">Si<span className="text-sky-600">-MaRi</span></h1>
             </div>
             
-            {/* Breadcrumb Persis Contoh: Home > Nama Menu */}
-            <div className="hidden md:flex items-center gap-2 text-[13.5px] font-medium text-white/90">
-              <Link href="/dashboard" className="flex items-center gap-1.5 text-white font-semibold hover:text-sky-200 transition-colors">
-                <Home className="h-4 w-4 text-white shrink-0" />
-                <span>Home</span>
-              </Link>
-              <span className="text-white/40">›</span>
-              <span className="text-white font-semibold truncate max-w-[280px]">{currentPageName}</span>
+            {/* Search Input Pill (Persis Desain Screenshot Atica: "Find reports and more...") */}
+            <div className="hidden md:flex items-center relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Find reports and more..."
+                className="w-64 lg:w-80 bg-slate-50 hover:bg-slate-100/70 focus:bg-white text-xs text-slate-800 placeholder:text-slate-400 pl-9 pr-4 py-2 rounded-full border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-[#414594]/20 focus:border-[#414594] transition-all shadow-inner"
+              />
             </div>
-            <div className="md:hidden font-bold text-white text-sm truncate">
+
+            {/* Breadcrumb / Nama Halaman Aktif */}
+            <div className="hidden xl:flex items-center gap-2 text-xs font-medium text-slate-500 pl-3 border-l border-slate-200">
+              <Link href="/dashboard" className="text-slate-500 hover:text-[#414594] transition-colors">
+                Home
+              </Link>
+              <span className="text-slate-300">›</span>
+              <span className="text-slate-800 font-semibold truncate max-w-[200px]">{currentPageName}</span>
+            </div>
+            <div className="md:hidden font-bold text-slate-800 text-sm truncate">
               {currentPageName}
             </div>
           </div>
 
-          {/* Sisi Kanan Header: Info Unit, Switcher Posisi Menu, Panduan, Profil */}
+          {/* Sisi Kanan Header: Add Pill Button, Chat Icon, Notification Bell, Info Unit, Switcher, Profil */}
           <div className="flex items-center gap-2.5 sm:gap-3 ml-auto">
+            {/* Tombol Add ▾ (Persis Screenshot Atica) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-1.5 bg-[#414594] hover:bg-[#343777] text-white text-xs font-semibold px-4 py-2 rounded-full shadow-xs transition-colors cursor-pointer outline-none">
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add</span>
+                  <ChevronDown className="w-3 h-3 opacity-80" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 p-1.5 rounded-2xl shadow-xl border border-slate-200 bg-white text-slate-700">
+                <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Aksi Cepat
+                </div>
+                <DropdownMenuItem onClick={() => router.push("/dashboard/identifikasi")} className="cursor-pointer text-xs rounded-xl py-2 hover:bg-slate-50 flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-[#414594]" />
+                  <span>Input Risiko Baru</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/dashboard/rencana-tindak-lanjut")} className="cursor-pointer text-xs rounded-xl py-2 hover:bg-slate-50 flex items-center gap-2">
+                  <Target className="w-4 h-4 text-emerald-600" />
+                  <span>Penyusunan RTP</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/dashboard/laporan")} className="cursor-pointer text-xs rounded-xl py-2 hover:bg-slate-50 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-indigo-600" />
+                  <span>Cetak Laporan MR</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Tombol Chat Pengguna Lingkaran (Persis Atica) */}
+            <Link
+              href="/dashboard/chat"
+              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200/80 text-slate-600 flex items-center justify-center relative transition-colors cursor-pointer"
+              title="Pusat Chat Antar Pengguna"
+            >
+              <MessageSquare className="w-4 h-4" />
+              {unreadChatCount > 0 ? (
+                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
+                  {unreadChatCount > 99 ? "99+" : unreadChatCount}
+                </span>
+              ) : (
+                <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white" />
+              )}
+            </Link>
+
+            {/* Tombol Notifikasi Bell Lingkaran (Persis Atica) */}
+            <button
+              type="button"
+              onClick={() => router.push("/dashboard/pemantauan")}
+              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200/80 text-slate-600 flex items-center justify-center relative transition-colors cursor-pointer"
+              title="Notifikasi & Pemantauan"
+            >
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white" />
+            </button>
+
             {/* Chip Info Unit & Tahun Anggaran */}
-            <div className="hidden lg:flex items-center gap-2 bg-[#122842]/60 border border-white/15 px-3 py-1.5 rounded-xl text-xs backdrop-blur-sm">
-              <Building2 className="w-3.5 h-3.5 text-sky-300 shrink-0" />
-              <span className="font-semibold text-white/95 max-w-[160px] truncate" title={user.unitName || ""}>
+            <div className="hidden lg:flex items-center gap-2 bg-slate-100/80 border border-slate-200/80 px-3 py-1.5 rounded-full text-xs text-slate-600">
+              <Building2 className="w-3.5 h-3.5 text-[#414594] shrink-0" />
+              <span className="font-semibold text-slate-700 max-w-[140px] truncate" title={user.unitName || ""}>
                 {user.unitName || "Semua Unit"}
               </span>
-              <span className="text-white/30">•</span>
-              <span className="font-bold text-white bg-white/15 border border-white/20 px-2 py-0.5 rounded-md text-[11px]">
+              <span className="text-slate-300">•</span>
+              <span className="font-bold text-slate-800 bg-white border border-slate-200 px-2 py-0.5 rounded-full text-[11px]">
                 TA {activeYear}
               </span>
             </div>
 
             {/* Switcher Posisi Penempatan Menu (Samping / Atas) */}
-            <div className="hidden md:flex items-center bg-[#122842]/60 p-0.5 rounded-xl border border-white/15 shadow-xs" title="Atur Posisi Tata Letak Menu">
+            <div className="hidden 2xl:flex items-center bg-slate-100 p-0.5 rounded-full border border-slate-200" title="Atur Posisi Tata Letak Menu">
               <button
                 type="button"
                 onClick={() => handleToggleMenuPosition("sidebar")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                   menuPosition === "sidebar"
-                    ? "bg-white/20 text-white shadow-xs border border-white/30 font-bold"
-                    : "text-white/70 hover:text-white"
+                    ? "bg-white text-[#414594] shadow-xs font-bold"
+                    : "text-slate-500 hover:text-slate-800"
                 }`}
                 title="Posisikan Menu di Samping Kiri"
               >
                 <PanelLeft className="w-3.5 h-3.5" />
-                <span className="hidden xl:inline">Menu Kiri</span>
+                <span>Menu Kiri</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleToggleMenuPosition("top")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                   menuPosition === "top"
-                    ? "bg-white/20 text-white shadow-xs border border-white/30 font-bold"
-                    : "text-white/70 hover:text-white"
+                    ? "bg-white text-[#414594] shadow-xs font-bold"
+                    : "text-slate-500 hover:text-slate-800"
                 }`}
                 title="Posisikan Menu di Atas (Horizontal)"
               >
                 <PanelTop className="w-3.5 h-3.5" />
-                <span className="hidden xl:inline">Menu Atas</span>
+                <span>Menu Atas</span>
               </button>
             </div>
 
-            {/* Tombol Pintasan Chat Pengguna (Pojok Kanan Atas) */}
-            <Link
-              href="/dashboard/chat"
-              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all relative cursor-pointer border ${
-                pathname === "/dashboard/chat"
-                  ? "bg-sky-600 text-white shadow-xs font-bold border-white/20"
-                  : "text-white/90 hover:text-white bg-[#122842]/60 hover:bg-white/15 border-white/15"
-              }`}
-              title="Pusat Chat Antar Pengguna"
-            >
-              <div className="relative flex items-center">
-                <MessageSquare className="w-3.5 h-3.5 text-white" />
-                {unreadChatCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-xs">
-                    {unreadChatCount > 99 ? "99+" : unreadChatCount}
-                  </span>
-                )}
-              </div>
-              <span className="hidden sm:inline">Chat</span>
-              {unreadChatCount > 0 ? (
-                <span className="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full animate-pulse shadow-xs">
-                  {unreadChatCount}
-                </span>
-              ) : (
-                <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${pathname === "/dashboard/chat" ? "bg-white" : "bg-sky-300"}`} />
-              )}
-            </Link>
-
-            {/* Tombol Pintasan Panduan (Khusus jika mode sidebar) */}
-            {menuPosition === "sidebar" && (
-              <Link
-                href="/dashboard/modul"
-                className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-white/90 hover:text-white bg-[#122842]/60 hover:bg-white/15 border border-white/15 px-3 py-1.5 rounded-xl transition-all"
-              >
-                <BookMarked className="w-3.5 h-3.5 text-sky-300" />
-                <span>Panduan</span>
-              </Link>
-            )}
-
-            {/* User Avatar Dropdown */}
+            {/* User Avatar Dropdown (Persis Atica) */}
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-white/15 transition-all cursor-pointer outline-none border border-white/15 bg-[#122842]/50 text-white">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white font-bold text-xs shadow-xs">
+              <DropdownMenuTrigger className="flex items-center gap-2.5 pl-1 pr-2.5 py-1 rounded-full hover:bg-slate-100 transition-all cursor-pointer outline-none border border-slate-200/80 bg-slate-50 text-slate-800">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#414594] to-[#6065d0] flex items-center justify-center text-white font-bold text-xs shadow-xs ring-2 ring-white">
                   {(user.displayName || user.email || "U").charAt(0).toUpperCase()}
                 </div>
-                <ChevronDown className="h-3.5 w-3.5 text-white/70" />
+                <div className="hidden md:flex flex-col text-left">
+                  <span className="text-xs font-semibold text-slate-800 leading-tight max-w-[120px] truncate">
+                    {user.displayName || user.email?.split("@")[0] || "User"}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-medium leading-none">
+                    {getRoleLabel(user.role)}
+                  </span>
+                </div>
+                <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80 p-2 rounded-2xl shadow-2xl max-w-[90vw] border border-[#2b537e] bg-[#183658] text-white">
-                <div className="px-3 py-2 bg-[#122842]/70 rounded-xl border border-white/10 mb-1">
+              <DropdownMenuContent align="end" className="w-80 p-2 rounded-2xl shadow-xl max-w-[90vw] border border-slate-200 bg-white text-slate-800">
+                <div className="px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-100 mb-1">
                   <div className="flex flex-col space-y-0.5">
-                    <p className="text-xs xl:text-sm font-semibold text-white whitespace-normal break-words" title={user.unitName || user.email || ""}>
+                    <p className="text-xs xl:text-sm font-semibold text-slate-800 whitespace-normal break-words" title={user.unitName || user.email || ""}>
                       {user.unitName || user.email}
                     </p>
-                    <p className="text-xs font-medium text-sky-300">
+                    <p className="text-xs font-medium text-[#414594]">
                       {getRoleLabel(user.role)} • TA: {activeYear}
                     </p>
                   </div>
                 </div>
 
-                <DropdownMenuSeparator className="my-1.5 border-white/10" />
+                <DropdownMenuSeparator className="my-1.5 border-slate-100" />
 
                 {/* Pengaturan Penempatan Menu di dalam Dropdown */}
-                <div className="px-2 pt-1 pb-1 text-[10px] font-bold text-white/50 uppercase tracking-wider">
+                <div className="px-2 pt-1 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   Posisi Penempatan Menu
                 </div>
                 <DropdownMenuItem
                   onClick={() => handleToggleMenuPosition("sidebar")}
-                  className="cursor-pointer rounded-lg text-xs py-1.5 flex items-center justify-between text-white/90 hover:bg-white/15 hover:text-white"
+                  className="cursor-pointer rounded-xl text-xs py-1.5 flex items-center justify-between text-slate-700 hover:bg-slate-100 hover:text-slate-900"
                 >
-                  <div className="flex items-center gap-2 text-white/90">
-                    <PanelLeft className="h-4 w-4 text-sky-300" />
+                  <div className="flex items-center gap-2">
+                    <PanelLeft className="h-4 w-4 text-[#414594]" />
                     <span>Sebelah Kiri (Sidebar)</span>
                   </div>
-                  {menuPosition === "sidebar" && <Check className="h-4 w-4 text-sky-400 font-bold" />}
+                  {menuPosition === "sidebar" && <Check className="h-4 w-4 text-[#414594] font-bold" />}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => handleToggleMenuPosition("top")}
-                  className="cursor-pointer rounded-lg text-xs py-1.5 flex items-center justify-between text-white/90 hover:bg-white/15 hover:text-white"
+                  className="cursor-pointer rounded-xl text-xs py-1.5 flex items-center justify-between text-slate-700 hover:bg-slate-100 hover:text-slate-900"
                 >
-                  <div className="flex items-center gap-2 text-white/90">
-                    <PanelTop className="h-4 w-4 text-sky-300" />
+                  <div className="flex items-center gap-2">
+                    <PanelTop className="h-4 w-4 text-[#414594]" />
                     <span>Sebelah Atas (Navbar)</span>
                   </div>
-                  {menuPosition === "top" && <Check className="h-4 w-4 text-sky-400 font-bold" />}
+                  {menuPosition === "top" && <Check className="h-4 w-4 text-[#414594] font-bold" />}
                 </DropdownMenuItem>
 
-                <DropdownMenuSeparator className="my-1.5 border-white/10" />
-                <DropdownMenuItem onClick={() => router.push("/dashboard/chat")} className="cursor-pointer rounded-lg text-xs py-2 text-white/90 hover:bg-white/15 hover:text-white">
-                  <MessageSquare className="mr-2 h-4 w-4 text-sky-300" />
+                <DropdownMenuSeparator className="my-1.5 border-slate-100" />
+                <DropdownMenuItem onClick={() => router.push("/dashboard/chat")} className="cursor-pointer rounded-xl text-xs py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900">
+                  <MessageSquare className="mr-2 h-4 w-4 text-[#414594]" />
                   <span className="font-medium">Buka Chat Pengguna</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsPasswordModalOpen(true)} className="cursor-pointer rounded-lg text-xs py-2 text-white/90 hover:bg-white/15 hover:text-white">
-                  <KeyRound className="mr-2 h-4 w-4 text-sky-300" />
+                <DropdownMenuItem onClick={() => setIsPasswordModalOpen(true)} className="cursor-pointer rounded-xl text-xs py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900">
+                  <KeyRound className="mr-2 h-4 w-4 text-[#414594]" />
                   <span className="font-medium">Ubah Password Akun</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/dashboard/modul")} className="cursor-pointer rounded-lg text-xs py-2 text-white/90 hover:bg-white/15 hover:text-white">
-                  <BookMarked className="mr-2 h-4 w-4 text-sky-300" />
+                <DropdownMenuItem onClick={() => router.push("/dashboard/modul")} className="cursor-pointer rounded-xl text-xs py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900">
+                  <BookMarked className="mr-2 h-4 w-4 text-[#414594]" />
                   <span className="font-medium">Buka Panduan Alur MR</span>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator className="my-1.5 border-white/10" />
-                <DropdownMenuItem onClick={handleLogout} className="text-rose-300 hover:bg-rose-500/20 hover:text-rose-200 cursor-pointer rounded-lg text-xs py-2">
+                <DropdownMenuSeparator className="my-1.5 border-slate-100" />
+                <DropdownMenuItem onClick={handleLogout} className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 cursor-pointer rounded-xl text-xs py-2">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span className="font-medium">Keluar dari Sistem</span>
                 </DropdownMenuItem>
