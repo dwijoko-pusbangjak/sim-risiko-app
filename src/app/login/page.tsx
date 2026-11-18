@@ -309,61 +309,86 @@ export default function LoginPage() {
       {/* ========================================================================= */}
       <main className="relative z-10 w-full max-w-6xl flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-16 py-12 lg:py-6">
         
-        {/* SISI KIRI: HERO BRANDING & BUBBLE CHAT FROSTED (Persis Screenshot) */}
-        <section className="hidden md:flex flex-col items-start justify-center flex-1 max-w-lg lg:pr-6 animate-in fade-in duration-700">
+        {/* SISI KIRI: HERO BRANDING & MASKOT SI-MARI DENGAN BALON BICARA TIMBUL TENGGELAM */}
+        <section className="hidden md:flex flex-col items-start justify-center flex-1 max-w-lg lg:max-w-xl lg:pr-6 animate-in fade-in duration-700">
           
-          {/* Gelembung Pesan Animasi Timbul Tenggelam Per Kalimat */}
-          <div className="mb-8 w-full min-h-[46px] flex items-center">
+          {/* Gelembung Pesan Animasi Timbul Tenggelam (Speech Bubble dari Maskot) */}
+          <div className="mb-4 w-full min-h-[52px] flex items-center relative">
             {(() => {
               const currentMsg = LOGIN_MESSAGES[activeMsgIndex];
               const IconComp = currentMsg.icon;
               return (
-                <div
-                  className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-white/80 backdrop-blur-md border border-white/90 shadow-xs text-xs font-semibold text-slate-700 transition-all duration-500 ease-in-out transform ${
-                    isMsgVisible
-                      ? "opacity-100 translate-y-0 scale-100"
-                      : "opacity-0 -translate-y-2 scale-95 blur-xs"
-                  }`}
-                >
-                  <IconComp className={`w-3.5 h-3.5 ${currentMsg.iconColor} shrink-0 animate-pulse`} />
-                  <span className="leading-tight">{currentMsg.text}</span>
+                <div className="relative inline-block max-w-md">
+                  <div
+                    className={`inline-flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white/90 backdrop-blur-md border border-white/95 shadow-md shadow-blue-500/10 text-xs font-semibold text-slate-700 transition-all duration-500 ease-in-out transform relative z-10 ${
+                      isMsgVisible
+                        ? "opacity-100 translate-y-0 scale-100"
+                        : "opacity-0 -translate-y-2 scale-95 blur-xs"
+                    }`}
+                  >
+                    <IconComp className={`w-3.5 h-3.5 ${currentMsg.iconColor} shrink-0 animate-pulse`} />
+                    <span className="leading-tight">{currentMsg.text}</span>
 
-                  {/* Indikator Titik Posisi Kalimat */}
-                  <div className="flex items-center gap-1 ml-2.5 pl-2.5 border-l border-slate-200/90">
-                    {LOGIN_MESSAGES.map((_, idx) => (
-                      <span
-                        key={idx}
-                        className={`h-1.5 rounded-full transition-all duration-300 ${
-                          activeMsgIndex === idx ? "w-3 bg-blue-600" : "w-1.5 bg-slate-300/80"
-                        }`}
-                      />
-                    ))}
+                    {/* Indikator Titik Posisi Kalimat */}
+                    <div className="flex items-center gap-1 ml-2.5 pl-2.5 border-l border-slate-200/90">
+                      {LOGIN_MESSAGES.map((_, idx) => (
+                        <span
+                          key={idx}
+                          className={`h-1.5 rounded-full transition-all duration-300 ${
+                            activeMsgIndex === idx ? "w-3 bg-blue-600" : "w-1.5 bg-slate-300/80"
+                          }`}
+                        />
+                      ))}
+                    </div>
                   </div>
+
+                  {/* Ekor Balon Bicara (Speech Bubble Pointer) yang menunjuk ke arah Maskot */}
+                  <div
+                    className={`absolute -bottom-1.5 left-36 sm:left-44 w-3.5 h-3.5 bg-white/90 border-r border-b border-white/95 transform rotate-45 transition-opacity duration-300 shadow-xs ${
+                      isMsgVisible ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
                 </div>
               );
             })()}
           </div>
 
-          {/* Tipografi Brand Futuristik Besar (Sesuai Gaya 'navos' di Screenshot) */}
-          <div className="relative mt-2">
-            {/* Titik-Titik Aksen Melayang Lembut */}
-            <div className="absolute -top-3 -left-3 w-2.5 h-2.5 rounded-full bg-blue-400/50 blur-[0.5px] animate-pulse" />
-            <div className="absolute top-12 -left-6 w-3.5 h-3.5 rounded-full bg-sky-400/40 blur-[1px]" />
-            <div className="absolute -bottom-2 left-16 w-2 h-2 rounded-full bg-indigo-400/40 blur-[0.5px]" />
+          {/* Baris Bersebelahan: Tipografi Brand Si-MaRi (Kiri) + Karakter Maskot Si-MaRi (Kanan) */}
+          <div className="flex items-center gap-4 lg:gap-6 mt-1 w-full">
+            {/* Teks Judul Brand Si-MaRi */}
+            <div className="relative shrink-0">
+              {/* Titik-Titik Aksen Melayang Lembut */}
+              <div className="absolute -top-3 -left-3 w-2.5 h-2.5 rounded-full bg-blue-400/50 blur-[0.5px] animate-pulse" />
+              <div className="absolute top-12 -left-6 w-3.5 h-3.5 rounded-full bg-sky-400/40 blur-[1px]" />
+              <div className="absolute -bottom-2 left-16 w-2 h-2 rounded-full bg-indigo-400/40 blur-[0.5px]" />
 
-            <span className="block text-[11px] font-bold tracking-[0.25em] text-slate-400 uppercase mb-1">
-              PORTAL RESMI
-            </span>
-            <h1 className="text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight text-[#0f2747] leading-none">
-              Si<span className="bg-gradient-to-r from-blue-600 via-sky-500 to-indigo-600 bg-clip-text text-transparent">-MaRi</span>
-            </h1>
-            <span className="block text-xs font-bold tracking-[0.35em] text-slate-400/90 uppercase mt-3">
-              KEMENDES PDT
-            </span>
+              <span className="block text-[11px] font-bold tracking-[0.25em] text-slate-400 uppercase mb-1">
+                PORTAL RESMI
+              </span>
+              <h1 className="text-4xl lg:text-5xl xl:text-6xl font-extrabold tracking-tight text-[#0f2747] leading-none">
+                Si<span className="bg-gradient-to-r from-blue-600 via-sky-500 to-indigo-600 bg-clip-text text-transparent">-MaRi</span>
+              </h1>
+              <span className="block text-xs font-bold tracking-[0.35em] text-slate-400/90 uppercase mt-2.5">
+                KEMENDES PDT
+              </span>
+            </div>
+
+            {/* Karakter Maskot Si-MaRi yang Seolah-olah Berbicara */}
+            <div className="relative shrink-0 flex items-center justify-center">
+              {/* Efek Cahaya Pendar Biru Halus di Belakang Maskot */}
+              <div className="absolute w-32 h-32 bg-blue-400/20 rounded-full blur-xl pointer-events-none" />
+
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/mascot-transparent.png"
+                alt="Maskot Karakter Si-MaRi Kemendes PDT"
+                className="w-32 lg:w-40 h-auto object-contain drop-shadow-[0_12px_20px_rgba(30,64,175,0.2)] animate-mascot-float select-none transition-transform hover:scale-105 duration-300"
+              />
+            </div>
           </div>
 
           {/* Deskripsi Pendukung */}
-          <p className="text-xs text-slate-500 font-medium leading-relaxed mt-6 max-w-sm">
+          <p className="text-xs text-slate-500 font-medium leading-relaxed mt-5 max-w-sm">
             Kementerian Desa dan Pembangunan Daerah Tertinggal Republik Indonesia.
           </p>
         </section>

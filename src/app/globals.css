@@ -255,3 +255,20 @@
   background: #0284c7;
 }
 
+/* ========================================================================= */
+/* ANIMASI MENGAPUNG MASKOT SI-MARI (FLOATING MASCOT)                        */
+/* ========================================================================= */
+@keyframes floatMascot {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(1.2deg);
+  }
+}
+
+.animate-mascot-float {
+  animation: floatMascot 4s ease-in-out infinite;
+}
+
+
