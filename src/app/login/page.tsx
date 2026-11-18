@@ -23,6 +23,24 @@ import {
   HelpCircle 
 } from "lucide-react";
 
+const LOGIN_MESSAGES = [
+  {
+    icon: Sparkles,
+    iconColor: "text-blue-500",
+    text: "Halo! Selamat datang di Si-MaRi Kemendes PDT 👋",
+  },
+  {
+    icon: ShieldCheck,
+    iconColor: "text-sky-500",
+    text: "Sistem Manajemen Risiko Terpadu & Terintegrasi",
+  },
+  {
+    icon: LogIn,
+    iconColor: "text-indigo-500",
+    text: "Silakan masuk untuk mengelola profil & mitigasi risiko unit Anda",
+  },
+];
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,9 +51,28 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [wallpaperUrl, setWallpaperUrl] = useState("");
+  const [activeMsgIndex, setActiveMsgIndex] = useState(0);
+  const [isMsgVisible, setIsMsgVisible] = useState(true);
   
   const router = useRouter();
   const { setActiveYear, user } = useAuth();
+
+  // Efek Animasi Timbul Tenggelam bergantian per kalimat
+  useEffect(() => {
+    const fadeOutTimer = setTimeout(() => {
+      setIsMsgVisible(false);
+    }, 3200);
+
+    const switchTimer = setTimeout(() => {
+      setActiveMsgIndex((prev) => (prev + 1) % LOGIN_MESSAGES.length);
+      setIsMsgVisible(true);
+    }, 3700);
+
+    return () => {
+      clearTimeout(fadeOutTimer);
+      clearTimeout(switchTimer);
+    };
+  }, [activeMsgIndex]);
 
   useEffect(() => {
     if (user) {
@@ -159,24 +196,36 @@ export default function LoginPage() {
         {/* SISI KIRI: HERO BRANDING & BUBBLE CHAT FROSTED (Persis Screenshot) */}
         <section className="hidden md:flex flex-col items-start justify-center flex-1 max-w-lg lg:pr-6 animate-in fade-in duration-700">
           
-          {/* Gelembung Pesan Obrolan Transparan (Frosted Chat Bubbles) */}
-          <div className="space-y-2.5 mb-8 w-full">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/75 backdrop-blur-md border border-white/80 shadow-xs text-xs font-semibold text-slate-700 animate-in fade-in slide-in-from-left-4 duration-500">
-              <Sparkles className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-              <span>Halo! Selamat datang di Si-MaRi Kemendes PDT 👋</span>
-            </div>
-            
-            <div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/65 backdrop-blur-md border border-white/70 shadow-xs text-xs font-medium text-slate-600 animate-in fade-in slide-in-from-left-4 duration-700">
-                <span>Sistem Manajemen Risiko Terpadu & Terintegrasi</span>
-              </div>
-            </div>
+          {/* Gelembung Pesan Animasi Timbul Tenggelam Per Kalimat */}
+          <div className="mb-8 w-full min-h-[46px] flex items-center">
+            {(() => {
+              const currentMsg = LOGIN_MESSAGES[activeMsgIndex];
+              const IconComp = currentMsg.icon;
+              return (
+                <div
+                  className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-white/80 backdrop-blur-md border border-white/90 shadow-xs text-xs font-semibold text-slate-700 transition-all duration-500 ease-in-out transform ${
+                    isMsgVisible
+                      ? "opacity-100 translate-y-0 scale-100"
+                      : "opacity-0 -translate-y-2 scale-95 blur-xs"
+                  }`}
+                >
+                  <IconComp className={`w-3.5 h-3.5 ${currentMsg.iconColor} shrink-0 animate-pulse`} />
+                  <span className="leading-tight">{currentMsg.text}</span>
 
-            <div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/55 backdrop-blur-md border border-white/60 shadow-xs text-xs font-medium text-slate-600 animate-in fade-in slide-in-from-left-4 duration-1000">
-                <span>Silakan masuk untuk mengelola profil & mitigasi risiko unit Anda</span>
-              </div>
-            </div>
+                  {/* Indikator Titik Posisi Kalimat */}
+                  <div className="flex items-center gap-1 ml-2.5 pl-2.5 border-l border-slate-200/90">
+                    {LOGIN_MESSAGES.map((_, idx) => (
+                      <span
+                        key={idx}
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                          activeMsgIndex === idx ? "w-3 bg-blue-600" : "w-1.5 bg-slate-300/80"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Tipografi Brand Futuristik Besar (Sesuai Gaya 'navos' di Screenshot) */}
