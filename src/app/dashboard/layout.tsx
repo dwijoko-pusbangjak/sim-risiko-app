@@ -840,18 +840,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* 3. NAVBAR HORIZONTAL (Tampil HANYA jika menuPosition === "top")        */}
         {/* ====================================================================== */}
         {menuPosition === "top" && (
-          <nav className="hidden md:flex items-center justify-between glass-menu-bar text-white px-4 md:px-6 py-2 shrink-0 overflow-x-auto shadow-xs custom-scrollbar relative z-10 animate-in fade-in duration-200">
+          <nav className="hidden md:flex items-center justify-between glass-menu-bar text-slate-800 px-4 md:px-6 py-2 shrink-0 overflow-x-auto shadow-xs custom-scrollbar relative z-10 animate-in fade-in duration-200">
             <div className="flex items-center gap-1.5 flex-wrap">
               {/* Overview Group: Dashboard & Katalog Peraturan */}
               <Link
                 href="/dashboard"
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                   pathname === "/dashboard"
-                    ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
-                    : "text-white/90 hover:text-white hover:bg-white/15 border-transparent"
+                    ? "bg-[#173f7c] text-white font-bold shadow-xs border-[#1b4584]"
+                    : "text-[#122b54] bg-white/75 hover:bg-white hover:text-[#0b1f3f] border-white/80 shadow-2xs backdrop-blur-sm"
                 }`}
               >
-                <LayoutDashboard className="h-3.5 w-3.5 text-white" />
+                <LayoutDashboard className={`h-3.5 w-3.5 ${pathname === "/dashboard" ? "text-white" : "text-[#173f7c]"}`} />
                 <span>Dashboard</span>
               </Link>
 
@@ -859,15 +859,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 href="/dashboard/katalog-peraturan"
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                   pathname === "/dashboard/katalog-peraturan"
-                    ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
-                    : "text-white/90 hover:text-white hover:bg-white/15 border-transparent"
+                    ? "bg-[#173f7c] text-white font-bold shadow-xs border-[#1b4584]"
+                    : "text-[#122b54] bg-white/75 hover:bg-white hover:text-[#0b1f3f] border-white/80 shadow-2xs backdrop-blur-sm"
                 }`}
               >
-                <BookOpen className="h-3.5 w-3.5 text-white" />
+                <BookOpen className={`h-3.5 w-3.5 ${pathname === "/dashboard/katalog-peraturan" ? "text-white" : "text-[#173f7c]"}`} />
                 <span>Katalog Peraturan</span>
               </Link>
 
-              <div className="h-4 w-px bg-white/20 mx-1.5 shrink-0" />
+              <div className="h-4 w-px bg-slate-300/80 mx-1.5 shrink-0" />
 
               {/* Cascading Kinerja (Khusus Kementerian, Eselon 1, Eselon 2 - tidak untuk Admin) */}
               {sasaranItems.length > 0 && (
@@ -878,13 +878,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     closeDelay={180}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
                       sasaranItems.some(s => pathname === s.href)
-                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
-                        : "text-white/90 hover:text-white hover:bg-white/15 border-transparent data-popup-open:bg-white/15"
+                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-[#1b4584]"
+                        : "text-[#122b54] bg-white/75 hover:bg-white hover:text-[#0b1f3f] border-white/80 shadow-2xs backdrop-blur-sm data-popup-open:bg-white"
                     }`}
                   >
-                    <Target className="h-3.5 w-3.5 text-white" />
+                    <Target className={`h-3.5 w-3.5 ${sasaranItems.some(s => pathname === s.href) ? "text-white" : "text-[#173f7c]"}`} />
                     <span>Cascading Kinerja</span>
-                    <ChevronDown className="h-3 w-3 ml-0.5 transition-transform duration-200 text-white/80" />
+                    <ChevronDown className={`h-3 w-3 ml-0.5 transition-transform duration-200 ${sasaranItems.some(s => pathname === s.href) ? "text-white" : "text-[#173f7c]/70"}`} />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" sideOffset={6} className="w-58 p-1.5 glass-dropdown-content text-white rounded-xl shadow-2xl animate-in fade-in-50 zoom-in-95 duration-150">
                     <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white/70 border-b border-white/15 mb-1">
@@ -921,14 +921,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       href="/dashboard/mr-analisis-rtp"
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                         pathname === "/dashboard/mr-analisis-rtp"
-                          ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
-                          : "text-white/90 hover:text-white hover:bg-white/15 border-transparent"
+                          ? "bg-[#173f7c] text-white font-bold shadow-xs border-[#1b4584]"
+                          : "text-[#122b54] bg-white/75 hover:bg-white hover:text-[#0b1f3f] border-white/80 shadow-2xs backdrop-blur-sm"
                       }`}
                     >
-                      <Sparkles className="h-3.5 w-3.5 text-white" />
+                      <Sparkles className={`h-3.5 w-3.5 ${pathname === "/dashboard/mr-analisis-rtp" ? "text-white" : "text-[#173f7c]"}`} />
                       <span>Analisis RTP</span>
                       <span className={`text-[9px] px-1.5 py-0.2 rounded-md font-bold ${
-                        pathname === "/dashboard/mr-analisis-rtp" ? "bg-white/25 text-white" : "bg-white/15 text-white border border-white/20"
+                        pathname === "/dashboard/mr-analisis-rtp" ? "bg-white/25 text-white" : "bg-white/80 text-[#173f7c] border border-blue-200"
                       }`}>
                         Telaah
                       </span>
@@ -938,11 +938,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     href="/dashboard/laporan"
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                       pathname === "/dashboard/laporan"
-                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
-                        : "text-white/90 hover:text-white hover:bg-white/15 border-transparent"
+                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-[#1b4584]"
+                        : "text-[#122b54] bg-white/75 hover:bg-white hover:text-[#0b1f3f] border-white/80 shadow-2xs backdrop-blur-sm"
                     }`}
                   >
-                    <BarChart4 className="h-3.5 w-3.5 text-white" />
+                    <BarChart4 className={`h-3.5 w-3.5 ${pathname === "/dashboard/laporan" ? "text-white" : "text-[#173f7c]"}`} />
                     <span>Cetak Laporan</span>
                   </Link>
                 </>
@@ -955,11 +955,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     href="/dashboard/mr-konteks"
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                       pathname === "/dashboard/mr-konteks"
-                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
-                        : "text-white/90 hover:text-white hover:bg-white/15 border-transparent"
+                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-[#1b4584]"
+                        : "text-[#122b54] bg-white/75 hover:bg-white hover:text-[#0b1f3f] border-white/80 shadow-2xs backdrop-blur-sm"
                     }`}
                   >
-                    <ClipboardList className="h-3.5 w-3.5 text-white" />
+                    <ClipboardList className={`h-3.5 w-3.5 ${pathname === "/dashboard/mr-konteks" ? "text-white" : "text-[#173f7c]"}`} />
                     <span>Penetapan Konteks</span>
                   </Link>
 
@@ -971,13 +971,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       closeDelay={180}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
                         pathname.startsWith("/dashboard/mr-") && pathname !== "/dashboard/mr-konteks"
-                          ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
-                          : "text-white/90 hover:text-white hover:bg-white/15 border-transparent data-popup-open:bg-white/15"
+                          ? "bg-[#173f7c] text-white font-bold shadow-xs border-[#1b4584]"
+                          : "text-[#122b54] bg-white/75 hover:bg-white hover:text-[#0b1f3f] border-white/80 shadow-2xs backdrop-blur-sm data-popup-open:bg-white"
                       }`}
                     >
-                      <FolderTree className="h-3.5 w-3.5 text-white" />
+                      <FolderTree className={`h-3.5 w-3.5 ${pathname.startsWith("/dashboard/mr-") && pathname !== "/dashboard/mr-konteks" ? "text-white" : "text-[#173f7c]"}`} />
                       <span>Proses MR</span>
-                      <ChevronDown className="h-3 w-3 ml-0.5 transition-transform duration-200 text-white/80" />
+                      <ChevronDown className={`h-3 w-3 ml-0.5 transition-transform duration-200 ${pathname.startsWith("/dashboard/mr-") && pathname !== "/dashboard/mr-konteks" ? "text-white" : "text-[#173f7c]/70"}`} />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" sideOffset={6} className="w-68 p-1.5 glass-dropdown-content text-white rounded-xl shadow-2xl animate-in fade-in-50 zoom-in-95 duration-150">
                       <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white/70 border-b border-white/15 mb-1">
@@ -1032,13 +1032,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       closeDelay={180}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
                         pathname.startsWith("/dashboard/proses-audit")
-                          ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
-                          : "text-white/90 hover:text-white hover:bg-white/15 border-transparent data-popup-open:bg-white/15"
+                          ? "bg-[#173f7c] text-white font-bold shadow-xs border-[#1b4584]"
+                          : "text-[#122b54] bg-white/75 hover:bg-white hover:text-[#0b1f3f] border-white/80 shadow-2xs backdrop-blur-sm data-popup-open:bg-white"
                       }`}
                     >
-                      <SearchCheck className="h-3.5 w-3.5 text-white" />
+                      <SearchCheck className={`h-3.5 w-3.5 ${pathname.startsWith("/dashboard/proses-audit") ? "text-white" : "text-[#173f7c]"}`} />
                       <span>Proses Riviu</span>
-                      <ChevronDown className="h-3 w-3 ml-0.5 transition-transform duration-200 text-white/80" />
+                      <ChevronDown className={`h-3 w-3 ml-0.5 transition-transform duration-200 ${pathname.startsWith("/dashboard/proses-audit") ? "text-white" : "text-[#173f7c]/70"}`} />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" sideOffset={6} className="w-58 p-1.5 glass-dropdown-content text-white rounded-xl shadow-2xl animate-in fade-in-50 zoom-in-95 duration-150">
                       <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white/70 border-b border-white/15 mb-1">
@@ -1070,11 +1070,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     href="/dashboard/laporan"
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                       pathname === "/dashboard/laporan"
-                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
-                        : "text-white/90 hover:text-white hover:bg-white/15 border-transparent"
+                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-[#1b4584]"
+                        : "text-[#122b54] bg-white/75 hover:bg-white hover:text-[#0b1f3f] border-white/80 shadow-2xs backdrop-blur-sm"
                     }`}
                   >
-                    <BarChart4 className="h-3.5 w-3.5 text-white" />
+                    <BarChart4 className={`h-3.5 w-3.5 ${pathname === "/dashboard/laporan" ? "text-white" : "text-[#173f7c]"}`} />
                     <span>Cetak Laporan</span>
                   </Link>
                 </>
@@ -1089,13 +1089,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     closeDelay={180}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
                       ["/dashboard/units", "/dashboard/users", "/dashboard/mr-analisis-rtp", "/dashboard/logs", "/dashboard/settings", "/dashboard/backup"].includes(pathname)
-                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
-                        : "text-white/90 hover:text-white hover:bg-white/15 border-transparent data-popup-open:bg-white/15"
+                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-[#1b4584]"
+                        : "text-[#122b54] bg-white/75 hover:bg-white hover:text-[#0b1f3f] border-white/80 shadow-2xs backdrop-blur-sm data-popup-open:bg-white"
                     }`}
                   >
-                    <Settings className="h-3.5 w-3.5 text-white" />
+                    <Settings className={`h-3.5 w-3.5 ${["/dashboard/units", "/dashboard/users", "/dashboard/mr-analisis-rtp", "/dashboard/logs", "/dashboard/settings", "/dashboard/backup"].includes(pathname) ? "text-white" : "text-[#173f7c]"}`} />
                     <span>Administrator</span>
-                    <ChevronDown className="h-3 w-3 ml-0.5 transition-transform duration-200 text-white/80" />
+                    <ChevronDown className={`h-3 w-3 ml-0.5 transition-transform duration-200 ${["/dashboard/units", "/dashboard/users", "/dashboard/mr-analisis-rtp", "/dashboard/logs", "/dashboard/settings", "/dashboard/backup"].includes(pathname) ? "text-white" : "text-[#173f7c]/70"}`} />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" sideOffset={6} className="w-64 p-1.5 glass-dropdown-content text-white rounded-xl shadow-2xl animate-in fade-in-50 zoom-in-95 duration-150">
                     <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white/70 border-b border-white/15 mb-1">
@@ -1146,11 +1146,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     href="/dashboard/audit"
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                       pathname === "/dashboard/audit"
-                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
-                        : "text-white/90 hover:text-white hover:bg-white/15 border-transparent"
+                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-[#1b4584]"
+                        : "text-[#122b54] bg-white/75 hover:bg-white hover:text-[#0b1f3f] border-white/80 shadow-2xs backdrop-blur-sm"
                     }`}
                   >
-                    <SearchCheck className="h-3.5 w-3.5 text-white" />
+                    <SearchCheck className={`h-3.5 w-3.5 ${pathname === "/dashboard/audit" ? "text-white" : "text-[#173f7c]"}`} />
                     <span>Audit Risiko</span>
                   </Link>
                   {isAnalisisRtpEnabled && (
@@ -1158,11 +1158,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       href="/dashboard/mr-analisis-rtp"
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                         pathname === "/dashboard/mr-analisis-rtp"
-                          ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
-                          : "text-white/90 hover:text-white hover:bg-white/15 border-transparent"
+                          ? "bg-[#173f7c] text-white font-bold shadow-xs border-[#1b4584]"
+                          : "text-[#122b54] bg-white/75 hover:bg-white hover:text-[#0b1f3f] border-white/80 shadow-2xs backdrop-blur-sm"
                       }`}
                     >
-                      <Sparkles className="h-3.5 w-3.5 text-white" />
+                      <Sparkles className={`h-3.5 w-3.5 ${pathname === "/dashboard/mr-analisis-rtp" ? "text-white" : "text-[#173f7c]"}`} />
                       <span>Analisis RTP</span>
                     </Link>
                   )}
@@ -1170,11 +1170,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     href="/dashboard/laporan"
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                       pathname === "/dashboard/laporan"
-                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
-                        : "text-white/90 hover:text-white hover:bg-white/15 border-transparent"
+                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-[#1b4584]"
+                        : "text-[#122b54] bg-white/75 hover:bg-white hover:text-[#0b1f3f] border-white/80 shadow-2xs backdrop-blur-sm"
                     }`}
                   >
-                    <BarChart4 className="h-3.5 w-3.5 text-white" />
+                    <BarChart4 className={`h-3.5 w-3.5 ${pathname === "/dashboard/laporan" ? "text-white" : "text-[#173f7c]"}`} />
                     <span>Cetak Laporan</span>
                   </Link>
                 </>
@@ -1187,11 +1187,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 href="/dashboard/modul"
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                   pathname === "/dashboard/modul"
-                    ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
-                    : "bg-white/10 hover:bg-white/20 text-white border-white/15 backdrop-blur-md"
+                    ? "bg-[#173f7c] text-white font-bold shadow-xs border-[#1b4584]"
+                    : "bg-white/80 hover:bg-white text-[#122b54] border-white/90 shadow-2xs backdrop-blur-md font-semibold"
                 }`}
               >
-                <BookMarked className="h-3.5 w-3.5 text-white" />
+                <BookMarked className={`h-3.5 w-3.5 ${pathname === "/dashboard/modul" ? "text-white" : "text-[#0284c7]"}`} />
                 <span>Panduan Alur MR</span>
               </Link>
             </div>

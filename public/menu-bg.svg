@@ -1,0 +1,44 @@
+<svg width="1440" height="96" viewBox="0 0 1440 96" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <defs>
+    <!-- Background Base Gradient (Soft Sky White to Azure) -->
+    <linearGradient id="fluidBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f5f9fe" />
+      <stop offset="25%" stop-color="#e8f2fd" />
+      <stop offset="60%" stop-color="#d4e6fc" />
+      <stop offset="100%" stop-color="#c1dbfb" />
+    </linearGradient>
+
+    <!-- Wave 1: Soft Cyan/Sky -->
+    <linearGradient id="fluidWave1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#bad7fc" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#cde2fc" stop-opacity="0.7" />
+      <stop offset="100%" stop-color="#e4effd" stop-opacity="0.5" />
+    </linearGradient>
+
+    <!-- Wave 2: Vibrant Mid Azure -->
+    <linearGradient id="fluidWave2" x1="0%" y1="15%" x2="100%" y2="85%">
+      <stop offset="0%" stop-color="#6ba0f5" stop-opacity="0.75" />
+      <stop offset="45%" stop-color="#84b4f8" stop-opacity="0.65" />
+      <stop offset="100%" stop-color="#bad6fb" stop-opacity="0.45" />
+    </linearGradient>
+
+    <!-- Wave 3: Fluid Royal Blue Depth -->
+    <linearGradient id="fluidWave3" x1="0%" y1="30%" x2="100%" y2="70%">
+      <stop offset="0%" stop-color="#3b78e7" stop-opacity="0.6" />
+      <stop offset="50%" stop-color="#5a95f2" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#93c0f9" stop-opacity="0.35" />
+    </linearGradient>
+  </defs>
+
+  <!-- Base Canvas Fill -->
+  <rect width="1440" height="96" fill="url(#fluidBg)" />
+
+  <!-- Wave 1: Flowing Top Curve -->
+  <path d="M-50,24 C220,44 480,12 820,28 C1120,42 1280,16 1500,26 L1500,96 L-50,96 Z" fill="url(#fluidWave1)" />
+
+  <!-- Wave 2: Flowing Mid Azure Curve -->
+  <path d="M-40,42 C240,62 520,26 860,42 C1160,56 1300,32 1480,44 L1480,96 L-40,96 Z" fill="url(#fluidWave2)" />
+
+  <!-- Wave 3: Flowing Lower Rich Blue Curve -->
+  <path d="M0,58 C260,78 560,40 900,56 C1200,70 1340,48 1460,60 L1460,96 L0,96 Z" fill="url(#fluidWave3)" />
+</svg>

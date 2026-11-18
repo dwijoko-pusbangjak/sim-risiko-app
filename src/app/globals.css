@@ -188,11 +188,15 @@
 
 .glass-menu-bar,
 .theme-menu-bar {
-  background: linear-gradient(90deg, #122b54 0%, #173f7c 35%, #1e4f9b 70%, #295fd1 100%) !important;
-  color: #ffffff !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.16) !important;
-  border-bottom: 1px solid #143568 !important;
-  box-shadow: 0 4px 24px -2px rgba(18, 43, 84, 0.28) !important;
+  background-color: #ebf3fc !important;
+  background-image: url('/menu-bg.svg') !important;
+  background-size: cover !important;
+  background-position: center bottom !important;
+  background-repeat: no-repeat !important;
+  color: #122b54 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.9) !important;
+  border-bottom: 1px solid #bfdbfe !important;
+  box-shadow: 0 4px 20px -2px rgba(37, 91, 199, 0.12) !important;
 }
 
 .glass-dropdown-content,
