@@ -122,7 +122,9 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-slate-50 text-slate-800 antialiased;
+    background: linear-gradient(135deg, #ebf3fc 0%, #f3f7fd 50%, #e4eefb 100%);
+    color: #0f2747;
+    @apply antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
   html {
@@ -175,43 +177,43 @@
   --app-bg-main: #f8fafc;
 }
 
-/* Helper Class untuk Kontainer Utama */
+/* Helper Class untuk Kontainer Utama (Fluid Soft Sky Blue Sesuai Tampilan Login) */
 .theme-bg-main {
-  background-color: #f8fafc !important;
+  background: linear-gradient(135deg, #ebf3fc 0%, #f3f7fd 50%, #e4eefb 100%) !important;
 }
 
 /* ========================================================================= */
-/* TEMA MENU & SUB-MENU WEBPRAKTIS (DEEP STEEL SLATE BLUE GRADIENT)          */
+/* TEMA MENU & SUB-MENU (ROYAL SAPPHIRE & FLUID AZURE - SESUAI HALAMAN LOGIN) */
 /* ========================================================================= */
 
 .glass-menu-bar,
 .theme-menu-bar {
-  background: linear-gradient(90deg, #183658 0%, #22476e 40%, #345a82 100%) !important;
+  background: linear-gradient(90deg, #122b54 0%, #173f7c 35%, #1e4f9b 70%, #295fd1 100%) !important;
   color: #ffffff !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-bottom: 1px solid #1a3c61 !important;
-  box-shadow: 0 4px 20px -2px rgba(10, 25, 45, 0.25) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-bottom: 1px solid #143568 !important;
+  box-shadow: 0 4px 24px -2px rgba(18, 43, 84, 0.28) !important;
 }
 
 .glass-dropdown-content,
 .theme-dropdown-content {
-  background: #183658 !important;
-  border: 1px solid #2b537e !important;
-  box-shadow: 0 20px 45px -10px rgba(8, 20, 36, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  background: #122b54 !important;
+  border: 1px solid #204e92 !important;
+  box-shadow: 0 20px 45px -10px rgba(10, 25, 50, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
   color: #ffffff !important;
 }
 
 .glass-sidebar,
 .theme-sidebar-gradient {
-  background: linear-gradient(180deg, #183658 0%, #244972 38%, #41678f 72%, #6888a9 100%) !important;
+  background: linear-gradient(180deg, #122b54 0%, #163a72 38%, #1e4f9b 72%, #295fd1 100%) !important;
   color: #ffffff !important;
-  border-right: 1px solid #183658 !important;
-  box-shadow: 4px 0 24px -4px rgba(10, 25, 45, 0.25) !important;
+  border-right: 1px solid #14376b !important;
+  box-shadow: 4px 0 24px -4px rgba(18, 43, 84, 0.25) !important;
 }
 
 .theme-header-dark {
-  background: #183658 !important;
-  border-bottom: 1px solid #23476e !important;
+  background: #122b54 !important;
+  border-bottom: 1px solid #1b4584 !important;
   color: #ffffff !important;
 }
 

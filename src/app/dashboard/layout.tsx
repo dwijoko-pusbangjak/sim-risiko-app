@@ -397,7 +397,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const renderNavGroups = (groups: NavGroup[], isMobile = false) => {
     return groups.map((group, idx) => (
       <div key={group.title} className={idx > 0 ? "mt-5" : ""}>
-        <div className="flex items-center px-3.5 py-2.5 my-2.5 rounded-xl bg-[#122842]/50 border border-white/10 shadow-xs backdrop-blur-xs">
+        <div className="flex items-center px-3.5 py-2.5 my-2.5 rounded-xl bg-[#0e2244]/50 border border-white/10 shadow-xs backdrop-blur-xs">
           <h3 className="text-[13.5px] font-bold text-white tracking-normal flex items-center gap-2">
             {group.title}
           </h3>
@@ -428,7 +428,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     onClick={() => toggleMenu(item.name, isOpen)}
                     className={`group flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[13.5px] font-medium transition-all w-full cursor-pointer text-left border ${
                       hasChildActive
-                        ? "bg-[#0e243d]/90 text-white border-white/20 shadow-xs font-semibold"
+                        ? "bg-[#173f7c]/90 text-white border-white/20 shadow-xs font-semibold"
                         : isHovered
                         ? "bg-white/15 text-white border-white/15 shadow-2xs font-medium"
                         : "text-white/90 hover:bg-white/15 hover:text-white border-transparent"
@@ -451,7 +451,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {/* Submenu Item List */}
                   <div className={`grid transition-all duration-200 ease-in-out ${isOpen ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0"}`}>
                     <div className="overflow-hidden">
-                      <div className="flex flex-col space-y-1 p-1.5 rounded-xl bg-[#0e2137]/50 border border-white/10 backdrop-blur-xs shadow-inner my-1">
+                      <div className="flex flex-col space-y-1 p-1.5 rounded-xl bg-[#0b1c36]/50 border border-white/10 backdrop-blur-xs shadow-inner my-1">
                         {item.children.map((child) => {
                           const isChildActive = pathname === child.href;
                           return (
@@ -507,7 +507,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 onClick={() => isMobile && setIsSidebarOpen(false)}
                 className={`group flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[13.5px] font-medium transition-all w-full cursor-pointer border ${
                   isDirectActive
-                    ? "bg-[#0e243d]/90 text-white shadow-xs font-bold border-white/20"
+                    ? "bg-[#173f7c]/90 text-white shadow-xs font-bold border-white/20"
                     : "text-white/90 hover:bg-white/15 hover:text-white border-transparent"
                 }`}
               >
@@ -560,14 +560,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 relative print:h-auto print:min-h-0 print:block print:overflow-visible font-sans">
-      {/* Latar Belakang Gradien Halus Biru Langit untuk Refraksi Kaca Nyata */}
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-[#ebf3fc] via-[#f3f7fd] to-[#e4eefb] relative print:h-auto print:min-h-0 print:block print:overflow-visible font-sans text-slate-800">
+      {/* Latar Belakang Gradien Halus Biru Langit & Cahaya Diffuse Sesuai Tampilan Login */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden print:hidden" aria-hidden="true">
-        <div className="absolute -top-20 -left-20 w-96 h-96 bg-sky-400/25 rounded-full blur-3xl" />
-        <div className="absolute top-1/4 left-8 w-80 h-80 bg-cyan-400/20 rounded-full blur-3xl" />
-        <div className="absolute -top-10 right-1/4 w-[500px] h-48 bg-sky-500/20 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 right-10 w-96 h-96 bg-blue-500/15 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 left-1/3 w-80 h-80 bg-slate-300/20 rounded-full blur-3xl" />
+        <div className="absolute -top-32 -left-32 w-[600px] h-[600px] bg-sky-200/50 rounded-full blur-[120px]" />
+        <div className="absolute top-1/4 -right-20 w-[550px] h-[550px] bg-blue-200/40 rounded-full blur-[130px]" />
+        <div className="absolute -bottom-20 left-1/3 w-[500px] h-[500px] bg-indigo-200/35 rounded-full blur-[140px]" />
       </div>
 
       {/* ====================================================================== */}
@@ -576,9 +574,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {menuPosition === "sidebar" && (
         <aside className="hidden w-64 xl:w-72 flex-col glass-sidebar md:flex shrink-0 print:hidden animate-in fade-in duration-200 relative z-20 text-white">
           {/* Brand Header */}
-          <div className="flex h-16 items-center px-4 xl:px-6 border-b border-[#22466e] shrink-0 bg-[#183658]">
+          <div className="flex h-16 items-center px-4 xl:px-6 border-b border-[#1b4584] shrink-0 bg-[#122b54]">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white shadow-sm border border-sky-300/40">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-blue-500/25 border border-white/60">
                 <ShieldAlert className="h-5 w-5" />
               </div>
               <div>
@@ -591,7 +589,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           
           {/* Info Profil di Sidebar */}
-          <div className="border-b border-[#22466e] px-4 xl:px-6 py-3.5 bg-[#142f4e]/60 shrink-0">
+          <div className="border-b border-[#1b4584] px-4 xl:px-6 py-3.5 bg-[#0e2244]/60 shrink-0">
             <p className="text-xs xl:text-sm font-bold text-white whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
               {user.unitName || user.email}
             </p>
@@ -611,10 +609,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </nav>
           
           {/* Sidebar Footer dengan Pintasan Panduan Alur MR */}
-          <div className="border-t border-[#22466e] p-3 shrink-0 bg-[#142f4e]/40 space-y-2">
+          <div className="border-t border-[#1b4584] p-3 shrink-0 bg-[#0e2244]/40 space-y-2">
             <Link
               href="/dashboard/modul"
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#122b48]/60 hover:bg-white/15 border border-white/15 text-white transition-all text-xs group shadow-xs"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#0e2244]/70 hover:bg-white/15 border border-white/15 text-white transition-all text-xs group shadow-xs"
             >
               <div className="flex items-center gap-2.5">
                 <BookMarked className="w-4 h-4 text-sky-300 group-hover:scale-110 transition-transform" />
@@ -634,8 +632,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* 2. AREA KONTEN UTAMA + TOPBAR HEADER                                   */}
       {/* ====================================================================== */}
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden print:block print:overflow-visible">
-        {/* Header Baris 1: Brand (jika top mode), Title, Info Unit, Switcher, Profil */}
-        <header className="flex h-16 items-center justify-between border-b bg-[#183658] border-[#22466e] px-4 md:px-6 shrink-0 shadow-sm print:hidden relative z-20 text-white">
+        {/* Header Baris 1: Sesuai Palet Royal Sapphire & Fluid Azure Halaman Login */}
+        <header className="flex h-16 items-center justify-between border-b bg-gradient-to-r from-[#122b54] via-[#173f7c] to-[#1e4f9b] border-[#1b4584] px-4 md:px-6 shrink-0 shadow-sm print:hidden relative z-20 text-white">
           {/* Sisi Kiri Header */}
           <div className="flex items-center gap-3 min-w-0">
             {/* Hamburger Button untuk Tampilan Mobile */}
@@ -651,7 +649,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Logo untuk Mode Menu Atas (Top) pada Desktop */}
             {menuPosition === "top" && (
               <div className="hidden md:flex items-center gap-2.5 pr-4 border-r border-white/15 mr-1">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white shadow-md border border-white/20">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-blue-500/25 border border-white/60">
                   <ShieldAlert className="h-5 w-5" />
                 </div>
                 <div>
@@ -665,7 +663,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* Mobile Logo */}
             <div className="flex items-center gap-2 md:hidden">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white shadow-sm border border-white/20">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white shadow-xs border border-white/40">
                 <ShieldAlert className="h-4 w-4" />
               </div>
               <h1 className="text-lg font-bold text-white">Si<span className="text-sky-300">-MaRi</span></h1>
@@ -688,7 +686,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Sisi Kanan Header: Info Unit, Switcher Posisi Menu, Panduan, Profil */}
           <div className="flex items-center gap-2.5 sm:gap-3 ml-auto">
             {/* Chip Info Unit & Tahun Anggaran */}
-            <div className="hidden lg:flex items-center gap-2 bg-[#122842]/60 border border-white/15 px-3 py-1.5 rounded-xl text-xs backdrop-blur-sm">
+            <div className="hidden lg:flex items-center gap-2 bg-[#0e2244]/60 border border-white/15 px-3 py-1.5 rounded-xl text-xs backdrop-blur-sm">
               <Building2 className="w-3.5 h-3.5 text-sky-300 shrink-0" />
               <span className="font-semibold text-white/95 max-w-[160px] truncate" title={user.unitName || ""}>
                 {user.unitName || "Semua Unit"}
@@ -700,7 +698,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
 
             {/* Switcher Posisi Penempatan Menu (Samping / Atas) */}
-            <div className="hidden md:flex items-center bg-[#122842]/60 p-0.5 rounded-xl border border-white/15 shadow-xs" title="Atur Posisi Tata Letak Menu">
+            <div className="hidden md:flex items-center bg-[#0e2244]/60 p-0.5 rounded-xl border border-white/15 shadow-xs" title="Atur Posisi Tata Letak Menu">
               <button
                 type="button"
                 onClick={() => handleToggleMenuPosition("sidebar")}
@@ -734,8 +732,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               href="/dashboard/chat"
               className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all relative cursor-pointer border ${
                 pathname === "/dashboard/chat"
-                  ? "bg-sky-600 text-white shadow-xs font-bold border-white/20"
-                  : "text-white/90 hover:text-white bg-[#122842]/60 hover:bg-white/15 border-white/15"
+                  ? "bg-blue-600 text-white shadow-xs font-bold border-white/20"
+                  : "text-white/90 hover:text-white bg-[#0e2244]/60 hover:bg-white/15 border-white/15"
               }`}
               title="Pusat Chat Antar Pengguna"
             >
@@ -761,7 +759,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {menuPosition === "sidebar" && (
               <Link
                 href="/dashboard/modul"
-                className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-white/90 hover:text-white bg-[#122842]/60 hover:bg-white/15 border border-white/15 px-3 py-1.5 rounded-xl transition-all"
+                className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-white/90 hover:text-white bg-[#0e2244]/60 hover:bg-white/15 border border-white/15 px-3 py-1.5 rounded-xl transition-all"
               >
                 <BookMarked className="w-3.5 h-3.5 text-sky-300" />
                 <span>Panduan</span>
@@ -770,14 +768,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* User Avatar Dropdown */}
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-white/15 transition-all cursor-pointer outline-none border border-white/15 bg-[#122842]/50 text-white">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white font-bold text-xs shadow-xs">
+              <DropdownMenuTrigger className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-white/15 transition-all cursor-pointer outline-none border border-white/15 bg-[#0e2244]/50 text-white">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white font-bold text-xs shadow-xs border border-white/30">
                   {(user.displayName || user.email || "U").charAt(0).toUpperCase()}
                 </div>
                 <ChevronDown className="h-3.5 w-3.5 text-white/70" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80 p-2 rounded-2xl shadow-2xl max-w-[90vw] border border-[#2b537e] bg-[#183658] text-white">
-                <div className="px-3 py-2 bg-[#122842]/70 rounded-xl border border-white/10 mb-1">
+              <DropdownMenuContent align="end" className="w-80 p-2 rounded-2xl shadow-2xl max-w-[90vw] border border-[#204e92] bg-[#122b54] text-white">
+                <div className="px-3 py-2 bg-[#0e2244]/70 rounded-xl border border-white/10 mb-1">
                   <div className="flex flex-col space-y-0.5">
                     <p className="text-xs xl:text-sm font-semibold text-white whitespace-normal break-words" title={user.unitName || user.email || ""}>
                       {user.unitName || user.email}
@@ -849,7 +847,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 href="/dashboard"
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                   pathname === "/dashboard"
-                    ? "bg-[#0e243d] text-white font-bold shadow-xs border-white/20"
+                    ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
                     : "text-white/90 hover:text-white hover:bg-white/15 border-transparent"
                 }`}
               >
@@ -861,7 +859,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 href="/dashboard/katalog-peraturan"
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                   pathname === "/dashboard/katalog-peraturan"
-                    ? "bg-[#0e243d] text-white font-bold shadow-xs border-white/20"
+                    ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
                     : "text-white/90 hover:text-white hover:bg-white/15 border-transparent"
                 }`}
               >
@@ -880,7 +878,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     closeDelay={180}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
                       sasaranItems.some(s => pathname === s.href)
-                        ? "bg-[#0e243d] text-white font-bold shadow-xs border-white/20"
+                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
                         : "text-white/90 hover:text-white hover:bg-white/15 border-transparent data-popup-open:bg-white/15"
                     }`}
                   >
@@ -900,7 +898,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                           onClick={() => router.push(item.href!)}
                           className={`cursor-pointer rounded-lg text-xs py-2 px-2.5 flex items-center justify-between mb-0.5 transition-all border ${
                             isActive
-                              ? "bg-[#0e243d] text-white font-bold shadow-xs border-white/25"
+                              ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/25"
                               : "text-white/90 hover:bg-white/15 hover:text-white focus:bg-white/15 focus:text-white border-transparent font-medium"
                           }`}
                         >
@@ -923,7 +921,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       href="/dashboard/mr-analisis-rtp"
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                         pathname === "/dashboard/mr-analisis-rtp"
-                          ? "bg-[#0e243d] text-white font-bold shadow-xs border-white/20"
+                          ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
                           : "text-white/90 hover:text-white hover:bg-white/15 border-transparent"
                       }`}
                     >
@@ -940,7 +938,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     href="/dashboard/laporan"
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                       pathname === "/dashboard/laporan"
-                        ? "bg-[#0e243d] text-white font-bold shadow-xs border-white/20"
+                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
                         : "text-white/90 hover:text-white hover:bg-white/15 border-transparent"
                     }`}
                   >
@@ -957,7 +955,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     href="/dashboard/mr-konteks"
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                       pathname === "/dashboard/mr-konteks"
-                        ? "bg-[#0e243d] text-white font-bold shadow-xs border-white/20"
+                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
                         : "text-white/90 hover:text-white hover:bg-white/15 border-transparent"
                     }`}
                   >
@@ -973,7 +971,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       closeDelay={180}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
                         pathname.startsWith("/dashboard/mr-") && pathname !== "/dashboard/mr-konteks"
-                          ? "bg-[#0e243d] text-white font-bold shadow-xs border-white/20"
+                          ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
                           : "text-white/90 hover:text-white hover:bg-white/15 border-transparent data-popup-open:bg-white/15"
                       }`}
                     >
@@ -1001,7 +999,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             onClick={() => router.push(child.href)}
                             className={`cursor-pointer rounded-lg text-xs py-2 px-2.5 flex items-center justify-between mb-0.5 transition-all border ${
                               isChildActive
-                                ? "bg-[#0e243d] text-white font-bold shadow-xs border-white/25"
+                                ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/25"
                                 : "text-white/90 hover:bg-white/15 hover:text-white focus:bg-white/15 focus:text-white border-transparent font-medium"
                             }`}
                           >
@@ -1034,7 +1032,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       closeDelay={180}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
                         pathname.startsWith("/dashboard/proses-audit")
-                          ? "bg-[#0e243d] text-white font-bold shadow-xs border-white/20"
+                          ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
                           : "text-white/90 hover:text-white hover:bg-white/15 border-transparent data-popup-open:bg-white/15"
                       }`}
                     >
@@ -1057,7 +1055,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             onClick={() => router.push(child.href)}
                             className={`cursor-pointer rounded-lg text-xs py-2 px-2.5 flex items-center justify-between mb-0.5 transition-all border ${
                               isChildActive
-                                ? "bg-[#0e243d] text-white font-bold shadow-xs border-white/25"
+                                ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/25"
                                 : "text-white/90 hover:bg-white/15 hover:text-white focus:bg-white/15 focus:text-white border-transparent font-medium"
                             }`}
                           >
@@ -1072,7 +1070,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     href="/dashboard/laporan"
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                       pathname === "/dashboard/laporan"
-                        ? "bg-[#0e243d] text-white font-bold shadow-xs border-white/20"
+                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
                         : "text-white/90 hover:text-white hover:bg-white/15 border-transparent"
                     }`}
                   >
@@ -1091,7 +1089,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     closeDelay={180}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer outline-none border ${
                       ["/dashboard/units", "/dashboard/users", "/dashboard/mr-analisis-rtp", "/dashboard/logs", "/dashboard/settings", "/dashboard/backup"].includes(pathname)
-                        ? "bg-[#0e243d] text-white font-bold shadow-xs border-white/20"
+                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
                         : "text-white/90 hover:text-white hover:bg-white/15 border-transparent data-popup-open:bg-white/15"
                     }`}
                   >
@@ -1119,7 +1117,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                           onClick={() => router.push(adminItem.href)}
                           className={`cursor-pointer rounded-lg text-xs py-2 px-2.5 flex items-center justify-between mb-0.5 transition-all border ${
                             isActive
-                              ? "bg-[#0e243d] text-white font-bold shadow-xs border-white/25"
+                              ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/25"
                               : "text-white/90 hover:bg-white/15 hover:text-white focus:bg-white/15 focus:text-white border-transparent font-medium"
                           }`}
                         >
@@ -1148,7 +1146,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     href="/dashboard/audit"
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                       pathname === "/dashboard/audit"
-                        ? "bg-[#0e243d] text-white font-bold shadow-xs border-white/20"
+                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
                         : "text-white/90 hover:text-white hover:bg-white/15 border-transparent"
                     }`}
                   >
@@ -1160,7 +1158,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       href="/dashboard/mr-analisis-rtp"
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                         pathname === "/dashboard/mr-analisis-rtp"
-                          ? "bg-[#0e243d] text-white font-bold shadow-xs border-white/20"
+                          ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
                           : "text-white/90 hover:text-white hover:bg-white/15 border-transparent"
                       }`}
                     >
@@ -1172,7 +1170,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     href="/dashboard/laporan"
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                       pathname === "/dashboard/laporan"
-                        ? "bg-[#0e243d] text-white font-bold shadow-xs border-white/20"
+                        ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
                         : "text-white/90 hover:text-white hover:bg-white/15 border-transparent"
                     }`}
                   >
@@ -1189,7 +1187,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 href="/dashboard/modul"
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 border ${
                   pathname === "/dashboard/modul"
-                    ? "bg-[#0e243d] text-white font-bold shadow-xs border-white/20"
+                    ? "bg-[#173f7c] text-white font-bold shadow-xs border-white/20"
                     : "bg-white/10 hover:bg-white/20 text-white border-white/15 backdrop-blur-md"
                 }`}
               >
@@ -1222,9 +1220,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 xl:w-72 transform glass-sidebar shadow-2xl transition-transform duration-300 ease-in-out md:hidden flex flex-col text-white ${
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       }`}>
-        <div className="flex h-16 items-center justify-between border-b border-[#22466e] px-4 xl:px-6 shrink-0 bg-[#183658]">
+        <div className="flex h-16 items-center justify-between border-b border-[#1b4584] px-4 xl:px-6 shrink-0 bg-[#122b54]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white shadow-sm border border-sky-300/40">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-blue-500/25 border border-white/60">
               <ShieldAlert className="h-5 w-5" />
             </div>
             <div>
@@ -1238,7 +1236,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Menu className="h-5 w-5" />
           </Button>
         </div>
-        <div className="border-b border-[#22466e] px-4 xl:px-6 py-3.5 bg-[#142f4e]/60 shrink-0">
+        <div className="border-b border-[#1b4584] px-4 xl:px-6 py-3.5 bg-[#0e2244]/60 shrink-0">
           <p className="text-xs xl:text-sm font-bold text-white whitespace-normal break-words max-w-full" title={user.unitName || user.email || ""}>
             {user.unitName || user.email}
           </p>
@@ -1254,11 +1252,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav className="flex-1 overflow-y-auto px-3.5 py-4 custom-scrollbar">
           {renderNavGroups(navGroups, true)}
         </nav>
-        <div className="border-t border-[#22466e] p-3 shrink-0 bg-[#142f4e]/40 space-y-2">
+        <div className="border-t border-[#1b4584] p-3 shrink-0 bg-[#0e2244]/40 space-y-2">
           <Link
             href="/dashboard/modul"
             onClick={() => setIsSidebarOpen(false)}
-            className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#122b48]/60 hover:bg-white/15 border border-white/15 text-white transition-all text-xs group shadow-xs"
+            className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#0e2244]/70 hover:bg-white/15 border border-white/15 text-white transition-all text-xs group shadow-xs"
           >
             <div className="flex items-center gap-2.5">
               <BookMarked className="w-4 h-4 text-sky-300 group-hover:scale-110 transition-transform" />
