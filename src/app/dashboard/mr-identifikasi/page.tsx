@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { collection, query, where, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Loader2, Save, Plus, Pencil, Trash2, X, AlertCircle } from "lucide-react";
+import { Loader2, Save, Plus, Pencil, Trash2, X, AlertCircle, Search, Layers, Filter } from "lucide-react";
 import { toast } from "sonner";
 
 interface Indikator { name: string; target: string; }
@@ -51,6 +51,47 @@ export default function IdentifikasiRisikoPage() {
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Filter & Pengelompokan Berdasarkan Indikator Kinerja
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredRisikoList = useMemo(() => {
+    if (!searchTerm.trim()) return risikoList;
+    const term = searchTerm.toLowerCase();
+    return risikoList.filter(item => 
+      item.indikatorKinerja?.toLowerCase().includes(term) ||
+      item.sasaranTerkait?.toLowerCase().includes(term) ||
+      item.pernyataanRisiko?.toLowerCase().includes(term) ||
+      item.permasalahan?.toLowerCase().includes(term) ||
+      item.kategori?.toLowerCase().includes(term) ||
+      item.pemilikRisiko?.toLowerCase().includes(term)
+    );
+  }, [risikoList, searchTerm]);
+
+  // Kelompokkan risiko berdasarkan Indikator Kinerja (agar indikator yang sama hanya ditulis 1 kali)
+  const groupedRisiko = useMemo(() => {
+    const map = new Map<string, { indikatorKinerja: string; sasaranTerkait: string; items: IdentifikasiRisiko[] }>();
+
+    filteredRisikoList.forEach((item) => {
+      const ind = item.indikatorKinerja?.trim() || "Tanpa Indikator Kinerja";
+      if (!map.has(ind)) {
+        map.set(ind, {
+          indikatorKinerja: ind,
+          sasaranTerkait: item.sasaranTerkait?.trim() || "-",
+          items: []
+        });
+      }
+      map.get(ind)!.items.push(item);
+    });
+
+    return Array.from(map.values());
+  }, [filteredRisikoList]);
+
+  const totalRisikoCount = risikoList.length;
+  const totalIndikatorCount = useMemo(() => {
+    const set = new Set(risikoList.map(r => (r.indikatorKinerja || "").trim()).filter(Boolean));
+    return set.size;
+  }, [risikoList]);
 
   // Master Data (Indikator & Sasaran)
   const [kinerjaList, setKinerjaList] = useState<{ id: string; indikator: string; sasaran: string }[]>([]);
@@ -294,110 +335,274 @@ export default function IdentifikasiRisikoPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-5">
+      {/* Header Halaman & Statistik Kelompok Indikator */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-800">Identifikasi Risiko</h2>
-          <p className="text-slate-500">Daftar identifikasi risiko untuk Tahun {activeYear}.</p>
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold shadow-2xs">
+              <Layers className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-slate-900">Identifikasi Risiko</h2>
+              <p className="text-xs text-slate-500">
+                Daftar risiko Tahun Anggaran {activeYear} dikelompokkan berdasarkan Indikator Sasaran Kinerja.
+              </p>
+            </div>
+          </div>
         </div>
-        {!isFormVisible && (
-          <Button onClick={handleCreateNew} className="bg-emerald-600 hover:bg-emerald-700">
-            <Plus className="mr-2 h-4 w-4" /> Tambah Identifikasi Risiko
-          </Button>
-        )}
+
+        <div className="flex items-center gap-2.5 flex-wrap self-stretch md:self-auto justify-end">
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 px-3 py-1.5 rounded-xl text-xs">
+            <span className="text-slate-500 font-medium">Kelompok Indikator:</span>
+            <span className="font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200">
+              {totalIndikatorCount}
+            </span>
+            <span className="text-slate-300">•</span>
+            <span className="text-slate-500 font-medium">Total Risiko:</span>
+            <span className="font-bold text-slate-800 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+              {totalRisikoCount}
+            </span>
+          </div>
+
+          {!isFormVisible && (
+            <Button onClick={handleCreateNew} className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs text-xs h-9">
+              <Plus className="mr-1.5 h-4 w-4" /> Tambah Identifikasi Risiko
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Tabel Daftar Risiko */}
+      {/* Bar Pencarian & Info Tampilan */}
       {!isFormVisible && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in zoom-in-95">
-          <div className="overflow-auto max-h-[calc(100vh-14.5rem)] relative custom-scrollbar pb-2">
-            <Table>
-              <TableHeader className="bg-slate-50">
-                <TableRow>
-                  <TableHead className="min-w-[200px] whitespace-nowrap">Indikator Kinerja</TableHead>
-                  <TableHead className="min-w-[250px] whitespace-nowrap">Sasaran Terkait</TableHead>
-                  <TableHead className="min-w-[250px] whitespace-nowrap">Permasalahan</TableHead>
-                  <TableHead className="min-w-[250px] whitespace-nowrap">Pernyataan Risiko</TableHead>
-                  <TableHead className="min-w-[130px] whitespace-nowrap">Kategori</TableHead>
-                  <TableHead className="min-w-[180px] whitespace-nowrap">Pemilik Risiko</TableHead>
-                  <TableHead className="min-w-[250px] whitespace-nowrap">Uraian Penyebab</TableHead>
-                  <TableHead className="min-w-[180px] whitespace-nowrap">Sumber Penyebab</TableHead>
-                  <TableHead className="min-w-[120px] whitespace-nowrap text-center">Sifat (C/UC)</TableHead>
-                  <TableHead className="min-w-[250px] whitespace-nowrap">Uraian Dampak</TableHead>
-                  <TableHead className="min-w-[180px] whitespace-nowrap">Pihak Terdampak</TableHead>
-                  <TableHead className="min-w-[250px] whitespace-nowrap">Pengendalian Yg Ada</TableHead>
-                  <TableHead className="min-w-[150px] whitespace-nowrap">Penilaian</TableHead>
-                  <TableHead className="min-w-[180px] whitespace-nowrap">Sisa Risiko</TableHead>
-                  <TableHead className="text-center min-w-[100px] sticky right-0 bg-slate-100 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)] z-10">Aksi</TableHead>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Input
+              type="text"
+              placeholder="Cari indikator kinerja, sasaran, atau risiko..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 bg-white border-slate-200 text-xs h-9 rounded-xl shadow-2xs"
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-semibold"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          <div className="text-xs text-slate-500 flex items-center gap-1.5">
+            <span>Menampilkan <strong>{filteredRisikoList.length}</strong> dari <strong>{risikoList.length}</strong> risiko ({groupedRisiko.length} kelompok indikator)</span>
+          </div>
+        </div>
+      )}
+
+      {/* Tabel Daftar Risiko Berdasarkan Kelompok Indikator */}
+      {!isFormVisible && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden animate-in fade-in zoom-in-95">
+          <div className="overflow-auto max-h-[calc(100vh-16rem)] relative custom-scrollbar pb-2">
+            <Table className="border-collapse">
+              <TableHeader className="bg-slate-100/90 sticky top-0 z-20 backdrop-blur-md">
+                <TableRow className="border-b border-slate-200 text-slate-700">
+                  <TableHead className="min-w-[240px] max-w-[280px] font-bold text-slate-800">Indikator Kinerja</TableHead>
+                  <TableHead className="min-w-[220px] max-w-[260px] font-bold text-slate-800">Sasaran Terkait</TableHead>
+                  <TableHead className="min-w-[220px] font-bold text-slate-800">Permasalahan</TableHead>
+                  <TableHead className="min-w-[260px] font-bold text-slate-800">Pernyataan Risiko</TableHead>
+                  <TableHead className="min-w-[120px] font-bold text-slate-800">Kategori</TableHead>
+                  <TableHead className="min-w-[170px] font-bold text-slate-800">Pemilik Risiko</TableHead>
+                  <TableHead className="min-w-[220px] font-bold text-slate-800">Uraian Penyebab</TableHead>
+                  <TableHead className="min-w-[160px] font-bold text-slate-800">Sumber Penyebab</TableHead>
+                  <TableHead className="min-w-[110px] text-center font-bold text-slate-800">Sifat (C/UC)</TableHead>
+                  <TableHead className="min-w-[220px] font-bold text-slate-800">Uraian Dampak</TableHead>
+                  <TableHead className="min-w-[160px] font-bold text-slate-800">Pihak Terdampak</TableHead>
+                  <TableHead className="min-w-[220px] font-bold text-slate-800">Pengendalian Yg Ada</TableHead>
+                  <TableHead className="min-w-[140px] font-bold text-slate-800">Penilaian</TableHead>
+                  <TableHead className="min-w-[160px] font-bold text-slate-800">Sisa Risiko</TableHead>
+                  <TableHead className="text-center min-w-[90px] sticky right-0 bg-slate-100 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)] z-30 font-bold text-slate-800">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {risikoList.length > 0 ? (
-                  risikoList.map((item) => (
-                    <TableRow key={item.id} className="hover:bg-slate-50/50">
-                      <TableCell className="text-sm max-w-[200px] truncate" title={item.indikatorKinerja}>{item.indikatorKinerja}</TableCell>
-                      <TableCell className="text-sm max-w-[250px] truncate" title={item.sasaranTerkait}>{item.sasaranTerkait}</TableCell>
-                      <TableCell className="text-sm max-w-[250px] truncate text-slate-600" title={item.permasalahan}>{item.permasalahan}</TableCell>
-                      <TableCell className="text-sm max-w-[250px] truncate font-medium text-slate-800" title={item.pernyataanRisiko}>{item.pernyataanRisiko}</TableCell>
-                      <TableCell>
-                        <span className="bg-slate-100 text-slate-700 px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap">
-                          {item.kategori}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-sm max-w-[180px] truncate" title={item.pemilikRisiko}>{item.pemilikRisiko}</TableCell>
-                      <TableCell className="text-sm max-w-[250px] truncate text-slate-600" title={item.uraianPenyebab}>{item.uraianPenyebab}</TableCell>
-                      <TableCell className="text-sm max-w-[180px] truncate" title={item.sumberPenyebab}>{item.sumberPenyebab}</TableCell>
-                      <TableCell className="text-center">
-                        <span className={`px-2 py-1 rounded-md text-xs font-bold ${
-                          item.sifatPenyebab === 'Controllable' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'
-                        }`} title={item.sifatPenyebab}>
-                          {item.sifatPenyebab === 'Controllable' ? 'C' : 'UC'}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-sm max-w-[250px] truncate text-slate-600" title={item.uraianDampak}>{item.uraianDampak}</TableCell>
-                      <TableCell className="text-sm max-w-[180px] truncate" title={item.pihakTerdampak}>{item.pihakTerdampak}</TableCell>
-                      <TableCell className="text-sm max-w-[250px] truncate text-slate-600" title={item.pengendalianAda}>{item.pengendalianAda}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">
-                        <span className={`px-2 py-1 rounded-md text-xs font-medium border ${
-                          item.penilaianPengendalian === 'Sudah Memadai' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-700'
-                        }`}>
-                          {item.penilaianPengendalian}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-sm max-w-[180px] truncate font-medium text-slate-700" title={item.sisaRisiko}>{item.sisaRisiko}</TableCell>
-                      
-                      <TableCell className="text-center sticky right-0 bg-white/95 backdrop-blur-sm shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.05)]">
-                        <div className="flex items-center justify-center gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} title="Edit">
-                            <Pencil className="h-4 w-4 text-blue-600" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-slate-100 hover:text-slate-900 h-9 w-9 text-red-600" title="Hapus">
-                              <Trash2 className="h-4 w-4" />
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Hapus Identifikasi Risiko?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Apakah Anda yakin ingin menghapus data risiko ini? Tindakan ini tidak dapat dibatalkan.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Batal</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(item.id)} className="bg-red-600 hover:bg-red-700">
-                                  Hapus
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                {groupedRisiko.length > 0 ? (
+                  groupedRisiko.map((group) => {
+                    const isSasaranSame = group.items.every(
+                      (it) => (it.sasaranTerkait || "").trim() === (group.items[0]?.sasaranTerkait || "").trim()
+                    );
+
+                    return group.items.map((item, idx) => (
+                      <TableRow 
+                        key={item.id} 
+                        className={`hover:bg-slate-50/80 transition-colors ${
+                          idx === 0 
+                            ? "border-t-2 border-slate-300" 
+                            : "border-t border-slate-100"
+                        }`}
+                      >
+                        {/* 1. Indikator Kinerja: DITULIS 1 KALI SAJA PER KELOMPOK DENGAN ROWSPAN */}
+                        {idx === 0 && (
+                          <TableCell 
+                            rowSpan={group.items.length} 
+                            className="align-top bg-sky-50/40 border-r border-slate-200 p-3.5 min-w-[240px] max-w-[280px]"
+                          >
+                            <div className="space-y-2 sticky top-12">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-sky-100 text-sky-800 border border-sky-200 shadow-2xs">
+                                  {group.items.length} Risiko
+                                </span>
+                              </div>
+                              <p className="text-xs font-bold text-slate-900 leading-snug whitespace-normal break-words">
+                                {group.indikatorKinerja}
+                              </p>
+                            </div>
+                          </TableCell>
+                        )}
+
+                        {/* 2. Sasaran Terkait: DITULIS 1 KALI SAJA JIKA SERAGAM PER KELOMPOK */}
+                        {idx === 0 && isSasaranSame && (
+                          <TableCell 
+                            rowSpan={group.items.length} 
+                            className="align-top bg-slate-50/50 border-r border-slate-200 p-3.5 min-w-[220px] max-w-[260px]"
+                          >
+                            <p className="text-xs text-slate-700 leading-relaxed whitespace-normal break-words sticky top-12">
+                              {group.sasaranTerkait || "-"}
+                            </p>
+                          </TableCell>
+                        )}
+                        {!isSasaranSame && (
+                          <TableCell className="align-top border-r border-slate-200 p-3 text-xs text-slate-700 whitespace-normal break-words">
+                            {item.sasaranTerkait || "-"}
+                          </TableCell>
+                        )}
+
+                        {/* 3. Permasalahan */}
+                        <TableCell className="text-xs max-w-[220px] align-top text-slate-600 whitespace-normal break-words leading-relaxed" title={item.permasalahan}>
+                          {item.permasalahan || "-"}
+                        </TableCell>
+
+                        {/* 4. Pernyataan Risiko */}
+                        <TableCell className="text-xs max-w-[260px] align-top font-semibold text-slate-900 whitespace-normal break-words leading-relaxed" title={item.pernyataanRisiko}>
+                          <div className="flex items-start gap-1.5">
+                            {group.items.length > 1 && (
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold shrink-0 mt-0.5">
+                                #{idx + 1}
+                              </span>
+                            )}
+                            <div className="space-y-1">
+                              <span>{item.pernyataanRisiko}</span>
+                              {item.catatanAuditor && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-pink-700 bg-pink-50 border border-pink-200 px-1.5 py-0.2 rounded-md">
+                                  <AlertCircle className="w-3 h-3 text-pink-600" /> Ada Catatan APIP
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* 5. Kategori */}
+                        <TableCell className="align-top">
+                          <span className="bg-slate-100 text-slate-700 px-2 py-1 rounded-md text-[11px] font-medium whitespace-nowrap inline-block">
+                            {item.kategori || "-"}
+                          </span>
+                        </TableCell>
+
+                        {/* 6. Pemilik Risiko */}
+                        <TableCell className="text-xs max-w-[170px] align-top text-slate-700 whitespace-normal break-words" title={item.pemilikRisiko}>
+                          {item.pemilikRisiko || "-"}
+                        </TableCell>
+
+                        {/* 7. Uraian Penyebab */}
+                        <TableCell className="text-xs max-w-[220px] align-top text-slate-600 whitespace-normal break-words leading-relaxed" title={item.uraianPenyebab}>
+                          {item.uraianPenyebab || "-"}
+                        </TableCell>
+
+                        {/* 8. Sumber Penyebab */}
+                        <TableCell className="text-xs max-w-[160px] align-top text-slate-700 whitespace-normal break-words" title={item.sumberPenyebab}>
+                          {item.sumberPenyebab || "-"}
+                        </TableCell>
+
+                        {/* 9. Sifat (C/UC) */}
+                        <TableCell className="text-center align-top">
+                          <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
+                            item.sifatPenyebab === 'Controllable' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'
+                          }`} title={item.sifatPenyebab}>
+                            {item.sifatPenyebab === 'Controllable' ? 'C' : 'UC'}
+                          </span>
+                        </TableCell>
+
+                        {/* 10. Uraian Dampak */}
+                        <TableCell className="text-xs max-w-[220px] align-top text-slate-600 whitespace-normal break-words leading-relaxed" title={item.uraianDampak}>
+                          {item.uraianDampak || "-"}
+                        </TableCell>
+
+                        {/* 11. Pihak Terdampak */}
+                        <TableCell className="text-xs max-w-[160px] align-top text-slate-700 whitespace-normal break-words" title={item.pihakTerdampak}>
+                          {item.pihakTerdampak || "-"}
+                        </TableCell>
+
+                        {/* 12. Pengendalian Yang Ada */}
+                        <TableCell className="text-xs max-w-[220px] align-top text-slate-600 whitespace-normal break-words leading-relaxed" title={item.pengendalianAda}>
+                          {item.pengendalianAda || "-"}
+                        </TableCell>
+
+                        {/* 13. Penilaian Pengendalian */}
+                        <TableCell className="text-xs whitespace-nowrap align-top">
+                          <span className={`px-2 py-1 rounded-md text-[11px] font-medium border inline-block ${
+                            item.penilaianPengendalian === 'Sudah Memadai' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-700'
+                          }`}>
+                            {item.penilaianPengendalian || "-"}
+                          </span>
+                        </TableCell>
+
+                        {/* 14. Sisa Risiko */}
+                        <TableCell className="text-xs max-w-[160px] align-top font-medium text-slate-700 whitespace-normal break-words" title={item.sisaRisiko}>
+                          {item.sisaRisiko || "-"}
+                        </TableCell>
+                        
+                        {/* 15. Aksi */}
+                        <TableCell className="text-center align-top sticky right-0 bg-white/95 backdrop-blur-sm shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.05)]">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} title="Edit Risiko" className="h-8 w-8 hover:bg-blue-50">
+                              <Pencil className="h-3.5 w-3.5 text-blue-600" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-red-50 hover:text-red-700 h-8 w-8 text-red-600" title="Hapus Risiko">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Hapus Identifikasi Risiko?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Apakah Anda yakin ingin menghapus data risiko ini? Tindakan ini tidak dapat dibatalkan.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Batal</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDelete(item.id)} className="bg-red-600 hover:bg-red-700">
+                                    Hapus
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ));
+                  })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={15} className="h-32 text-center text-slate-500">
-                      Belum ada data identifikasi risiko tahun {activeYear}.
+                    <TableCell colSpan={15} className="h-36 text-center text-slate-500">
+                      {searchTerm ? (
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <p>Tidak ditemukan risiko yang cocok dengan pencarian &ldquo;{searchTerm}&rdquo;.</p>
+                          <Button variant="outline" size="sm" onClick={() => setSearchTerm("")}>
+                            Reset Pencarian
+                          </Button>
+                        </div>
+                      ) : (
+                        `Belum ada data identifikasi risiko untuk tahun anggaran ${activeYear}.`
+                      )}
                     </TableCell>
                   </TableRow>
                 )}
