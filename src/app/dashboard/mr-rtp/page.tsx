@@ -9,16 +9,36 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Save, X, Plus, Pencil, Trash2, ShieldCheck, ListChecks } from "lucide-react";
+import { Loader2, Save, X, Plus, Pencil, Trash2, ShieldCheck, ListChecks, AlertTriangle, Calendar, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { 
+  MONTH_OPTIONS, 
+  TargetTipe, 
+  buildTargetWaktuString, 
+  parseTargetWaktuString, 
+  getRtpDeadlineInfo 
+} from "@/lib/rtp-deadline";
+import { RtpStatusBadge, RtpDeadlineAlert } from "@/components/RtpStatusBadge";
 
 interface RTP {
   id: string;
   rencana: string;
   penanggungjawab: string;
   targetWaktu: string;
+  targetTipe?: TargetTipe;
+  targetBulan?: string;
+  targetDariBulan?: string;
+  targetSampaiBulan?: string;
+  targetTahun?: string;
   bentukKomunikasi: string;
+  pemantauan?: {
+    progres?: string;
+    waktuPelaksanaan?: string;
+    linkEviden?: string;
+    persentase?: number;
+    updatedAt?: string;
+  };
 }
 
 interface IdentifikasiRisiko {
@@ -58,8 +78,27 @@ export default function RtpPage() {
     rencana: "",
     penanggungjawab: "",
     targetWaktu: "",
+    targetTipe: "bulan",
+    targetBulan: "Januari",
+    targetDariBulan: "Januari",
+    targetSampaiBulan: "Desember",
+    targetTahun: "",
     bentukKomunikasi: ""
   });
+
+  const updateTargetWaktuFields = (updates: Partial<RTP>) => {
+    setFormData((prev) => {
+      const next = { ...prev, ...updates };
+      const built = buildTargetWaktuString({
+        tipe: next.targetTipe,
+        bulan: next.targetBulan,
+        dariBulan: next.targetDariBulan,
+        sampaiBulan: next.targetSampaiBulan,
+        tahun: next.targetTahun,
+      });
+      return { ...next, targetWaktu: built };
+    });
+  };
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -119,18 +158,65 @@ export default function RtpPage() {
   };
 
   const handleAddRtp = () => {
+    const defaultYear = selectedRisiko?.tahun || activeYear || new Date().getFullYear().toString();
+    const defaultTipe = "bulan";
+    const defaultBulan = "Januari";
+    const defaultDari = "Januari";
+    const defaultSampai = "Desember";
+    const defaultWaktu = buildTargetWaktuString({
+      tipe: defaultTipe,
+      bulan: defaultBulan,
+      dariBulan: defaultDari,
+      sampaiBulan: defaultSampai,
+      tahun: defaultYear,
+    });
+
     setFormData({
       id: Math.random().toString(36).substring(2, 15), // Simple ID generator
       rencana: "",
       penanggungjawab: "",
-      targetWaktu: "",
+      targetTipe: defaultTipe,
+      targetBulan: defaultBulan,
+      targetDariBulan: defaultDari,
+      targetSampaiBulan: defaultSampai,
+      targetTahun: defaultYear,
+      targetWaktu: defaultWaktu,
       bentukKomunikasi: ""
     });
     setIsFormVisible(true);
   };
 
   const handleEditRtp = (rtp: RTP) => {
-    setFormData({ ...rtp });
+    const defaultYear = selectedRisiko?.tahun || activeYear || new Date().getFullYear().toString();
+    let tipe = rtp.targetTipe;
+    let bulan = rtp.targetBulan || "";
+    let dariBulan = rtp.targetDariBulan || "";
+    let sampaiBulan = rtp.targetSampaiBulan || "";
+    let tahun = rtp.targetTahun || defaultYear;
+
+    if (!tipe && rtp.targetWaktu) {
+      const parsed = parseTargetWaktuString(rtp.targetWaktu, defaultYear);
+      tipe = parsed.tipe;
+      bulan = parsed.bulan;
+      dariBulan = parsed.dariBulan;
+      sampaiBulan = parsed.sampaiBulan;
+      tahun = parsed.tahun;
+    }
+
+    if (!tipe) tipe = "bulan";
+    if (!bulan) bulan = "Januari";
+    if (!dariBulan) dariBulan = "Januari";
+    if (!sampaiBulan) sampaiBulan = "Desember";
+
+    setFormData({
+      ...rtp,
+      targetTipe: tipe,
+      targetBulan: bulan,
+      targetDariBulan: dariBulan,
+      targetSampaiBulan: sampaiBulan,
+      targetTahun: tahun,
+      targetWaktu: rtp.targetWaktu || buildTargetWaktuString({ tipe, bulan, dariBulan, sampaiBulan, tahun }),
+    });
     setIsFormVisible(true);
   };
 
@@ -244,6 +330,9 @@ export default function RtpPage() {
                 risikoList.map((item) => {
                   const levelInfo = getRiskLevelInfo(item.besaranRisiko || 0);
                   const count = item.rtpList?.length || 0;
+                  const overdueCount = (item.rtpList || []).filter(
+                    (r) => getRtpDeadlineInfo(r, item.tahun).isOverdue
+                  ).length;
                   
                   return (
                     <TableRow key={item.id} className="hover:bg-slate-50/50 transition-colors">
@@ -259,14 +348,25 @@ export default function RtpPage() {
                         </span>
                       </TableCell>
                       <TableCell className="text-center sticky right-0 bg-white/95 backdrop-blur-sm shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.05)]">
-                        <button 
-                          onClick={() => handleOpenModal(item)}
-                          className="inline-flex items-center justify-center bg-indigo-100 hover:bg-indigo-600 text-indigo-700 hover:text-white rounded-full px-4 py-1.5 text-xs font-bold transition-all cursor-pointer shadow-sm border border-indigo-200"
-                          title="Klik untuk melihat atau menambah RTP"
-                        >
-                          <ListChecks className="w-3.5 h-3.5 mr-1.5" />
-                          {count} RTP
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                          <button 
+                            onClick={() => handleOpenModal(item)}
+                            className="inline-flex items-center justify-center bg-indigo-100 hover:bg-indigo-600 text-indigo-700 hover:text-white rounded-full px-4 py-1.5 text-xs font-bold transition-all cursor-pointer shadow-sm border border-indigo-200"
+                            title="Klik untuk melihat atau menambah RTP"
+                          >
+                            <ListChecks className="w-3.5 h-3.5 mr-1.5" />
+                            {count} RTP
+                          </button>
+                          {overdueCount > 0 && (
+                            <span 
+                              className="inline-flex items-center gap-1 bg-red-100 text-red-700 text-[11px] font-bold px-2 py-0.5 rounded-full border border-red-200 shadow-sm animate-pulse" 
+                              title={`${overdueCount} RTP telah melebihi batas waktu!`}
+                            >
+                              <AlertTriangle className="w-3 h-3 text-red-600" />
+                              {overdueCount} Terlambat
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -309,6 +409,17 @@ export default function RtpPage() {
               {/* === VIEW 1: TABEL RTP === */}
               {!isFormVisible && (
                 <div className="space-y-4">
+                  {/* Alert jika ada RTP yang melebihi batas waktu */}
+                  {selectedRisiko.rtpList && selectedRisiko.rtpList.some(r => getRtpDeadlineInfo(r, selectedRisiko.tahun).isOverdue) && (
+                    <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs shadow-sm">
+                      <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5 animate-bounce" />
+                      <div>
+                        <span className="font-bold text-red-900">Perhatian: </span>
+                        Terdapat Rencana Tindak Pengendalian (RTP) yang telah <strong>melebihi batas waktu pelaksanaan</strong>. Mohon periksa tindakan dengan badge merah di bawah ini dan lakukan percepatan atau pembaruan pemantauan.
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex justify-end">
                     <Button onClick={handleAddRtp} className="bg-indigo-600 hover:bg-indigo-700 shadow-sm">
                       <Plus className="mr-2 h-4 w-4" /> Tambah RTP Baru
@@ -321,9 +432,9 @@ export default function RtpPage() {
                         <TableHeader className="bg-slate-50">
                           <TableRow>
                             <TableHead className="min-w-[250px]">Rencana Tindak Pengendalian</TableHead>
-                            <TableHead className="min-w-[200px]">Penanggungjawab</TableHead>
-                            <TableHead className="min-w-[150px]">Target Waktu</TableHead>
-                            <TableHead className="min-w-[200px]">Bentuk Komunikasi</TableHead>
+                            <TableHead className="min-w-[180px]">Penanggungjawab</TableHead>
+                            <TableHead className="min-w-[200px]">Target Waktu & Batas Waktu</TableHead>
+                            <TableHead className="min-w-[180px]">Bentuk Komunikasi</TableHead>
                             <TableHead className="text-center w-[100px] sticky right-0 bg-slate-50 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)] z-10">Aksi</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -333,7 +444,12 @@ export default function RtpPage() {
                               <TableRow key={rtp.id} className="hover:bg-slate-50/50">
                                 <TableCell className="font-medium text-slate-800 whitespace-pre-wrap">{rtp.rencana}</TableCell>
                                 <TableCell className="text-slate-600">{rtp.penanggungjawab}</TableCell>
-                                <TableCell className="text-slate-600">{rtp.targetWaktu}</TableCell>
+                                <TableCell className="text-slate-600">
+                                  <div className="space-y-1.5">
+                                    <div className="font-semibold text-slate-800 text-sm">{rtp.targetWaktu || "-"}</div>
+                                    <RtpStatusBadge rtp={rtp} fallbackYear={selectedRisiko.tahun || activeYear} showDaysText={true} />
+                                  </div>
+                                </TableCell>
                                 <TableCell className="text-slate-600">{rtp.bentukKomunikasi}</TableCell>
                                 <TableCell className="text-center sticky right-0 bg-white/95 backdrop-blur-sm shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.05)]">
                                   <div className="flex items-center justify-center gap-1">
@@ -402,28 +518,135 @@ export default function RtpPage() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-3">
-                        <Label htmlFor="penanggungjawab" className="text-base font-semibold">Penanggungjawab *</Label>
-                        <Input 
-                          id="penanggungjawab" 
-                          placeholder="Nama / Jabatan Penanggungjawab" 
-                          value={formData.penanggungjawab}
-                          onChange={(e) => setFormData({...formData, penanggungjawab: e.target.value})}
-                          required
-                        />
+                    <div className="space-y-3">
+                      <Label htmlFor="penanggungjawab" className="text-base font-semibold">Penanggungjawab *</Label>
+                      <Input 
+                        id="penanggungjawab" 
+                        placeholder="Nama / Jabatan Penanggungjawab" 
+                        value={formData.penanggungjawab}
+                        onChange={(e) => setFormData({...formData, penanggungjawab: e.target.value})}
+                        required
+                      />
+                    </div>
+
+                    {/* PENGATURAN TARGET WAKTU RTP */}
+                    <div className="space-y-4 rounded-xl border border-indigo-100 bg-indigo-50/30 p-4">
+                      <div className="flex items-center justify-between border-b border-indigo-100/80 pb-2">
+                        <div>
+                          <Label className="text-base font-bold text-slate-800 flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-indigo-600" />
+                            Target Waktu RTP *
+                          </Label>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Pilih model target waktu untuk memonitor masa pelaksanaan dan mendeteksi keterlambatan secara otomatis.
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="space-y-3">
-                        <Label htmlFor="targetWaktu" className="text-base font-semibold">Target Waktu RTP *</Label>
-                        <Input 
-                          id="targetWaktu" 
-                          placeholder="contoh: Triwulan 3 2026, atau November 2026" 
-                          value={formData.targetWaktu}
-                          onChange={(e) => setFormData({...formData, targetWaktu: e.target.value})}
-                          required
-                        />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {/* 1. Tipe Target Waktu */}
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold text-slate-700">Pilihan Periode *</Label>
+                          <select
+                            value={formData.targetTipe || "bulan"}
+                            onChange={(e) => updateTargetWaktuFields({ targetTipe: e.target.value as TargetTipe })}
+                            className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:border-indigo-500 shadow-sm font-medium"
+                          >
+                            <option value="bulan">Bulan</option>
+                            <option value="rentang_bulan">Rentang Bulan</option>
+                            <option value="triwulan_1">Triwulan 1</option>
+                            <option value="triwulan_2">Triwulan 2</option>
+                            <option value="triwulan_3">Triwulan 3</option>
+                            <option value="triwulan_4">Triwulan 4</option>
+                          </select>
+                        </div>
+
+                        {/* 2. Sub-pilihan berdasarkan Tipe */}
+                        {formData.targetTipe === "bulan" && (
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-slate-700">Daftar Bulan *</Label>
+                            <select
+                              value={formData.targetBulan || "Januari"}
+                              onChange={(e) => updateTargetWaktuFields({ targetBulan: e.target.value })}
+                              className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 shadow-sm"
+                            >
+                              {MONTH_OPTIONS.map((m) => (
+                                <option key={m.value} value={m.value}>{m.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {formData.targetTipe === "rentang_bulan" && (
+                          <>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-semibold text-slate-700">Dari Bulan *</Label>
+                              <select
+                                value={formData.targetDariBulan || "Januari"}
+                                onChange={(e) => updateTargetWaktuFields({ targetDariBulan: e.target.value })}
+                                className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 shadow-sm"
+                              >
+                                {MONTH_OPTIONS.map((m) => (
+                                  <option key={m.value} value={m.value}>{m.label}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-semibold text-slate-700">Sampai Bulan *</Label>
+                              <select
+                                value={formData.targetSampaiBulan || "Desember"}
+                                onChange={(e) => updateTargetWaktuFields({ targetSampaiBulan: e.target.value })}
+                                className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 shadow-sm"
+                              >
+                                {MONTH_OPTIONS.map((m) => (
+                                  <option key={m.value} value={m.value}>{m.label}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </>
+                        )}
+
+                        {/* 3. Tahun Target Waktu */}
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold text-slate-700">Tahun Target *</Label>
+                          <Input
+                            type="text"
+                            value={formData.targetTahun || selectedRisiko?.tahun || activeYear || new Date().getFullYear().toString()}
+                            onChange={(e) => updateTargetWaktuFields({ targetTahun: e.target.value })}
+                            placeholder="contoh: 2026"
+                            className="bg-white"
+                            required
+                          />
+                        </div>
                       </div>
+
+                      {/* Live Status & Deadline Alert Preview */}
+                      <div className="mt-2 pt-2 border-t border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white/80 p-3 rounded-lg border border-slate-200">
+                        <div className="text-xs">
+                          <span className="text-slate-500">Target Waktu Terformat: </span>
+                          <span className="font-bold text-slate-800 ml-1">{formData.targetWaktu || "-"}</span>
+                        </div>
+                        <div className="shrink-0">
+                          <RtpStatusBadge
+                            rtp={formData}
+                            fallbackYear={formData.targetTahun || selectedRisiko?.tahun || activeYear}
+                            showDaysText={true}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Peringatan jika melebihi batas waktu */}
+                      {getRtpDeadlineInfo(formData, formData.targetTahun || selectedRisiko?.tahun || activeYear).isOverdue && (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800 flex items-start gap-2.5">
+                          <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5 animate-bounce" />
+                          <div>
+                            <p className="font-bold text-red-900">Perhatian: Target waktu yang dipilih sudah melebihi batas waktu!</p>
+                            <p className="text-red-700 mt-0.5">
+                              Batas akhir pelaksanaan untuk target ini adalah {getRtpDeadlineInfo(formData, formData.targetTahun || selectedRisiko?.tahun || activeYear).deadlineFormatted}, yang telah berlalu dari hari ini.
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="space-y-3">

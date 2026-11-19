@@ -69,6 +69,8 @@ import {
 import { cn } from "cn";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/logger";
+import { RtpStatusBadge, RtpDeadlineAlert } from "@/components/RtpStatusBadge";
+import { getRtpDeadlineInfo } from "@/lib/rtp-deadline";
 
 // Matriks Besaran Risiko 5x5 (Permenpan RB No. 5/2020)
 const RISK_MATRIX: Record<number, Record<number, number>> = {
@@ -116,6 +118,11 @@ interface CompletedRTP {
   rencana: string;
   penanggungjawab: string;
   targetWaktu: string;
+  targetTipe?: string;
+  targetBulan?: string;
+  targetDariBulan?: string;
+  targetSampaiBulan?: string;
+  targetTahun?: string;
   bentukKomunikasi?: string;
 
   // Pemantauan (Progress 100% / Selesai)
@@ -314,6 +321,11 @@ export default function AnalisisRTPPage() {
               rencana: rtp.rencana || "Tanpa Rencana Aksi",
               penanggungjawab: rtp.penanggungjawab || "-",
               targetWaktu: rtp.targetWaktu || "-",
+              targetTipe: rtp.targetTipe,
+              targetBulan: rtp.targetBulan,
+              targetDariBulan: rtp.targetDariBulan,
+              targetSampaiBulan: rtp.targetSampaiBulan,
+              targetTahun: rtp.targetTahun,
               bentukKomunikasi: rtp.bentukKomunikasi || "-",
               pemantauan: rtp.pemantauan,
               efektifitas: rtp.efektifitas,
@@ -980,12 +992,13 @@ export default function AnalisisRTPPage() {
                         </TableCell>
 
                         {/* PIC & Target */}
-                        <TableCell className="space-y-0.5">
+                        <TableCell className="space-y-1">
                           <p className="font-medium text-slate-800">{item.penanggungjawab}</p>
-                          <p className="text-[10px] text-slate-500 font-mono flex items-center gap-1">
+                          <p className="text-[10px] text-slate-600 font-mono flex items-center gap-1 font-semibold">
                             <Clock className="w-3 h-3 text-slate-400" />
                             {item.targetWaktu}
                           </p>
+                          <RtpStatusBadge rtp={item} fallbackYear={item.tahun || activeYear} compact={true} />
                         </TableCell>
 
                         {/* Progres Pelaksanaan & Eviden */}
@@ -1491,6 +1504,8 @@ export default function AnalisisRTPPage() {
                     </h4>
                   </div>
 
+                  <RtpDeadlineAlert rtp={selectedItem} fallbackYear={selectedItem.tahun || activeYear} />
+
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
                     {/* Akar Masalah */}
                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 flex flex-col justify-between">
@@ -1522,9 +1537,10 @@ export default function AnalisisRTPPage() {
                         <span className="font-bold text-slate-700 uppercase tracking-wider text-[11px] block mb-1">
                           Penanggung Jawab &amp; Jadwal
                         </span>
-                        <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 space-y-1">
+                        <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 space-y-1.5">
                           <p className="text-slate-800 font-semibold">{selectedItem.penanggungjawab}</p>
-                          <p className="text-slate-500 font-mono text-[11px]">Target: {selectedItem.targetWaktu}</p>
+                          <p className="text-slate-600 font-mono text-[11px] font-semibold">Target: {selectedItem.targetWaktu}</p>
+                          <RtpStatusBadge rtp={selectedItem} fallbackYear={selectedItem.tahun || activeYear} compact={true} />
                           <p className="text-slate-500 text-[11px]">
                             Realisasi: {selectedItem.pemantauan?.waktuPelaksanaan || (currentAnalysis.isCompleted ? "Selesai Sesuai Target" : currentAnalysis.isInProgress ? "Dalam Pelaksanaan" : "Belum Mulai")}
                           </p>

@@ -10,16 +10,26 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Loader2, Save, FileText, CheckCircle, Clock } from "lucide-react";
+import { Loader2, Save, FileText, CheckCircle, Clock, AlertTriangle, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/logger";
+import { getRtpDeadlineInfo } from "@/lib/rtp-deadline";
+import { RtpStatusBadge, RtpDeadlineAlert } from "@/components/RtpStatusBadge";
 
 // Tipe Data untuk menampung RTP yang sudah di-flatten (dilebarkan) dari parent risikonya
 interface FlattenedRTP {
   riskId: string;
   pernyataanRisiko: string;
+  tahun?: string;
   rtpId: string;
   rencana: string;
+  penanggungjawab?: string;
+  targetWaktu?: string;
+  targetTipe?: string;
+  targetBulan?: string;
+  targetDariBulan?: string;
+  targetSampaiBulan?: string;
+  targetTahun?: string;
   pemantauan?: {
     progres: string;
     waktuPelaksanaan: string;
@@ -74,8 +84,16 @@ export default function PemantauanRTPPage() {
             results.push({
               riskId: docSnap.id,
               pernyataanRisiko: riskData.pernyataanRisiko || "Tanpa Judul",
+              tahun: riskData.tahun,
               rtpId: rtp.id,
               rencana: rtp.rencana || "Tanpa Nama RTP",
+              penanggungjawab: rtp.penanggungjawab,
+              targetWaktu: rtp.targetWaktu,
+              targetTipe: rtp.targetTipe,
+              targetBulan: rtp.targetBulan,
+              targetDariBulan: rtp.targetDariBulan,
+              targetSampaiBulan: rtp.targetSampaiBulan,
+              targetTahun: rtp.targetTahun,
               pemantauan: rtp.pemantauan
             });
           });
@@ -186,78 +204,98 @@ export default function PemantauanRTPPage() {
           <Table>
             <TableHeader className="bg-slate-50">
               <TableRow>
-                <TableHead className="w-[20%]">Risiko</TableHead>
-                <TableHead className="w-[20%]">Rencana Tindak Pengendalian (RTP)</TableHead>
-                <TableHead className="w-[25%]">Uraian Progres Pelaksanaan</TableHead>
-                <TableHead className="w-[12%]">Waktu</TableHead>
-                <TableHead className="w-[8%] text-center">Progres</TableHead>
-                <TableHead className="w-[15%] text-right">Aksi</TableHead>
+                <TableHead className="w-[18%]">Risiko</TableHead>
+                <TableHead className="w-[18%]">Rencana Tindak Pengendalian (RTP)</TableHead>
+                <TableHead className="w-[18%]">Target Waktu & Batas Waktu</TableHead>
+                <TableHead className="w-[20%]">Uraian Progres Pelaksanaan</TableHead>
+                <TableHead className="w-[10%]">Waktu</TableHead>
+                <TableHead className="w-[6%] text-center">Progres</TableHead>
+                <TableHead className="w-[10%] text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {flattenedRtps.length > 0 ? (
-                flattenedRtps.map((item) => (
-                  <TableRow key={`${item.riskId}-${item.rtpId}`} className="hover:bg-slate-50/50">
-                    <TableCell className="font-medium text-slate-700">
-                      {item.pernyataanRisiko}
-                    </TableCell>
-                    <TableCell className="text-slate-600">
-                      {item.rencana}
-                    </TableCell>
-                    <TableCell className="text-slate-600 text-sm">
-                      {item.pemantauan?.progres ? (
-                        <div className="line-clamp-3 whitespace-pre-wrap">
-                          {item.pemantauan.progres}
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 italic">Belum ada progres</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-slate-500 text-sm">
-                      {item.pemantauan?.waktuPelaksanaan ? (
-                        <span className="flex items-center">
-                          <Clock className="w-3 h-3 mr-1" /> {item.pemantauan.waktuPelaksanaan}
-                        </span>
-                      ) : "-"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex flex-col items-center">
-                        <span className={`text-lg font-bold ${
-                          (item.pemantauan?.persentase || 0) === 100 ? 'text-emerald-600' :
-                          (item.pemantauan?.persentase || 0) > 0 ? 'text-indigo-600' : 'text-slate-400'
-                        }`}>
-                          {item.pemantauan?.persentase || 0}%
-                        </span>
-                        {/* Simple progress bar */}
-                        <div className="w-full bg-slate-200 h-1.5 rounded-full mt-1 overflow-hidden">
-                          <div 
-                            className={`h-full ${
-                              (item.pemantauan?.persentase || 0) === 100 ? 'bg-emerald-500' : 'bg-indigo-500'
-                            }`}
-                            style={{ width: `${item.pemantauan?.persentase || 0}%` }}
-                          />
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button 
-                        size="sm" 
-                        variant={item.pemantauan ? "outline" : "default"}
-                        className={!item.pemantauan ? "bg-emerald-600 hover:bg-emerald-700" : ""}
-                        onClick={() => handleOpenModal(item)}
-                      >
-                        {item.pemantauan ? (
-                          <>Update Progres</>
-                        ) : (
-                          <>Input Pemantauan</>
+                flattenedRtps.map((item) => {
+                  const deadlineInfo = getRtpDeadlineInfo(item, item.tahun || activeYear);
+                  return (
+                    <TableRow 
+                      key={`${item.riskId}-${item.rtpId}`} 
+                      className={`hover:bg-slate-50/50 transition-colors ${
+                        deadlineInfo.isOverdue ? "bg-red-50/20" : ""
+                      }`}
+                    >
+                      <TableCell className="font-medium text-slate-700">
+                        {item.pernyataanRisiko}
+                      </TableCell>
+                      <TableCell className="text-slate-600">
+                        <div className="font-medium text-slate-800">{item.rencana}</div>
+                        {item.penanggungjawab && (
+                          <div className="text-[11px] text-slate-500 mt-0.5">PIC: {item.penanggungjawab}</div>
                         )}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
+                      </TableCell>
+                      <TableCell className="text-slate-600">
+                        <div className="space-y-1">
+                          <div className="font-semibold text-slate-800 text-xs sm:text-sm">
+                            {item.targetWaktu || "-"}
+                          </div>
+                          <RtpStatusBadge rtp={item} fallbackYear={item.tahun || activeYear} showDaysText={true} />
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-slate-600 text-sm">
+                        {item.pemantauan?.progres ? (
+                          <div className="line-clamp-3 whitespace-pre-wrap">
+                            {item.pemantauan.progres}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic">Belum ada progres</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-slate-500 text-sm">
+                        {item.pemantauan?.waktuPelaksanaan ? (
+                          <span className="flex items-center">
+                            <Clock className="w-3 h-3 mr-1" /> {item.pemantauan.waktuPelaksanaan}
+                          </span>
+                        ) : "-"}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex flex-col items-center">
+                          <span className={`text-lg font-bold ${
+                            (item.pemantauan?.persentase || 0) === 100 ? 'text-emerald-600' :
+                            (item.pemantauan?.persentase || 0) > 0 ? 'text-indigo-600' : 'text-slate-400'
+                          }`}>
+                            {item.pemantauan?.persentase || 0}%
+                          </span>
+                          {/* Simple progress bar */}
+                          <div className="w-full bg-slate-200 h-1.5 rounded-full mt-1 overflow-hidden">
+                            <div 
+                              className={`h-full ${
+                                (item.pemantauan?.persentase || 0) === 100 ? 'bg-emerald-500' : 'bg-indigo-500'
+                              }`}
+                              style={{ width: `${item.pemantauan?.persentase || 0}%` }}
+                            />
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button 
+                          size="sm" 
+                          variant={item.pemantauan ? "outline" : "default"}
+                          className={!item.pemantauan ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                          onClick={() => handleOpenModal(item)}
+                        >
+                          {item.pemantauan ? (
+                            <>Update Progres</>
+                          ) : (
+                            <>Input Pemantauan</>
+                          )}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-32 text-center text-slate-500">
+                  <TableCell colSpan={7} className="h-32 text-center text-slate-500">
                     Belum ada Rencana Tindak Pengendalian (RTP) yang dapat dipantau.<br/>
                     Pastikan Anda telah mengisi RTP pada menu "Rencana Tindak Pengendalian".
                   </TableCell>
@@ -270,7 +308,7 @@ export default function PemantauanRTPPage() {
 
       {/* Modal Input Pemantauan */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[620px]">
           <DialogHeader>
             <DialogTitle>Input Pemantauan RTP</DialogTitle>
             <DialogDescription>
@@ -279,12 +317,33 @@ export default function PemantauanRTPPage() {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-5 py-4">
+          <div className="space-y-4 py-2">
+            {/* Peringatan Melebihi Batas Waktu */}
+            <RtpDeadlineAlert rtp={selectedItem} fallbackYear={selectedItem?.tahun || activeYear} />
+
+            {/* Info Target Waktu & PIC */}
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs space-y-1.5">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Target Waktu:</span>
+                <span className="font-bold text-slate-800">{selectedItem?.targetWaktu || "-"}</span>
+              </div>
+              {selectedItem?.penanggungjawab && (
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 font-medium">Penanggungjawab:</span>
+                  <span className="font-semibold text-slate-700">{selectedItem.penanggungjawab}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center pt-1 border-t border-slate-200">
+                <span className="text-slate-500 font-medium">Status Pelaksanaan:</span>
+                <RtpStatusBadge rtp={selectedItem} fallbackYear={selectedItem?.tahun || activeYear} showDaysText={true} />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="progres">Progres Pelaksanaan RTP</Label>
+              <Label htmlFor="progres">Progres Pelaksanaan RTP *</Label>
               <Textarea 
                 id="progres"
-                placeholder="Jelaskan progres pelaksanaan yang sudah dilakukan..."
+                placeholder="Jelaskan progres pelaksanaan yang sudah dilakukan secara jelas..."
                 value={formData.progres}
                 onChange={(e) => setFormData({...formData, progres: e.target.value})}
                 className="min-h-[100px]"
@@ -302,7 +361,7 @@ export default function PemantauanRTPPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="persentase">Persentase Pelaksanaan (%)</Label>
+                <Label htmlFor="persentase">Persentase Pelaksanaan (%) *</Label>
                 <div className="relative">
                   <Input 
                     id="persentase"

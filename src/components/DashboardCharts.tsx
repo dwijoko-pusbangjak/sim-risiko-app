@@ -35,11 +35,17 @@ import {
   Sparkles,
   Info
 } from "lucide-react";
+import { getRtpDeadlineInfo } from "@/lib/rtp-deadline";
 
 interface RTP {
   id?: string;
   rencana?: string;
   targetWaktu?: string;
+  targetTipe?: string;
+  targetBulan?: string;
+  targetDariBulan?: string;
+  targetSampaiBulan?: string;
+  targetTahun?: string;
   penanggungJawab?: string;
   pemantauan?: {
     persentase?: number;
@@ -264,12 +270,10 @@ export function DashboardCharts({ risks }: DashboardChartsProps) {
             belum++;
           }
 
-          if (p < 100 && rtp.targetWaktu) {
-            const tDate = new Date(rtp.targetWaktu);
-            if (!isNaN(tDate.getTime()) && tDate.getTime() < Date.now()) {
-              terlambat++;
-              overdueList.push({ rtp, riskName: r.pernyataanRisiko || "-" });
-            }
+          const deadlineInfo = getRtpDeadlineInfo(rtp, r.tahun);
+          if (deadlineInfo.isOverdue) {
+            terlambat++;
+            overdueList.push({ rtp, riskName: r.pernyataanRisiko || "-" });
           }
         });
       }
