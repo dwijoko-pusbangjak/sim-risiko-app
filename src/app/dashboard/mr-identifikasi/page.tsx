@@ -52,21 +52,38 @@ export default function IdentifikasiRisikoPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Filter & Pengelompokan Berdasarkan Indikator Kinerja
-  const [searchTerm, setSearchTerm] = useState("");
+  // Filter & Pengelompokan Berdasarkan IKU
+  const [selectedIku, setSelectedIku] = useState<string>("ALL");
+  const [kinerjaList, setKinerjaList] = useState<{ id: string; indikator: string; sasaran: string }[]>([]);
+
+  // Daftar IKU unik sesuai unit kerja (kombinasi master sasaran & data risiko eksisting)
+  const availableIkuList = useMemo(() => {
+    const set = new Set<string>();
+
+    // 1. Ambil dari master data sasaran unit kerja
+    kinerjaList.forEach(k => {
+      if (k.indikator && k.indikator.trim()) {
+        set.add(k.indikator.trim());
+      }
+    });
+
+    // 2. Ambil dari seluruh data identifikasi risiko unit ini
+    risikoList.forEach(r => {
+      if (r.indikatorKinerja && r.indikatorKinerja.trim()) {
+        set.add(r.indikatorKinerja.trim());
+      }
+    });
+
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [kinerjaList, risikoList]);
 
   const filteredRisikoList = useMemo(() => {
-    if (!searchTerm.trim()) return risikoList;
-    const term = searchTerm.toLowerCase();
+    if (!selectedIku || selectedIku === "ALL") return risikoList;
+    const target = selectedIku.trim().toLowerCase();
     return risikoList.filter(item => 
-      item.indikatorKinerja?.toLowerCase().includes(term) ||
-      item.sasaranTerkait?.toLowerCase().includes(term) ||
-      item.pernyataanRisiko?.toLowerCase().includes(term) ||
-      item.permasalahan?.toLowerCase().includes(term) ||
-      item.kategori?.toLowerCase().includes(term) ||
-      item.pemilikRisiko?.toLowerCase().includes(term)
+      (item.indikatorKinerja || "").trim().toLowerCase() === target
     );
-  }, [risikoList, searchTerm]);
+  }, [risikoList, selectedIku]);
 
   // Kelompokkan risiko berdasarkan Indikator Kinerja (agar indikator yang sama hanya ditulis 1 kali)
   const groupedRisiko = useMemo(() => {
@@ -154,8 +171,6 @@ export default function IdentifikasiRisikoPage() {
     }
   };
 
-  // Master Data (Indikator & Sasaran)
-  const [kinerjaList, setKinerjaList] = useState<{ id: string; indikator: string; sasaran: string }[]>([]);
 
   // Form State
   const [formData, setFormData] = useState<IdentifikasiRisiko>({
@@ -242,6 +257,40 @@ export default function IdentifikasiRisikoPage() {
           }
         });
       }
+
+      // Fallback jika belum terambil berdasarkan role
+      if (list.length === 0 && user.unitName) {
+        // Coba sasaran kegiatan sesuai unit kerja
+        const qKeg = query(collection(db, "sasaran_kegiatan"), where("unitName", "==", user.unitName));
+        const snapKeg = await getDocs(qKeg);
+        snapKeg.docs.forEach(d => {
+          const data = d.data() as SasaranKegiatan;
+          if (data.indikators && data.indikators.length > 0) {
+            data.indikators.forEach((ind, i) => {
+              list.push({ id: d.id + "_" + i, indikator: ind.name, sasaran: data.name });
+            });
+          } else if (data.ikk) {
+            list.push({ id: d.id, indikator: data.ikk, sasaran: data.name });
+          }
+        });
+
+        // Coba sasaran program sesuai unit kerja
+        if (list.length === 0) {
+          const qProg = query(collection(db, "sasaran_program"), where("unitName", "==", user.unitName));
+          const snapProg = await getDocs(qProg);
+          snapProg.docs.forEach(d => {
+            const data = d.data() as SasaranProgram;
+            if (data.indikators && data.indikators.length > 0) {
+              data.indikators.forEach((ind, i) => {
+                list.push({ id: d.id + "_" + i, indikator: ind.name, sasaran: data.name });
+              });
+            } else if (data.ikp) {
+              list.push({ id: d.id, indikator: data.ikp, sasaran: data.name });
+            }
+          });
+        }
+      }
+
       setKinerjaList(list);
     } catch (error) {
       console.error("Gagal mengambil master kinerja:", error);
@@ -406,8 +455,9 @@ export default function IdentifikasiRisikoPage() {
             </div>
             <div>
               <h2 className="text-xl font-bold tracking-tight text-slate-900">Identifikasi Risiko</h2>
-              <p className="text-xs text-slate-500">
-                Daftar risiko Tahun Anggaran {activeYear} dikelompokkan berdasarkan Indikator Sasaran Kinerja.
+              <p className="text-xs text-slate-500 font-medium flex items-center gap-1.5 mt-0.5">
+                <Filter className="w-3.5 h-3.5 text-sky-600" />
+                <span>Filter Risiko Berdasarkan IKU</span>
               </p>
             </div>
           </div>
@@ -434,29 +484,58 @@ export default function IdentifikasiRisikoPage() {
         </div>
       </div>
 
-      {/* Bar Pencarian & Info Tampilan */}
+      {/* Filter Risiko Berdasarkan IKU (Dropdown Sesuai Unit Kerja) */}
       {!isFormVisible && (
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <Input
-              type="text"
-              placeholder="Cari indikator kinerja, sasaran, atau risiko..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 bg-white border-slate-200 text-xs h-9 rounded-xl shadow-2xs"
-            />
-            {searchTerm && (
-              <button 
-                onClick={() => setSearchTerm("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-semibold"
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 sm:p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 flex-1 max-w-2xl">
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-sky-50 border border-sky-200 text-sky-700 flex items-center justify-center shrink-0">
+                <Filter className="w-4 h-4 text-sky-600" />
+              </div>
+              <span className="text-xs font-bold text-slate-700 whitespace-nowrap">
+                Pilih IKU:
+              </span>
+            </div>
+
+            <div className="w-full sm:flex-1 min-w-[280px]">
+              <Select
+                value={selectedIku}
+                onValueChange={(val) => setSelectedIku(val)}
               >
-                ✕
-              </button>
+                <SelectTrigger className="w-full bg-white border-slate-300 text-xs h-9 rounded-xl shadow-2xs focus:ring-sky-500">
+                  <SelectValue placeholder="Pilih IKU Unit Kerja..." />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  <SelectItem value="ALL" className="text-xs font-bold text-sky-800">
+                    Semua IKU / Indikator Kinerja ({user?.unitName || "Unit Kerja"})
+                  </SelectItem>
+                  {availableIkuList.map((iku, idx) => (
+                    <SelectItem key={idx} value={iku} className="text-xs">
+                      {iku}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedIku && selectedIku !== "ALL" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedIku("ALL")}
+                className="h-9 px-2.5 text-xs text-slate-500 hover:text-red-600 shrink-0 cursor-pointer"
+                title="Tampilkan semua IKU"
+              >
+                <X className="w-3.5 h-3.5 mr-1" /> Reset
+              </Button>
             )}
           </div>
-          <div className="text-xs text-slate-500 flex items-center gap-1.5">
-            <span>Menampilkan <strong>{filteredRisikoList.length}</strong> dari <strong>{risikoList.length}</strong> risiko ({groupedRisiko.length} kelompok indikator)</span>
+
+          <div className="text-xs text-slate-500 flex items-center gap-1.5 self-start sm:self-center">
+            <span>
+              Menampilkan <strong>{filteredRisikoList.length}</strong> dari <strong>{risikoList.length}</strong> risiko
+              {selectedIku !== "ALL" ? " (Terfilter 1 IKU)" : ` (${groupedRisiko.length} kelompok IKU)`}
+            </span>
           </div>
         </div>
       )}
@@ -776,11 +855,11 @@ export default function IdentifikasiRisikoPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={15} className="h-36 text-center text-slate-500">
-                      {searchTerm ? (
+                      {selectedIku && selectedIku !== "ALL" ? (
                         <div className="flex flex-col items-center justify-center gap-2">
-                          <p>Tidak ditemukan risiko yang cocok dengan pencarian &ldquo;{searchTerm}&rdquo;.</p>
-                          <Button variant="outline" size="sm" onClick={() => setSearchTerm("")}>
-                            Reset Pencarian
+                          <p>Tidak ditemukan data risiko untuk IKU &ldquo;{selectedIku}&rdquo;.</p>
+                          <Button variant="outline" size="sm" onClick={() => setSelectedIku("ALL")} className="text-xs">
+                            Tampilkan Semua IKU
                           </Button>
                         </div>
                       ) : (
