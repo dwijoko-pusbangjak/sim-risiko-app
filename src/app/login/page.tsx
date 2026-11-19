@@ -24,7 +24,7 @@ import {
   TrendingUp,
   Award
 } from "lucide-react";
-import { AnimatedMascot } from "@/components/AnimatedMascot";
+import { MASCOT_IMAGE_BASE64 } from "@/lib/mascot-data";
 
 interface CaptchaData {
   code: string;
@@ -397,12 +397,18 @@ export default function LoginPage() {
               </span>
             </div>
 
-            {/* Karakter Maskot Si-MaRi dengan Animasi Tangan Menunjuk Tulisan & Mulut Berbicara */}
+            {/* Karakter Maskot Si-MaRi */}
             <div className="relative shrink-0 flex items-center justify-center">
-              <AnimatedMascot
-                isSpeaking={isMsgVisible}
-                onMascotClick={handleSpeakMascotMessage}
-                className="w-32 lg:w-40"
+              {/* Efek Cahaya Pendar Biru Halus di Belakang Maskot */}
+              <div className="absolute w-32 h-32 bg-blue-400/20 rounded-full blur-xl pointer-events-none" />
+
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={MASCOT_IMAGE_BASE64}
+                alt="Maskot Karakter Si-MaRi Kemendes PDT"
+                width={329}
+                height={377}
+                className="w-32 lg:w-40 h-auto object-contain drop-shadow-[0_12px_20px_rgba(30,64,175,0.2)] select-none transition-transform hover:scale-105 duration-300"
               />
             </div>
           </div>
