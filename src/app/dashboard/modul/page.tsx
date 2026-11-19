@@ -9,6 +9,7 @@ import {
   Search,
   CheckCircle2,
   ChevronRight,
+  ChevronLeft,
   ChevronDown,
   Target,
   ClipboardList,
@@ -38,16 +39,19 @@ import {
   PlayCircle,
   Flag,
   CornerDownRight,
-  ExternalLink
+  ExternalLink,
+  X
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 
 export default function ModulPanduanPage() {
   const { user, activeYear } = useAuth();
-  const [selectedStage, setSelectedStage] = useState<number | null>(null);
+  const [selectedStage, setSelectedStage] = useState<number>(1);
+  const [activeModalStage, setActiveModalStage] = useState<any | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [copiedFormula, setCopiedFormula] = useState(false);
-  const [filterRole, setFilterRole] = useState<"all" | "unit" | "auditor" | "kementerian">("all");
+  const [showAllDetails, setShowAllDetails] = useState(false);
 
   const handleCopyFormula = () => {
     const formulaText = "[Penyebab / Akar Masalah] (Adanya... / Karena...) -> [Peristiwa Risiko] (Menyebabkan / Berpotensi terjadinya...) -> [Dampak] (Mengakibatkan / Berdampak pada...)";
@@ -57,19 +61,11 @@ export default function ModulPanduanPage() {
     setTimeout(() => setCopiedFormula(false), 2500);
   };
 
-  const scrollToStage = (stageNumber: number) => {
-    setSelectedStage(stageNumber);
-    const element = document.getElementById(`stage-${stageNumber}`);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
-
   const handlePrint = () => {
     window.print();
   };
 
-  // 8 Tahapan Alur Lengkap Proses Aplikasi
+  // 7 Tahapan Alur Lengkap Proses Aplikasi
   const stages = [
     {
       step: 1,
@@ -244,13 +240,13 @@ export default function ModulPanduanPage() {
         },
         {
           no: "4.4",
-          nama: "Tentukan Target Waktu Penyelesaian",
-          detail: "Pilih periode penyelesaian realistis: Triwulan I, Triwulan II, Triwulan III, atau Triwulan IV."
+          nama: "Pilih Target Waktu (Bulan, Rentang Bulan, atau Triwulan)",
+          detail: "Pilih model target waktu yang presisi: Bulan (Jan-Des), Rentang Bulan (Dari - Sampai), atau Triwulan 1-4. Sistem otomatis mendeteksi status batas waktu & keterlambatan."
         },
         {
           no: "4.5",
-          nama: "Tetapkan Indikator Bukti Output",
-          detail: "Cantumkan dokumen bukti fisik penyelesaian tindakan (contoh: Dokumen SOP, Notulensi Rapat, SK Tim)."
+          nama: "Tetapkan Bentuk Komunikasi & Indikator Bukti Output",
+          detail: "Cantumkan bentuk komunikasi serta dokumen bukti fisik penyelesaian tindakan (contoh: Dokumen SOP, Notulensi Rapat, SK Tim)."
         }
       ],
       output: "Matriks Rencana Tindak Pengendalian (RTP) terukur per peristiwa risiko.",
@@ -315,7 +311,7 @@ export default function ModulPanduanPage() {
       menuName: "Menu Pemantauan RTP, Pencatatan Keterjadian, & Efektifitas",
       roles: ["Unit Kerja Eselon 1", "Unit Kerja Eselon 2", "Pengelola Risiko Kementerian"],
       roleFilter: "unit",
-      color: "from-teal-600 to-emerald-700",
+      color: "from-teal-600 to-cyan-700",
       accentBg: "bg-teal-50 border-teal-200 text-teal-900",
       badgeColor: "bg-teal-100 text-teal-800 border-teal-200",
       icon: BarChart4,
@@ -323,8 +319,8 @@ export default function ModulPanduanPage() {
       langkahTeknis: [
         {
           no: "6.1",
-          nama: "Pemantauan Pelaksanaan RTP Triwulanan",
-          detail: "Setiap akhir triwulan, laporkan status tindakan: Belum Dilaksanakan (0%), Dalam Proses (1%-99%), atau Selesai (100%)."
+          nama: "Pemantauan Pelaksanaan RTP Berkala",
+          detail: "Laporkan status tindakan berkala: persentase progres (0-100%), link dokumen bukti eviden, dan perhatikan status apakah Dalam Masa Pelaksanaan atau Melebihi Batas Waktu."
         },
         {
           no: "6.2",
@@ -362,7 +358,7 @@ export default function ModulPanduanPage() {
       menuName: "Menu Cetak Laporan & Dashboard Infografis",
       roles: ["Seluruh Unit Kerja", "Pimpinan Unit Kerja", "Pengelola Risiko Kementerian"],
       roleFilter: "kementerian",
-      color: "from-slate-800 to-slate-950",
+      color: "from-[#122b54] to-slate-800",
       accentBg: "bg-slate-100 border-slate-300 text-slate-900",
       badgeColor: "bg-slate-200 text-slate-800 border-slate-300",
       icon: FileText,
@@ -397,56 +393,73 @@ export default function ModulPanduanPage() {
     }
   ];
 
-  return (
-    <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 pb-20 font-sans">
-      {/* ====================================================================== */}
-      {/* 1. HEADER UTAMA                                                        */}
-      {/* ====================================================================== */}
-      <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl border border-emerald-900/50 relative overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-80 h-80 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-teal-500/20 rounded-full blur-3xl pointer-events-none" />
+  const handleStageClick = (st: typeof stages[0]) => {
+    setSelectedStage(st.step);
+    setActiveModalStage(st);
+    setIsDetailModalOpen(true);
+  };
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
+  const handleNavigateModal = (targetStep: number) => {
+    const found = stages.find((s) => s.step === targetStep);
+    if (found) {
+      setActiveModalStage(found);
+      setSelectedStage(found.step);
+    }
+  };
+
+  const currentSelectedStageData = stages.find((s) => s.step === selectedStage) || stages[0];
+
+  return (
+    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300 pb-20 font-sans">
+      
+      {/* ====================================================================== */}
+      {/* 1. HEADER UTAMA (DIPERKECIL & SEWARNA TEMA EXECUTIVE NAVY APLIKASI)     */}
+      {/* ====================================================================== */}
+      <div className="bg-gradient-to-r from-[#0d2140] via-[#122b54] to-[#183a6d] text-white p-4 sm:p-5 rounded-2xl shadow-md border border-blue-900/50 relative overflow-hidden">
+        <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-500/15 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-sky-400/15 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1.5 max-w-2xl">
             <div className="flex items-center gap-2">
-              <span className="p-2 bg-emerald-500/20 border border-emerald-400/30 rounded-xl">
-                <GitBranch className="w-6 h-6 text-emerald-400" />
+              <span className="p-1.5 bg-blue-500/20 border border-blue-400/30 rounded-lg">
+                <GitBranch className="w-4 h-4 text-sky-400" />
               </span>
-              <span className="text-xs bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full border border-emerald-500/30 font-bold uppercase tracking-wider">
+              <span className="text-[11px] bg-blue-500/20 text-sky-300 px-2.5 py-0.5 rounded-full border border-blue-400/30 font-bold uppercase tracking-wider">
                 Alur Proses Penggunaan Aplikasi
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
-              Modul Diagram Alur & Panduan Tahapan SIM-Risiko
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white leading-snug">
+              Modul Diagram Alur &amp; Panduan Tahapan SIM-Risiko
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Panduan terstruktur alur proses operasional Sistem Informasi Manajemen Risiko Kemendesa PDT dari tahap awal login hingga pelaporan dinas, disajikan dalam bentuk <strong>diagram alur terpadu</strong> dan <strong>penjelasan detail setiap tahapan</strong>.
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Panduan terstruktur siklus manajemen risiko Kemendesa PDT dari login hingga pelaporan dinas, disajikan dalam bentuk <strong>diagram alur huruf Z</strong>. Klik pada kotak tahapan untuk membaca detail langkah teknis.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 shrink-0 print:hidden">
+          <div className="flex flex-wrap items-center gap-2 shrink-0 print:hidden">
             <button
               onClick={handlePrint}
-              className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 border border-white/20 backdrop-blur-md transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95"
+              className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-semibold flex items-center gap-2 border border-white/20 backdrop-blur-md transition-all cursor-pointer shadow-xs hover:scale-102 active:scale-98"
               title="Cetak modul diagram atau simpan sebagai PDF"
             >
-              <Printer className="w-4 h-4 text-emerald-300" />
+              <Printer className="w-3.5 h-3.5 text-sky-300" />
               <span>Cetak Modul / PDF</span>
             </button>
 
             <button
               onClick={handleCopyFormula}
-              className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95"
+              className="px-3.5 py-2 bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 text-white rounded-lg text-xs font-semibold flex items-center gap-2 shadow-sm transition-all cursor-pointer hover:scale-102 active:scale-98"
               title="Salin formula baku pernyataan risiko"
             >
               {copiedFormula ? (
                 <>
-                  <Check className="w-4 h-4 text-amber-300" />
+                  <Check className="w-3.5 h-3.5 text-amber-300" />
                   <span>Formula Disalin!</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-4 h-4 text-emerald-200" />
+                  <Copy className="w-3.5 h-3.5 text-sky-200" />
                   <span>Salin Rumus Risiko</span>
                 </>
               )}
@@ -456,429 +469,320 @@ export default function ModulPanduanPage() {
       </div>
 
       {/* ====================================================================== */}
-      {/* 2. DIAGRAM ALUR PROSES PENGGUNAAN APLIKASI (VISUAL FLOWCHART)         */}
+      {/* 2. DIAGRAM ALUR PROSES BERBENTUK HURUF Z (WORKFLOW DIAGRAM)            */}
       {/* ====================================================================== */}
-      <Card className="shadow-lg border-2 border-emerald-600/30 overflow-hidden bg-white">
-        <CardHeader className="bg-slate-50 border-b border-slate-200 p-5">
+      <Card className="shadow-sm border border-slate-200 overflow-hidden bg-white rounded-2xl">
+        <CardHeader className="bg-slate-50/80 border-b border-slate-200 p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <GitBranch className="w-5 h-5 text-emerald-700" />
-                <CardTitle className="text-base sm:text-lg font-bold text-slate-900">
-                  Diagram Alur Proses Penggunaan Aplikasi (Workflow Diagram)
+                <GitBranch className="w-5 h-5 text-blue-700" />
+                <CardTitle className="text-base sm:text-lg font-bold text-[#122b54]">
+                  Diagram Alur Proses Penggunaan Aplikasi (Alur Huruf Z)
                 </CardTitle>
               </div>
-              <CardDescription className="text-xs text-slate-500 mt-1">
-                Bagan visual langkah demi langkah siklus manajemen risiko. Klik pada kotak tahapan untuk langsung menuju penjelasan detailnya di bawah.
+              <CardDescription className="text-xs text-slate-500 mt-0.5">
+                Alur langkah demi langkah siklus manajemen risiko berurutan dari kiri ke kanan, diagonal, lalu berlanjut di baris kedua. <strong>Klik pada kotak tahapan</strong> untuk membuka rincian keterangannya.
               </CardDescription>
             </div>
 
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 shrink-0">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse" />
               <span>Siklus Resmi TA {activeYear}</span>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className="p-6 space-y-6">
-          {/* FLOWCHART CONTAINER */}
-          <div className="max-w-4xl mx-auto space-y-3">
-            
-            {/* NODE 0: START */}
-            <div className="flex flex-col items-center">
-              <div className="px-6 py-2.5 rounded-full bg-slate-900 text-white font-extrabold text-xs tracking-wider uppercase shadow-md flex items-center gap-2 border-2 border-slate-700">
-                <PlayCircle className="w-4 h-4 text-emerald-400" />
-                <span>MULAI: Login Pengguna &amp; Pilih Tahun Anggaran</span>
-              </div>
-              <div className="w-0.5 h-6 bg-slate-300 my-1" />
-              <ArrowDown className="w-4 h-4 text-slate-400 -mt-2" />
+        <CardContent className="p-4 sm:p-6 space-y-5 bg-slate-50/25">
+          
+          {/* TITIK MULAI */}
+          <div className="flex items-center gap-2">
+            <div className="px-3.5 py-1.5 rounded-full bg-[#122b54] text-white font-extrabold text-[11px] sm:text-xs tracking-wider uppercase shadow-xs flex items-center gap-2 border border-blue-400/40">
+              <PlayCircle className="w-3.5 h-3.5 text-sky-400" />
+              <span>MULAI: Login Pengguna &amp; Pilih Tahun Anggaran {activeYear}</span>
             </div>
-
-            {/* NODE 1: PENETAPAN KONTEKS */}
-            <div className="flex flex-col items-center">
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => scrollToStage(1)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    scrollToStage(1);
-                  }
-                }}
-                className={`w-full max-w-xl p-4 rounded-2xl border-2 transition-all cursor-pointer text-left shadow-xs hover:shadow-md hover:scale-[1.01] ${
-                  selectedStage === 1
-                    ? "border-blue-600 bg-blue-50/80 ring-4 ring-blue-100"
-                    : "border-blue-200 bg-white hover:border-blue-400"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="w-9 h-9 rounded-xl bg-blue-600 text-white font-black text-sm flex items-center justify-center shadow-xs">
-                      1
-                    </span>
-                    <div>
-                      <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                        Tahap 1: Penetapan Konteks Risiko
-                        <span className="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold">
-                          Konteks
-                        </span>
-                      </h4>
-                      <p className="text-xs text-slate-500">
-                        Sasaran Strategis/Program/Kegiatan • Analisis Stakeholders • Regulasi Acuan • Insiden Lalu
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-blue-600 shrink-0" />
-                </div>
-              </div>
-              <div className="w-0.5 h-6 bg-slate-300 my-1" />
-              <ArrowDown className="w-4 h-4 text-slate-400 -mt-2" />
-            </div>
-
-            {/* NODE 2: IDENTIFIKASI RISIKO */}
-            <div className="flex flex-col items-center">
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => scrollToStage(2)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    scrollToStage(2);
-                  }
-                }}
-                className={`w-full max-w-xl p-4 rounded-2xl border-2 transition-all cursor-pointer text-left shadow-xs hover:shadow-md hover:scale-[1.01] ${
-                  selectedStage === 2
-                    ? "border-emerald-600 bg-emerald-50/80 ring-4 ring-emerald-100"
-                    : "border-emerald-200 bg-white hover:border-emerald-400"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="w-9 h-9 rounded-xl bg-emerald-600 text-white font-black text-sm flex items-center justify-center shadow-xs">
-                      2
-                    </span>
-                    <div>
-                      <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                        Tahap 2: Identifikasi Risiko
-                        <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
-                          Identifikasi
-                        </span>
-                      </h4>
-                      <p className="text-xs text-slate-500">
-                        Formula Wajib: <strong>[Penyebab] $\rightarrow$ [Peristiwa] $\rightarrow$ [Dampak]</strong> • 5 Kategori Risiko
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-emerald-600 shrink-0" />
-                </div>
-              </div>
-              <div className="w-0.5 h-6 bg-slate-300 my-1" />
-              <ArrowDown className="w-4 h-4 text-slate-400 -mt-2" />
-            </div>
-
-            {/* NODE 3: ANALISIS RISIKO 5x5 */}
-            <div className="flex flex-col items-center">
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => scrollToStage(3)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    scrollToStage(3);
-                  }
-                }}
-                className={`w-full max-w-xl p-4 rounded-2xl border-2 transition-all cursor-pointer text-left shadow-xs hover:shadow-md hover:scale-[1.01] ${
-                  selectedStage === 3
-                    ? "border-amber-600 bg-amber-50/80 ring-4 ring-amber-100"
-                    : "border-amber-200 bg-white hover:border-amber-400"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="w-9 h-9 rounded-xl bg-amber-500 text-white font-black text-sm flex items-center justify-center shadow-xs">
-                      3
-                    </span>
-                    <div>
-                      <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                        Tahap 3: Analisis Risiko &amp; Matriks 5×5
-                        <span className="text-[10px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full font-bold">
-                          Scoring
-                        </span>
-                      </h4>
-                      <p className="text-xs text-slate-500">
-                        Kemungkinan (1-5) × Dampak (1-5) = Besaran Skor • Filter Risiko Prioritas (Skor $\ge 12$)
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-amber-600 shrink-0" />
-                </div>
-              </div>
-              <div className="w-0.5 h-6 bg-slate-300 my-1" />
-              <ArrowDown className="w-4 h-4 text-slate-400 -mt-2" />
-            </div>
-
-            {/* NODE 4: RENCANA TINDAK PENGENDALIAN (RTP) */}
-            <div className="flex flex-col items-center">
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => scrollToStage(4)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    scrollToStage(4);
-                  }
-                }}
-                className={`w-full max-w-xl p-4 rounded-2xl border-2 transition-all cursor-pointer text-left shadow-xs hover:shadow-md hover:scale-[1.01] ${
-                  selectedStage === 4
-                    ? "border-purple-600 bg-purple-50/80 ring-4 ring-purple-100"
-                    : "border-purple-200 bg-white hover:border-purple-400"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="w-9 h-9 rounded-xl bg-purple-600 text-white font-black text-sm flex items-center justify-center shadow-xs">
-                      4
-                    </span>
-                    <div>
-                      <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                        Tahap 4: Rencana Tindak Pengendalian (RTP)
-                        <span className="text-[10px] bg-purple-100 text-purple-900 px-2 py-0.5 rounded-full font-bold">
-                          Mitigasi
-                        </span>
-                      </h4>
-                      <p className="text-xs text-slate-500">
-                        Uraian Tindakan Konkret • Penanggung Jawab (Jabatan) • Target Triwulan • Bukti Output
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-purple-600 shrink-0" />
-                </div>
-              </div>
-              <div className="w-0.5 h-6 bg-slate-300 my-1" />
-              <ArrowDown className="w-4 h-4 text-slate-400 -mt-2" />
-            </div>
-
-            {/* NODE 5: PENGAJUAN & GATE AUDITOR APIP (DENGAN CABANG KEPUTUSAN REVIU) */}
-            <div className="flex flex-col items-center">
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => scrollToStage(5)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    scrollToStage(5);
-                  }
-                }}
-                className={`w-full max-w-xl p-4 rounded-2xl border-2 transition-all cursor-pointer text-left shadow-xs hover:shadow-md hover:scale-[1.01] ${
-                  selectedStage === 5
-                    ? "border-rose-600 bg-rose-50/80 ring-4 ring-rose-100"
-                    : "border-rose-200 bg-white hover:border-rose-400"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="w-9 h-9 rounded-xl bg-rose-600 text-white font-black text-sm flex items-center justify-center shadow-xs">
-                      5
-                    </span>
-                    <div>
-                      <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                        Tahap 5: Pengajuan &amp; Reviu Auditor APIP
-                        <span className="text-[10px] bg-rose-100 text-rose-900 px-2 py-0.5 rounded-full font-bold">
-                          Pengawasan Itjen
-                        </span>
-                      </h4>
-                      <p className="text-xs text-slate-500">
-                        Kirim ke Auditor APIP $\rightarrow$ Telaah Inspektorat Jenderal $\rightarrow$ Catatan Perbaikan di Inbox
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-rose-600 shrink-0" />
-                </div>
-              </div>
-
-              <div className="w-0.5 h-6 bg-slate-300 my-1" />
-              <ArrowDown className="w-4 h-4 text-slate-400 -mt-2" />
-
-              {/* DECISION NODE: HASIL REVIU APIP */}
-              <div className="w-full max-w-xl my-2 p-3 bg-slate-900 text-white rounded-2xl border border-slate-700 shadow-md text-xs">
-                <div className="flex items-center justify-center gap-2 font-bold text-amber-400 mb-2">
-                  <SearchCheck className="w-4 h-4" />
-                  <span>Gerbang Keputusan Reviu Auditor APIP:</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                  <div className="p-2.5 bg-rose-950/70 border border-rose-700/60 rounded-xl flex items-start gap-2">
-                    <XCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-bold text-rose-200 block">Ada Catatan / Perbaikan:</span>
-                      <span className="text-rose-300/90 leading-tight block mt-0.5">
-                        Unit baca catatan di Inbox $\rightarrow$ Perbaiki di Tahap 2, 3, atau 4 $\rightarrow$ Ajukan ulang.
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-2.5 bg-emerald-950/70 border border-emerald-700/60 rounded-xl flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-bold text-emerald-200 block">Disetujui APIP:</span>
-                      <span className="text-emerald-300/90 leading-tight block mt-0.5">
-                        Profil risiko disahkan $\rightarrow$ Lanjut ke pelaksanaan mitigasi &amp; pemantauan berkala.
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="w-0.5 h-6 bg-slate-300 my-1" />
-              <ArrowDown className="w-4 h-4 text-slate-400 -mt-2" />
-            </div>
-
-            {/* NODE 6: PEMANTAUAN & KETERJADIAN */}
-            <div className="flex flex-col items-center">
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => scrollToStage(6)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    scrollToStage(6);
-                  }
-                }}
-                className={`w-full max-w-xl p-4 rounded-2xl border-2 transition-all cursor-pointer text-left shadow-xs hover:shadow-md hover:scale-[1.01] ${
-                  selectedStage === 6
-                    ? "border-teal-600 bg-teal-50/80 ring-4 ring-teal-100"
-                    : "border-teal-200 bg-white hover:border-teal-400"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="w-9 h-9 rounded-xl bg-teal-600 text-white font-black text-sm flex items-center justify-center shadow-xs">
-                      6
-                    </span>
-                    <div>
-                      <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                        Tahap 6: Pemantauan, Keterjadian, &amp; Efektifitas
-                        <span className="text-[10px] bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full font-bold">
-                          Monitoring
-                        </span>
-                      </h4>
-                      <p className="text-xs text-slate-500">
-                        Progres RTP Triwulanan • Catat Insiden Riil Lapangan • Evaluasi Risiko Residual
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-teal-600 shrink-0" />
-                </div>
-              </div>
-              <div className="w-0.5 h-6 bg-slate-300 my-1" />
-              <ArrowDown className="w-4 h-4 text-slate-400 -mt-2" />
-            </div>
-
-            {/* NODE 7: PELAPORAN RESMI & DASHBOARD */}
-            <div className="flex flex-col items-center">
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => scrollToStage(7)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    scrollToStage(7);
-                  }
-                }}
-                className={`w-full max-w-xl p-4 rounded-2xl border-2 transition-all cursor-pointer text-left shadow-xs hover:shadow-md hover:scale-[1.01] ${
-                  selectedStage === 7
-                    ? "border-slate-800 bg-slate-100 ring-4 ring-slate-200"
-                    : "border-slate-300 bg-white hover:border-slate-500"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="w-9 h-9 rounded-xl bg-slate-800 text-white font-black text-sm flex items-center justify-center shadow-xs">
-                      7
-                    </span>
-                    <div>
-                      <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                        Tahap 7: Pelaporan Resmi &amp; Monitoring Dashboard
-                        <span className="text-[10px] bg-slate-200 text-slate-800 px-2 py-0.5 rounded-full font-bold">
-                          Pelaporan
-                        </span>
-                      </h4>
-                      <p className="text-xs text-slate-500">
-                        Cetak Laporan PDF Resmi (Pengesahan Pimpinan) • Unduh Excel • Peta Panas Heat Map 5×5
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-700 shrink-0" />
-                </div>
-              </div>
-              <div className="w-0.5 h-6 bg-slate-300 my-1" />
-              <ArrowDown className="w-4 h-4 text-slate-400 -mt-2" />
-            </div>
-
-            {/* NODE END: SELESAI */}
-            <div className="flex flex-col items-center">
-              <div className="px-6 py-2.5 rounded-full bg-emerald-700 text-white font-extrabold text-xs tracking-wider uppercase shadow-md flex items-center gap-2 border-2 border-emerald-500">
-                <Flag className="w-4 h-4 text-amber-300" />
-                <span>SELESAI: Profil Risiko Sah &amp; Siklus Pengendalian Berjalan</span>
-              </div>
-            </div>
-
+            <div className="h-0.5 w-6 bg-blue-300 hidden md:block" />
+            <ArrowRight className="w-3.5 h-3.5 text-blue-500 hidden md:block -ml-2" />
           </div>
+
+          {/* ================================================================== */}
+          {/* BARIS 1 ALUR Z: KIRI KE KANAN (TAHAP 1 ➔ TAHAP 2 ➔ TAHAP 3)        */}
+          {/* ================================================================== */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative items-stretch">
+            {stages.slice(0, 3).map((st, idx) => {
+              const isLastInRow = idx === 2;
+
+              return (
+                <div key={st.step} className="relative flex flex-col">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleStageClick(st)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleStageClick(st);
+                      }
+                    }}
+                    className={`p-4 rounded-xl border-2 transition-all cursor-pointer text-left shadow-xs hover:shadow-md hover:scale-[1.01] bg-white flex flex-col justify-between h-full group ${
+                      selectedStage === st.step
+                        ? "border-blue-600 bg-blue-50/40 ring-2 ring-blue-500/20"
+                        : "border-slate-200 hover:border-blue-400"
+                    }`}
+                  >
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-8 h-8 rounded-lg bg-gradient-to-r ${st.color} text-white font-black text-xs flex items-center justify-center shadow-xs shrink-0`}>
+                            {st.step}
+                          </span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border ${st.badgeColor}`}>
+                            Alur {st.step}
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 group-hover:bg-blue-600 group-hover:text-white px-2 py-0.5 rounded transition-colors flex items-center gap-1 shadow-2xs">
+                          <Info className="w-3 h-3" />
+                          <span>Detail</span>
+                        </span>
+                      </div>
+
+                      <div>
+                        <h4 className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-blue-700 transition-colors">
+                          Tahap {st.step}: {st.title}
+                        </h4>
+                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                          {st.subtitle}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600">
+                      <span className="truncate max-w-[180px] font-medium text-slate-500">
+                        {st.menuName.replace("Proses Manajemen Risiko -> ", "")}
+                      </span>
+                      <ChevronRight className="w-3.5 h-3.5 text-blue-600 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                    </div>
+                  </div>
+
+                  {/* Panah Horisontal Kiri ke Kanan di Desktop */}
+                  {!isLastInRow && (
+                    <div className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-white border border-slate-300 items-center justify-center shadow-2xs">
+                      <ArrowRight className="w-3.5 h-3.5 text-blue-600" />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ================================================================== */}
+          {/* PENGHUBUNG DIAGONAL HURUF Z: DARI KANAN ATAS KE KIRI BAWAH         */}
+          {/* ================================================================== */}
+          <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-50 via-indigo-50/70 to-blue-100/60 border border-blue-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[#122b54] text-white flex items-center justify-center font-extrabold text-sm shadow-xs shrink-0">
+                Z
+              </div>
+              <div>
+                <span className="font-bold text-xs text-[#122b54] block">
+                  Penghubung Alur Huruf "Z" — Siklus Berlanjut ke Mitigasi &amp; Pengawasan:
+                </span>
+                <span className="text-[11px] text-slate-600 leading-tight">
+                  Setelah prioritas risiko ditetapkan di Tahap 3, alur berbelok ke baris bawah untuk penyusunan mitigasi (RTP), pengawasan APIP, pemantauan, hingga pelaporan dinas.
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-blue-700 font-bold text-xs shrink-0 bg-white/80 px-3 py-1.5 rounded-lg border border-blue-200 shadow-2xs">
+              <span>Menuju Tahap 4 (RTP)</span>
+              <CornerDownRight className="w-4 h-4 text-blue-600 animate-bounce" />
+            </div>
+          </div>
+
+          {/* ================================================================== */}
+          {/* BARIS 2 ALUR Z: KIRI KE KANAN (TAHAP 4 ➔ 5 ➔ 6 ➔ 7)                */}
+          {/* ================================================================== */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative items-stretch">
+            {stages.slice(3, 7).map((st, idx) => {
+              const isLastInRow = idx === 3;
+
+              return (
+                <div key={st.step} className="relative flex flex-col">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleStageClick(st)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleStageClick(st);
+                      }
+                    }}
+                    className={`p-4 rounded-xl border-2 transition-all cursor-pointer text-left shadow-xs hover:shadow-md hover:scale-[1.01] bg-white flex flex-col justify-between h-full group ${
+                      selectedStage === st.step
+                        ? "border-blue-600 bg-blue-50/40 ring-2 ring-blue-500/20"
+                        : "border-slate-200 hover:border-blue-400"
+                    }`}
+                  >
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-8 h-8 rounded-lg bg-gradient-to-r ${st.color} text-white font-black text-xs flex items-center justify-center shadow-xs shrink-0`}>
+                            {st.step}
+                          </span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border ${st.badgeColor}`}>
+                            Alur {st.step}
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 group-hover:bg-blue-600 group-hover:text-white px-2 py-0.5 rounded transition-colors flex items-center gap-1 shadow-2xs">
+                          <Info className="w-3 h-3" />
+                          <span>Detail</span>
+                        </span>
+                      </div>
+
+                      <div>
+                        <h4 className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-blue-700 transition-colors">
+                          Tahap {st.step}: {st.title}
+                        </h4>
+                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                          {st.subtitle}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600">
+                      <span className="truncate max-w-[160px] font-medium text-slate-500">
+                        {st.menuName.replace("Proses Manajemen Risiko -> ", "").replace("Proses Riviu -> ", "")}
+                      </span>
+                      <ChevronRight className="w-3.5 h-3.5 text-blue-600 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                    </div>
+                  </div>
+
+                  {/* Panah Horisontal Kiri ke Kanan di Desktop */}
+                  {!isLastInRow && (
+                    <div className="hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-white border border-slate-300 items-center justify-center shadow-2xs">
+                      <ArrowRight className="w-3.5 h-3.5 text-blue-600" />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* TITIK SELESAI */}
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="h-0.5 w-6 bg-emerald-400 hidden md:block" />
+            <div className="px-4 py-1.5 rounded-full bg-emerald-700 text-white font-extrabold text-[11px] sm:text-xs tracking-wider uppercase shadow-xs flex items-center gap-2 border border-emerald-400">
+              <CheckCircle className="w-3.5 h-3.5 text-amber-300" />
+              <span>SELESAI: Profil Risiko Sah &amp; Siklus Pengendalian Berjalan</span>
+            </div>
+          </div>
+
         </CardContent>
       </Card>
 
       {/* ====================================================================== */}
-      {/* 3. PENJELASAN SETIAP ALUR TAHAPAN SECARA MENYELURUH                    */}
+      {/* 3. PANEL TAMPILAN DETAIL TAHAPAN YANG SEDANG DIPILIH                   */}
       {/* ====================================================================== */}
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <BookMarked className="w-5 h-5 text-emerald-600" />
-              Penjelasan Rinci Setiap Alur Tahapan
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500">
-              Pelajari langkah teknis, tujuan, menu aplikasi, dan ketentuan penting untuk masing-masing tahapan alur di atas.
-            </p>
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
+          <div className="flex items-center gap-3">
+            <span className={`w-9 h-9 rounded-xl bg-gradient-to-r ${currentSelectedStageData.color} text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs`}>
+              {currentSelectedStageData.step}
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-sm sm:text-base text-slate-900">
+                  Keterangan Tahap {currentSelectedStageData.step}: {currentSelectedStageData.title}
+                </h3>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border ${currentSelectedStageData.badgeColor}`}>
+                  Aktif
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {currentSelectedStageData.subtitle}
+              </p>
+            </div>
           </div>
 
-          {/* Quick Jump Buttons */}
-          <div className="flex flex-wrap items-center gap-1.5 print:hidden">
-            <span className="text-[11px] font-bold text-slate-400 mr-1">Lompat ke:</span>
-            {[1, 2, 3, 4, 5, 6, 7].map((num) => (
-              <button
-                key={num}
-                onClick={() => scrollToStage(num)}
-                className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  selectedStage === num
-                    ? "bg-emerald-600 text-white shadow-xs scale-105"
-                    : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-                }`}
-              >
-                {num}
-              </button>
-            ))}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => {
+                setActiveModalStage(currentSelectedStageData);
+                setIsDetailModalOpen(true);
+              }}
+              className="px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 border border-blue-200 transition-colors cursor-pointer"
+            >
+              <Info className="w-3.5 h-3.5" />
+              <span>Buka Pop-up Detail Lengkap</span>
+            </button>
+            <Link
+              href={currentSelectedStageData.menuPath}
+              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Buka {currentSelectedStageData.menuName}</span>
+            </Link>
           </div>
         </div>
 
-        {/* LIST OF STAGES DETAIL CARDS */}
-        <div className="space-y-6">
-          {stages.map((st) => {
-            const IconComp = st.icon;
+        {/* Ringkasan Cepat Tahapan Terpilih */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+            <span className="font-bold text-slate-500 uppercase tracking-wider text-[11px] block">🎯 Tujuan:</span>
+            <p className="text-slate-700 leading-relaxed font-medium">{currentSelectedStageData.tujuan}</p>
+          </div>
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+            <span className="font-bold text-slate-500 uppercase tracking-wider text-[11px] block">👥 Pelaksana:</span>
+            <div className="flex flex-wrap gap-1">
+              {currentSelectedStageData.roles.map((r, i) => (
+                <span key={i} className="bg-white text-slate-700 font-semibold px-2 py-0.5 rounded border border-slate-200 text-[10px]">
+                  {r}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="p-3 bg-blue-50/70 rounded-xl border border-blue-200 space-y-1">
+            <span className="font-bold text-blue-900 uppercase tracking-wider text-[11px] block">📦 Output:</span>
+            <p className="text-blue-950 font-semibold leading-relaxed">{currentSelectedStageData.output}</p>
+          </div>
+        </div>
 
-            return (
+        {/* Tombol Toggle Buka Seluruh Panduan Rinci 7 Tahapan */}
+        <div className="pt-2 flex justify-center">
+          <button
+            onClick={() => setShowAllDetails(!showAllDetails)}
+            className="text-xs font-semibold text-slate-600 hover:text-blue-700 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            <span>{showAllDetails ? "Sembunyikan Seluruh Panduan Lengkap" : "Tampilkan Seluruh Panduan Lengkap (7 Tahapan Sekaligus)"}</span>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAllDetails ? "rotate-180" : ""}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* ====================================================================== */}
+      {/* 4. PENJELASAN LENGKAP SETIAP TAHAPAN (KONDISIONAL / CETAK)              */}
+      {/* ====================================================================== */}
+      {showAllDetails && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="border-b border-slate-200 pb-3">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+              <BookMarked className="w-5 h-5 text-blue-600" />
+              Penjelasan Rinci Seluruh Alur Tahapan (1 s.d. 7)
+            </h2>
+            <p className="text-xs text-slate-500">
+              Uraian menyeluruh langkah teknis, tujuan, menu aplikasi, dan ketentuan Do &amp; Don't untuk setiap tahapan.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            {stages.map((st) => (
               <div
                 key={st.step}
                 id={st.id}
-                className={`scroll-mt-24 rounded-2xl border-2 transition-all p-5 sm:p-6 shadow-sm bg-white ${
+                className={`scroll-mt-24 rounded-2xl border-2 transition-all p-5 sm:p-6 shadow-xs bg-white ${
                   selectedStage === st.step
-                    ? "border-emerald-600 ring-4 ring-emerald-100 shadow-md"
+                    ? "border-blue-600 ring-2 ring-blue-100 shadow-md"
                     : "border-slate-200 hover:border-slate-300"
                 }`}
               >
@@ -906,7 +810,7 @@ export default function ModulPanduanPage() {
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     <Link
                       href={st.menuPath}
-                      className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg font-semibold flex items-center gap-1.5 border border-emerald-200 transition-colors"
+                      className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-lg font-semibold flex items-center gap-1.5 border border-blue-200 transition-colors"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                       <span>Buka {st.menuName}</span>
@@ -916,13 +820,12 @@ export default function ModulPanduanPage() {
 
                 {/* Sub Content Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-5">
-                  {/* Kolom 1: Ringkasan, Pelaksana, & Output */}
                   <div className="space-y-4 lg:col-span-1">
                     <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
                       <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                         🎯 Tujuan Tahapan:
                       </span>
-                      <p className="text-xs text-slate-700 leading-relaxed">
+                      <p className="text-xs text-slate-700 leading-relaxed font-medium">
                         {st.tujuan}
                       </p>
                     </div>
@@ -933,24 +836,23 @@ export default function ModulPanduanPage() {
                       </span>
                       <div className="flex flex-wrap gap-1">
                         {st.roles.map((r, i) => (
-                          <span key={i} className="text-[11px] bg-white text-slate-800 font-semibold px-2 py-0.5 rounded border border-slate-200">
+                          <span key={i} className="text-[10px] bg-white text-slate-800 font-semibold px-2 py-0.5 rounded border border-slate-200">
                             • {r}
                           </span>
                         ))}
                       </div>
                     </div>
 
-                    <div className="p-3.5 bg-emerald-50/70 rounded-xl border border-emerald-200 space-y-1">
-                      <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wider block">
+                    <div className="p-3.5 bg-blue-50/70 rounded-xl border border-blue-200 space-y-1">
+                      <span className="text-[11px] font-bold text-blue-900 uppercase tracking-wider block">
                         📦 Output yang Dihasilkan:
                       </span>
-                      <p className="text-xs text-emerald-950 font-medium leading-relaxed">
+                      <p className="text-xs text-blue-950 font-semibold leading-relaxed">
                         {st.output}
                       </p>
                     </div>
                   </div>
 
-                  {/* Kolom 2: Panduan Langkah Teknis di Aplikasi */}
                   <div className="space-y-3 lg:col-span-2">
                     <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -961,9 +863,9 @@ export default function ModulPanduanPage() {
                       {st.langkahTeknis.map((item, idx) => (
                         <div
                           key={idx}
-                          className="p-3 bg-white rounded-xl border border-slate-200 hover:border-emerald-300 transition-colors flex items-start gap-3 shadow-xs"
+                          className="p-3 bg-white rounded-xl border border-slate-200 hover:border-blue-300 transition-colors flex items-start gap-3 shadow-2xs"
                         >
-                          <span className="font-mono font-bold text-xs bg-slate-100 text-emerald-800 px-2 py-0.5 rounded border border-slate-200 shrink-0 mt-0.5">
+                          <span className="font-mono font-bold text-xs bg-slate-100 text-blue-800 px-2 py-0.5 rounded border border-slate-200 shrink-0 mt-0.5">
                             {item.no}
                           </span>
                           <div className="space-y-0.5">
@@ -978,7 +880,6 @@ export default function ModulPanduanPage() {
                       ))}
                     </div>
 
-                    {/* Do's and Don'ts */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                       <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs">
                         <span className="font-bold text-emerald-900 flex items-center gap-1 mb-1">
@@ -1001,40 +902,215 @@ export default function ModulPanduanPage() {
                   </div>
                 </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ====================================================================== */}
-      {/* 4. ASISTEN AI SI-MARI (BANTUAN KONSULTASI INTERAKTIF)                   */}
+      {/* 5. MODAL DETAIL TAHAPAN (MUNCUL KETIKA KOTAK DIAGRAM DIKLIK)           */}
       {/* ====================================================================== */}
-      <Card className="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 text-white border-none shadow-xl rounded-3xl overflow-hidden p-6 sm:p-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-xl">
-            <div className="flex items-center gap-2 text-emerald-300 font-bold text-xs uppercase tracking-wider">
+      {isDetailModalOpen && activeModalStage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 p-4 sm:p-6 print:hidden">
+          <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
+            
+            {/* Header Modal */}
+            <div className={`p-5 sm:p-6 bg-gradient-to-r ${activeModalStage.color} text-white flex items-start justify-between gap-4 shrink-0 shadow-sm`}>
+              <div className="flex items-start gap-3.5">
+                <span className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md text-white font-black text-lg flex items-center justify-center shrink-0 border border-white/30 shadow-xs mt-0.5">
+                  {activeModalStage.step}
+                </span>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <span className="text-[11px] bg-white/25 text-white px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border border-white/30">
+                      Tahap {activeModalStage.step} dari 7
+                    </span>
+                    <span className="text-[11px] bg-black/20 text-white/90 px-2.5 py-0.5 rounded-full font-medium border border-white/20">
+                      {activeModalStage.menuName}
+                    </span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-extrabold text-white leading-snug">
+                    Tahap {activeModalStage.step}: {activeModalStage.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-white/80 mt-0.5 leading-relaxed">
+                    {activeModalStage.subtitle}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsDetailModalOpen(false)}
+                className="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-full transition-all shrink-0 cursor-pointer"
+                title="Tutup Modal Detail"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body Modal (Scrollable) */}
+            <div className="p-5 sm:p-6 overflow-y-auto custom-scrollbar space-y-6 flex-1 bg-slate-50/40">
+              
+              {/* Ringkasan: Tujuan, Pelaksana, Output */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-3.5 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-1">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <Target className="w-3.5 h-3.5 text-blue-600" />
+                    Tujuan Tahapan:
+                  </span>
+                  <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                    {activeModalStage.tujuan}
+                  </p>
+                </div>
+
+                <div className="p-3.5 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-1">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-indigo-600" />
+                    Pelaksana Bertanggung Jawab:
+                  </span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {activeModalStage.roles.map((r: string, i: number) => (
+                      <span key={i} className="text-[10px] bg-slate-100 text-slate-700 font-semibold px-2 py-0.5 rounded border border-slate-200">
+                        {r}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-blue-50/70 rounded-xl border border-blue-200 shadow-2xs space-y-1">
+                  <span className="text-[11px] font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-blue-700" />
+                    Output yang Dihasilkan:
+                  </span>
+                  <p className="text-xs text-blue-950 font-semibold leading-relaxed">
+                    {activeModalStage.output}
+                  </p>
+                </div>
+              </div>
+
+              {/* Langkah-Langkah Teknis di Aplikasi */}
+              <div className="space-y-3 bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-2xs">
+                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  Langkah-Langkah Teknis Pengoperasian di Aplikasi:
+                </h4>
+
+                <div className="space-y-2.5">
+                  {activeModalStage.langkahTeknis.map((item: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className="p-3 bg-slate-50 rounded-xl border border-slate-200 hover:border-blue-300 transition-colors flex items-start gap-3"
+                    >
+                      <span className="font-mono font-bold text-xs bg-white text-blue-700 px-2.5 py-1 rounded-md border border-slate-200 shrink-0 shadow-2xs">
+                        {item.no}
+                      </span>
+                      <div className="space-y-0.5 flex-1">
+                        <span className="font-bold text-xs sm:text-sm text-slate-900 block">
+                          {item.nama}
+                        </span>
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                          {item.detail}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Do's and Don'ts */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs shadow-2xs">
+                  <span className="font-bold text-emerald-900 flex items-center gap-1.5 mb-1 text-xs">
+                    <CheckCircle className="w-4 h-4 text-emerald-600" /> Kriteria Benar (Do):
+                  </span>
+                  <p className="text-emerald-800 leading-relaxed">
+                    {activeModalStage.doAndDont.do}
+                  </p>
+                </div>
+
+                <div className="p-3.5 bg-red-50 rounded-xl border border-red-200 text-xs shadow-2xs">
+                  <span className="font-bold text-red-900 flex items-center gap-1.5 mb-1 text-xs">
+                    <XCircle className="w-4 h-4 text-red-600" /> Hal yang Dilarang (Don't):
+                  </span>
+                  <p className="text-red-800 leading-relaxed">
+                    {activeModalStage.doAndDont.dont}
+                  </p>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer Modal dengan Navigasi Sebelumnya / Selanjutnya dan Buka Menu */}
+            <div className="p-4 bg-white border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  disabled={activeModalStage.step <= 1}
+                  onClick={() => handleNavigateModal(activeModalStage.step - 1)}
+                  className="flex-1 sm:flex-none px-3.5 py-2 text-xs font-semibold rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span>Tahap Sebelumnya</span>
+                </button>
+                <button
+                  disabled={activeModalStage.step >= 7}
+                  onClick={() => handleNavigateModal(activeModalStage.step + 1)}
+                  className="flex-1 sm:flex-none px-3.5 py-2 text-xs font-semibold rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                >
+                  <span>Tahap Selanjutnya</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                <button
+                  onClick={() => setIsDetailModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                >
+                  Tutup
+                </button>
+                <Link
+                  href={activeModalStage.menuPath}
+                  className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs flex items-center gap-2 transition-all cursor-pointer"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Buka {activeModalStage.menuName}</span>
+                </Link>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ====================================================================== */}
+      {/* 6. ASISTEN AI SI-MARI (BANTUAN KONSULTASI INTERAKTIF)                   */}
+      {/* ====================================================================== */}
+      <Card className="bg-gradient-to-r from-[#0d2140] via-[#122b54] to-[#183a6d] text-white border-none shadow-md rounded-2xl overflow-hidden p-5 sm:p-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="space-y-1.5 max-w-xl">
+            <div className="flex items-center gap-2 text-sky-300 font-bold text-xs uppercase tracking-wider">
               <Bot className="w-4 h-4 text-amber-400" />
               <span>Butuh Bantuan Lebih Lanjut?</span>
             </div>
-            <h3 className="text-xl sm:text-2xl font-black text-white">
-              Konsultasikan Pertanyaan Anda dengan Si-MaRi AI
+            <h3 className="text-lg sm:text-xl font-black text-white">
+              Konsultasikan Alur Pengelolaan dengan Si-MaRi AI
             </h3>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            <p className="text-xs text-slate-300 leading-relaxed">
               Jika Anda ragu dalam merumuskan kalimat risiko, menentukan matriks skor 5×5, atau menyusun butir RTP, gunakan asisten cerdas <strong>Si-MaRi AI</strong> pada ikon chatbox di pojok kanan bawah layar untuk konsultasi langsung 24/7!
             </p>
           </div>
 
           <div className="shrink-0 flex items-center gap-3">
-            <div className="p-3 bg-white/10 rounded-2xl border border-white/20 backdrop-blur-md flex items-center gap-3">
-              <Bot className="w-8 h-8 text-emerald-400 animate-bounce" />
+            <div className="p-3 bg-white/10 rounded-xl border border-white/20 backdrop-blur-md flex items-center gap-3">
+              <Bot className="w-7 h-7 text-sky-400 animate-bounce" />
               <div className="text-xs">
                 <span className="font-bold text-white block">Si-MaRi AI Online</span>
-                <span className="text-[11px] text-emerald-300">Klik tombol di kanan bawah</span>
+                <span className="text-[11px] text-sky-300">Klik tombol di kanan bawah</span>
               </div>
             </div>
           </div>
         </div>
       </Card>
+
     </div>
   );
 }
