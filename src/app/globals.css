@@ -271,4 +271,76 @@
   animation: floatMascot 4s ease-in-out infinite;
 }
 
+/* ========================================================================= */
+/* ANIMASI MULUT BERBICARA & TANGAN MENUNJUK MASKOT SI-MARI                 */
+/* ========================================================================= */
+@keyframes mouthTalk {
+  0%, 100% {
+    transform: scaleY(0.9) scaleX(1);
+  }
+  25% {
+    transform: scaleY(0.35) scaleX(0.92);
+  }
+  50% {
+    transform: scaleY(1.18) scaleX(1.05);
+  }
+  75% {
+    transform: scaleY(0.55) scaleX(0.97);
+  }
+}
+
+.animate-mouth-talk {
+  animation: mouthTalk 0.32s ease-in-out infinite;
+}
+
+@keyframes tongueBounce {
+  0%, 100% {
+    transform: translateY(0) scaleY(1);
+  }
+  50% {
+    transform: translateY(-2px) scaleY(1.2);
+  }
+}
+
+.animate-tongue-bounce {
+  animation: tongueBounce 0.28s ease-in-out infinite;
+}
+
+@keyframes pointGesture {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(-8deg);
+  }
+}
+
+.animate-point-gesture {
+  animation: pointGesture 0.85s ease-in-out infinite;
+}
+
+@keyframes soundWave {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.85) translateX(0);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.15) translateX(3px);
+  }
+}
+
+.animate-sound-wave {
+  animation: soundWave 0.65s ease-in-out infinite;
+}
+
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spinSlow 6s linear infinite;
+}
+
 

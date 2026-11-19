@@ -24,7 +24,7 @@ import {
   TrendingUp,
   Award
 } from "lucide-react";
-import { MASCOT_IMAGE_BASE64 } from "@/lib/mascot-data";
+import { AnimatedMascot } from "@/components/AnimatedMascot";
 
 interface CaptchaData {
   code: string;
@@ -150,6 +150,19 @@ export default function LoginPage() {
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.lang = "id-ID";
       utterance.rate = 0.8;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const handleSpeakMascotMessage = () => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      const msg = LOGIN_MESSAGES[activeMsgIndex]?.text;
+      if (!msg) return;
+      const cleanMsg = msg.replace(/[👋✨]/g, "").trim();
+      const utterance = new SpeechSynthesisUtterance(cleanMsg);
+      utterance.lang = "id-ID";
+      utterance.rate = 0.95;
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utterance);
     }
@@ -327,8 +340,21 @@ export default function LoginPage() {
                     <IconComp className={`w-3.5 h-3.5 ${currentMsg.iconColor} shrink-0 animate-pulse`} />
                     <span className="leading-tight">{currentMsg.text}</span>
 
+                    {/* Tombol Suara untuk Mendengarkan Maskot Berbicara */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSpeakMascotMessage();
+                      }}
+                      title="Dengarkan maskot berbicara"
+                      className="text-slate-400 hover:text-blue-600 transition-colors p-1 rounded-full hover:bg-blue-50 cursor-pointer shrink-0"
+                    >
+                      <Volume2 className="w-3.5 h-3.5" />
+                    </button>
+
                     {/* Indikator Titik Posisi Kalimat */}
-                    <div className="flex items-center gap-1 ml-2.5 pl-2.5 border-l border-slate-200/90">
+                    <div className="flex items-center gap-1 ml-1.5 pl-2.5 border-l border-slate-200/90">
                       {LOGIN_MESSAGES.map((_, idx) => (
                         <span
                           key={idx}
@@ -371,18 +397,12 @@ export default function LoginPage() {
               </span>
             </div>
 
-            {/* Karakter Maskot Si-MaRi yang Seolah-olah Berbicara */}
+            {/* Karakter Maskot Si-MaRi dengan Animasi Tangan Menunjuk Tulisan & Mulut Berbicara */}
             <div className="relative shrink-0 flex items-center justify-center">
-              {/* Efek Cahaya Pendar Biru Halus di Belakang Maskot */}
-              <div className="absolute w-32 h-32 bg-blue-400/20 rounded-full blur-xl pointer-events-none" />
-
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={MASCOT_IMAGE_BASE64}
-                alt="Maskot Karakter Si-MaRi Kemendes PDT"
-                width={329}
-                height={377}
-                className="w-32 lg:w-40 h-auto object-contain drop-shadow-[0_12px_20px_rgba(30,64,175,0.2)] animate-mascot-float select-none transition-transform hover:scale-105 duration-300"
+              <AnimatedMascot
+                isSpeaking={isMsgVisible}
+                onMascotClick={handleSpeakMascotMessage}
+                className="w-32 lg:w-40"
               />
             </div>
           </div>
