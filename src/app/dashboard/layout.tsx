@@ -29,7 +29,8 @@ import {
   PanelTop,
   Check,
   MessageSquare,
-  Home
+  Home,
+  Calendar
 } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -79,20 +80,36 @@ const LiveClock = () => {
     return () => clearInterval(interval);
   }, []);
 
-  if (!time) return <div className="h-4" />;
+  if (!time) {
+    return (
+      <div className="h-4 mt-0.5 text-[11px] text-slate-400 flex items-center gap-1.5">
+        <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
+        <span>Memuat tanggal...</span>
+      </div>
+    );
+  }
+
+  const hariDanTanggal = time.toLocaleDateString("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const jamMenitDetik = time.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).replace(/\./g, ":");
 
   return (
-    <div suppressHydrationWarning className="text-[11px] xl:text-[12px] font-medium text-slate-500 flex items-center mt-0.5">
-      {time.toLocaleDateString("id-ID", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })} - {time.toLocaleTimeString("id-ID", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      })}
+    <div suppressHydrationWarning className="text-[11px] xl:text-[11.5px] font-medium text-slate-500 flex items-center gap-1.5 mt-0.5 leading-none">
+      <Calendar className="w-3 h-3 text-blue-600/70 shrink-0" />
+      <span>{hariDanTanggal}</span>
+      <span className="text-slate-300">•</span>
+      <span className="font-mono text-slate-600 text-[10.5px] xl:text-[11px]">
+        {jamMenitDetik} WIB
+      </span>
     </div>
   );
 };
@@ -678,17 +695,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <h1 className="text-lg font-bold text-[#122b54]">Si<span className="text-blue-600">-MaRi</span></h1>
           </div>
           
-          {/* Breadcrumb Persis Contoh: Home > Nama Menu */}
-          <div className="hidden md:flex items-center gap-2 text-[13.5px] font-medium text-slate-700">
-            <Link href="/dashboard" className="flex items-center gap-1.5 text-[#122b54] font-semibold hover:text-blue-600 transition-colors">
-              <Home className="h-4 w-4 text-[#173f7c] shrink-0" />
-              <span>Home</span>
-            </Link>
-            <span className="text-slate-400">›</span>
-            <span className="text-[#122b54] font-bold truncate max-w-[280px]">{currentPageName}</span>
+          {/* Breadcrumb Persis Contoh: Home > Nama Menu dengan Hari dan Tanggal di bawahnya */}
+          <div className="hidden md:flex flex-col justify-center min-w-0">
+            <div className="flex items-center gap-2 text-[13.5px] font-medium text-slate-700 leading-tight">
+              <Link href="/dashboard" className="flex items-center gap-1.5 text-[#122b54] font-semibold hover:text-blue-600 transition-colors">
+                <Home className="h-4 w-4 text-[#173f7c] shrink-0" />
+                <span>Home</span>
+              </Link>
+              <span className="text-slate-400">›</span>
+              <span className="text-[#122b54] font-bold truncate max-w-[320px]" title={currentPageName}>
+                {currentPageName}
+              </span>
+            </div>
+            <LiveClock />
           </div>
-          <div className="md:hidden font-bold text-[#122b54] text-sm truncate">
-            {currentPageName}
+
+          <div className="md:hidden flex flex-col justify-center min-w-0">
+            <div className="font-bold text-[#122b54] text-sm truncate">
+              {currentPageName}
+            </div>
+            <LiveClock />
           </div>
         </div>
 
