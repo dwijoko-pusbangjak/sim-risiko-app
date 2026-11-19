@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Save, Calculator, X, AlertTriangle } from "lucide-react";
+import { Loader2, Save, Calculator, X, AlertTriangle, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 
 interface IdentifikasiRisiko {
@@ -96,6 +96,27 @@ export default function AnalisisRisikoPage() {
       );
       const snap = await getDocs(q);
       const data = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as IdentifikasiRisiko));
+      
+      // Urutkan risiko dari skala risiko tertinggi (besaran terbesar) ke yang terendah
+      data.sort((a, b) => {
+        const scoreA = Number(a.besaranRisiko || 0);
+        const scoreB = Number(b.besaranRisiko || 0);
+        if (scoreB !== scoreA) {
+          return scoreB - scoreA;
+        }
+        const dampakA = Number(a.levelDampak || 0);
+        const dampakB = Number(b.levelDampak || 0);
+        if (dampakB !== dampakA) {
+          return dampakB - dampakA;
+        }
+        const kemA = Number(a.levelKemungkinan || 0);
+        const kemB = Number(b.levelKemungkinan || 0);
+        if (kemB !== kemA) {
+          return kemB - kemA;
+        }
+        return (a.pernyataanRisiko || "").localeCompare(b.pernyataanRisiko || "");
+      });
+
       setRisikoList(data);
     } catch (error: any) {
       console.error("Error fetching list:", error);
@@ -174,6 +195,10 @@ export default function AnalisisRisikoPage() {
           <h2 className="text-2xl font-bold tracking-tight text-slate-800">Analisis Risiko</h2>
           <p className="text-slate-500">Penilaian tingkat kemungkinan dan dampak untuk setiap risiko di Tahun {activeYear}.</p>
         </div>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold shadow-2xs">
+          <ArrowDown className="w-3.5 h-3.5 text-blue-600" />
+          <span>Urutan: Skala Risiko Tertinggi ➔ Terendah</span>
+        </div>
       </div>
 
       {/* Tabel Daftar Risiko */}
@@ -183,21 +208,30 @@ export default function AnalisisRisikoPage() {
             <Table>
               <TableHeader className="bg-slate-50">
                 <TableRow>
+                  <TableHead className="w-12 text-center font-bold">No</TableHead>
                   <TableHead className="min-w-[250px]">Pernyataan Risiko</TableHead>
                   <TableHead className="min-w-[150px]">Sisa Risiko</TableHead>
                   <TableHead className="text-center">Kemungkinan</TableHead>
                   <TableHead className="text-center">Dampak</TableHead>
-                  <TableHead className="text-center">Besaran</TableHead>
+                  <TableHead className="text-center font-bold">
+                    <div className="inline-flex items-center justify-center gap-1">
+                      <span>Besaran</span>
+                      <ArrowDown className="w-3.5 h-3.5 text-blue-600" />
+                    </div>
+                  </TableHead>
                   <TableHead className="text-center min-w-[150px]">Level Risiko</TableHead>
                   <TableHead className="text-center w-[120px] sticky right-0 bg-slate-100 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)] z-10">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {risikoList.length > 0 ? (
-                  risikoList.map((item) => {
+                  risikoList.map((item, idx) => {
                     const levelInfo = getRiskLevelInfo(item.besaranRisiko || 0);
                     return (
                       <TableRow key={item.id} className="hover:bg-slate-50/50">
+                        <TableCell className="text-center text-xs font-semibold text-slate-500">
+                          {idx + 1}
+                        </TableCell>
                         <TableCell className="font-medium text-slate-800 max-w-[250px] truncate" title={item.pernyataanRisiko}>
                           {item.pernyataanRisiko}
                         </TableCell>
@@ -212,7 +246,7 @@ export default function AnalisisRisikoPage() {
                         </TableCell>
                         <TableCell className="text-center">
                           {item.besaranRisiko ? (
-                            <span className="font-bold text-lg">{item.besaranRisiko}</span>
+                            <span className="font-bold text-lg text-slate-800">{item.besaranRisiko}</span>
                           ) : "-"}
                         </TableCell>
                         <TableCell className="text-center">
@@ -234,7 +268,7 @@ export default function AnalisisRisikoPage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-32 text-center text-slate-500">
+                    <TableCell colSpan={8} className="h-32 text-center text-slate-500">
                       Belum ada data identifikasi risiko tahun {activeYear}. Silakan isi di menu Identifikasi Risiko.
                     </TableCell>
                   </TableRow>

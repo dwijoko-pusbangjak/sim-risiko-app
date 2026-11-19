@@ -335,6 +335,14 @@ export default function AnalisisRTPPage() {
         }
       });
 
+      // Urutkan dari skala risiko inheren tertinggi ke yang terendah
+      results.sort((a, b) => {
+        if (b.awalSkala !== a.awalSkala) {
+          return b.awalSkala - a.awalSkala;
+        }
+        return (a.pernyataanRisiko || "").localeCompare(b.pernyataanRisiko || "");
+      });
+
       setCompletedRtps(results);
     } catch (err: any) {
       console.error("Gagal memuat Analisis RTP:", err);

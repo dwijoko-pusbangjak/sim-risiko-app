@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Save, X, Plus, Pencil, Trash2, ShieldCheck, ListChecks, AlertTriangle, Calendar, Clock } from "lucide-react";
+import { Loader2, Save, X, Plus, Pencil, Trash2, ShieldCheck, ListChecks, AlertTriangle, Calendar, Clock, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { 
@@ -126,6 +126,16 @@ export default function RtpPage() {
       // Filter hanya risiko dengan besaran > 11
       const filteredData = data.filter(r => r.besaranRisiko && r.besaranRisiko > 11);
       
+      // Urutkan risiko dari skala risiko tertinggi (besaran terbesar) ke yang terendah
+      filteredData.sort((a, b) => {
+        const scoreA = Number(a.besaranRisiko || 0);
+        const scoreB = Number(b.besaranRisiko || 0);
+        if (scoreB !== scoreA) {
+          return scoreB - scoreA;
+        }
+        return (a.pernyataanRisiko || "").localeCompare(b.pernyataanRisiko || "");
+      });
+
       setRisikoList(filteredData);
       
       // Update selectedRisiko with new data if it exists (for live updates inside modal)
@@ -304,21 +314,34 @@ export default function RtpPage() {
           <h2 className="text-2xl font-bold tracking-tight text-slate-800">Rencana Tindak Pengendalian (RTP)</h2>
           <p className="text-slate-500">Kelola tindakan pengendalian untuk risiko prioritas dengan nilai &gt; 11 di Tahun {activeYear}.</p>
         </div>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-semibold shadow-2xs">
+          <ArrowDown className="w-3.5 h-3.5 text-indigo-600" />
+          <span>Urutan: Skala Risiko Tertinggi ➔ Terendah</span>
+        </div>
       </div>
 
       {/* Tabel Risiko Prioritas */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in zoom-in-95">
-        <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
+        <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
           <h3 className="font-semibold text-slate-800 flex items-center">
             <ShieldCheck className="mr-2 h-5 w-5 text-indigo-600" /> Daftar Risiko Prioritas (Sedang - Sangat Tinggi)
           </h3>
+          <span className="text-xs text-slate-500">
+            Diurutkan berdasarkan skor besaran risiko terbesar
+          </span>
         </div>
         <div className="overflow-auto max-h-[calc(100vh-14.5rem)] relative custom-scrollbar pb-2">
           <Table>
             <TableHeader className="bg-white">
               <TableRow>
+                <TableHead className="w-12 text-center font-bold">No</TableHead>
                 <TableHead className="min-w-[300px]">Pernyataan Risiko</TableHead>
-                <TableHead className="text-center">Besaran</TableHead>
+                <TableHead className="text-center font-bold">
+                  <div className="inline-flex items-center justify-center gap-1">
+                    <span>Besaran</span>
+                    <ArrowDown className="w-3.5 h-3.5 text-indigo-600" />
+                  </div>
+                </TableHead>
                 <TableHead className="text-center min-w-[150px]">Level Risiko</TableHead>
                 <TableHead className="text-center min-w-[150px] sticky right-0 bg-white shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)] z-10">
                   Jumlah RTP (Klik Detail)
@@ -327,7 +350,7 @@ export default function RtpPage() {
             </TableHeader>
             <TableBody>
               {risikoList.length > 0 ? (
-                risikoList.map((item) => {
+                risikoList.map((item, idx) => {
                   const levelInfo = getRiskLevelInfo(item.besaranRisiko || 0);
                   const count = item.rtpList?.length || 0;
                   const overdueCount = (item.rtpList || []).filter(
@@ -336,10 +359,13 @@ export default function RtpPage() {
                   
                   return (
                     <TableRow key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                      <TableCell className="text-center text-xs font-semibold text-slate-500">
+                        {idx + 1}
+                      </TableCell>
                       <TableCell className="font-medium text-slate-800 max-w-[300px] truncate" title={item.pernyataanRisiko}>
                         {item.pernyataanRisiko}
                       </TableCell>
-                      <TableCell className="text-center font-bold text-lg text-slate-700">
+                      <TableCell className="text-center font-bold text-lg text-slate-800">
                         {item.besaranRisiko}
                       </TableCell>
                       <TableCell className="text-center">
@@ -373,7 +399,7 @@ export default function RtpPage() {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-32 text-center text-slate-500">
+                  <TableCell colSpan={5} className="h-32 text-center text-slate-500">
                     Tidak ada risiko dengan nilai di atas 11.
                   </TableCell>
                 </TableRow>
